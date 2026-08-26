@@ -1,18 +1,147 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Razorpay Aegis - Autonomous Dispute Defense
+// Prisma Schema for Neon Serverless PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// NOTE: Models will be added in subsequent feature tasks.
-// Placeholder model for initial migration to create the SQLite database file.
-model SchemaInit {
+model Merchant {
+  id            String   @id @default(cuid())
+  name          String
+  rzpMerchantId String   @unique
+  mode          String   @default("test")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("merchants")
+}
+
+model Customer {
+  id                 String   @id @default(cuid())
+  name               String
+  email              String
+  address            String
+  priorOrdersCount   Int      @default(0)
+  priorDisputesCount Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("customers")
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  rzpPaymentId String
+  customerId   String
+  item         String
+  amount       Int // in paise (e.g. 10000 = ₹100.00)
+  currency     String   @default("INR")
+  status       String // "paid", "captured", "refunded", "failed"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  delivery       Delivery?
+  communications Communication[]
+  refunds        Refund[]
+  disputes       Dispute[]
+
+  @@index([customerId])
+  @@index([rzpPaymentId])
+  @@map("orders")
+}
+
+model Delivery {
+  id                 String    @id @default(cuid())
+  orderId            String    @unique
+  courier            String // e.g. "BlueDart", "Delhivery", "Shadowfax"
+  trackingId         String
+  deliveredAt        DateTime?
+  deliveredToAddress String
+  signatureCaptured  Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("deliveries")
+}
+
+model Communication {
   id        String   @id @default(cuid())
+  orderId   String
+  direction String // "inbound", "outbound"
+  channel   String // "email", "whatsapp", "sms", "chat"
+  body      String
+  sentAt    DateTime @default(now())
   createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("communications")
+}
+
+model Refund {
+  id          String   @id @default(cuid())
+  orderId     String
+  rzpRefundId String?
+  amount      Int // in paise
+  status      String // "processed", "failed", "pending"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("refunds")
+}
+
+model Dispute {
+  id          String   @id // like "disp_92831" or "disp_1064_goods_not_received"
+  rzpDisputeId String  @unique
+  orderId     String
+  paymentId   String
+  reasonCode  String // e.g. "1064", "1081", "1084", "4837", "1061", "1062"
+  network     String // "upi", "card"
+  amount      Int // in paise
+  currency    String   @default("INR")
+  phase       String   @default("chargeback") // "chargeback", "retrieval", "arbitration"
+  status      String   @default("open") // "open", "under_review", "won", "lost", "accepted"
+  respondBy   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  evidenceItems EvidenceItem[]
+
+  @@index([orderId])
+  @@index([paymentId])
+  @@index([status])
+  @@map("disputes")
+}
+
+model EvidenceItem {
+  id          String   @id @default(cuid())
+  disputeId   String
+  type        String // Razorpay fields: "shipping_proof", "billing_proof", "customer_communication", "proof_of_service", "explanation_letter", "refund_confirmation", "access_activity_log", "refund_cancellation_policy", "term_and_conditions", "others"
+  present     Boolean  @default(false)
+  documentRef String?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  dispute Dispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+
+  @@index([disputeId])
+  @@index([type])
+  @@map("evidence_items")
 }

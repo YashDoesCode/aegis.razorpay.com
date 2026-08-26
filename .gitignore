@@ -38,6 +38,10 @@ $RECYCLE.BIN/
 .project
 .settings/
 
+# AI Agents & IDE Cache
+.agents/
+.gemini/
+
 # Node & Package Managers
 node_modules/
 /node_modules
@@ -54,6 +58,38 @@ yarn-error.log*
 .pnpm-debug.log*
 lerna-debug.log*
 
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+
 # Next.js, Turbopack, Bundlers & Build Outputs
 .next/
 /.next/
@@ -66,11 +102,15 @@ dist/
 .turbo/
 .cache/
 
-# Testing & Coverage
+# Testing & Coverage (Vitest / Jest / Playwright)
 coverage/
 /coverage
 .nyc_output/
 *.lcov
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # TypeScript
 *.tsbuildinfo
@@ -88,7 +128,7 @@ next-env.d.ts
 .env.production.local
 !.env.example
 
-# SQLite & Database Artifacts
+# SQLite, Postgres & Database Dumps / Artifacts
 *.db
 *.db-journal
 *.db-wal
@@ -98,6 +138,8 @@ next-env.d.ts
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
+*.dump
+*.sql.gz
 prisma/*.db
 prisma/*.db-journal
 
@@ -116,3 +158,5 @@ prisma/*.db-journal
 *.bak
 chrome/
 .local-chromium/
+scratch/
+test-reports/

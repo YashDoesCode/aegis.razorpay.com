@@ -42,155 +42,120 @@
   --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-display: 'TASA Orbiter Display', var(--font-inter-tight), system-ui, sans-serif;
   --font-tight: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif;
-  --font-heading: 'TASA Orbiter Display', var(--font-inter-tight), system-ui, sans-serif;
+  --font-headline-lg: 'TASA Orbiter Display', var(--font-inter-tight), sans-serif;
+  --font-headline-md: 'TASA Orbiter Display', var(--font-inter-tight), sans-serif;
+  --font-headline-sm: 'TASA Orbiter Display', var(--font-inter-tight), sans-serif;
+  --font-body-lg: var(--font-inter), sans-serif;
+  --font-body-md: var(--font-inter), sans-serif;
+  --font-body-sm: var(--font-inter), sans-serif;
 
-  /* Razorpay Exact Color Palette */
-  /* Dark / Navy */
+  /* Exact Color Palette */
+  --color-primary: #305EFF;
+  --color-primary-container: #2950DA;
+  --color-ink: #0D1C2D;
+  --color-on-background: #0D1C2D;
+  --color-muted-slate: #5D6D86;
+  --color-border-subtle: #DFE3E9;
+  --color-success: #00A251;
+  --color-attention: #E08600;
+  --color-danger: #ED2939;
+  --color-page-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-container-low: #EEF4FF;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-on-surface-variant: #434656;
+  --color-rzp-navy: #0D1A48;
+
+  /* Theme Tokens */
   --color-rp-navy: #0D1A48;
   --color-rp-navy-800: #132644;
   --color-rp-navy-700: #192839;
   --color-rp-navy-600: #203553;
-
-  /* Typography / Text */
-  --color-rp-ink: #222222;
-  --color-rp-ink-2: #333333;
+  --color-rp-ink: #0D1C2D;
+  --color-rp-ink-2: #222222;
   --color-rp-ink-3: #1B1B1B;
-  --color-rp-ink-black: #0B0A0D;
   --color-rp-slate: #40566D;
   --color-rp-muted: #5D6D86;
   --color-rp-muted-2: #8794A7;
-
-  /* Accent Blue */
   --color-rp-blue: #305EFF;
   --color-rp-blue-hover: #2950DA;
   --color-rp-blue-light: #4D7FFF;
   --color-rp-blue-bg: #D0E0FF;
-  --color-rp-blue-vivid: #0239FF;
-
-  /* Success Green */
   --color-rp-green: #00A251;
-  --color-rp-green-dark: #008743;
-  --color-rp-green-deep: #006C3F;
-  --color-rp-green-mid: #009E5C;
   --color-rp-green-tint: #00A25117;
-
-  /* Danger Red */
   --color-rp-red: #ED2939;
-  --color-rp-red-dark: #D52B1E;
   --color-rp-red-tint: #FFBFBF;
-
-  /* Surfaces & Borders */
   --color-rp-surface: #FFFFFF;
   --color-rp-bg: #F8FAFC;
-  --color-rp-bg-2: #F1F5FA;
-  --color-rp-bg-3: #F2F4F8;
   --color-rp-border: #DFE3E9;
+  --color-ring: #305EFF;
+  --color-border: #DFE3E9;
+  --color-background: #F8FAFC;
+  --color-foreground: #0D1C2D;
 
-  /* 4px Border Radius Everywhere (Razorpay Spec) */
+  /* 4px Border Radius Everywhere */
   --radius: 4px;
   --radius-xs: 4px;
   --radius-sm: 4px;
   --radius-md: 4px;
   --radius-lg: 4px;
   --radius-xl: 4px;
-  --radius-2xl: 4px;
-  --radius-3xl: 4px;
-  --radius-4xl: 4px;
 
-  /* Subtle Razorpay Shadows */
+  /* Shadows */
+  --shadow-flat: 0px 4px 6px -1px rgba(0, 0, 0, 0.05), 0px 2px 4px -1px rgba(0, 0, 0, 0.03);
   --shadow-rp-soft: 0px 2px 4px 0px rgba(0, 0, 0, 0.04);
   --shadow-rp-up: 0px -2px 4px 0px rgba(0, 0, 0, 0.04);
-  --shadow-rp-card: 0px 2px 4px 0px rgba(0, 0, 0, 0.04);
-
-  /* Theme Mappings */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
 }
 
 :root {
   --background: #F8FAFC;
-  --foreground: #222222;
+  --foreground: #0D1C2D;
   --card: #FFFFFF;
-  --card-foreground: #222222;
+  --card-foreground: #0D1C2D;
   --popover: #FFFFFF;
-  --popover-foreground: #222222;
+  --popover-foreground: #0D1C2D;
   --primary: #305EFF;
   --primary-foreground: #FFFFFF;
   --secondary: #F1F5FA;
-  --secondary-foreground: #222222;
+  --secondary-foreground: #0D1C2D;
   --muted: #F1F5FA;
   --muted-foreground: #5D6D86;
-  --accent: #F1F5FA;
-  --accent-foreground: #222222;
   --destructive: #ED2939;
   --destructive-foreground: #FFFFFF;
   --border: #DFE3E9;
   --input: #DFE3E9;
   --ring: #305EFF;
-  
-  /* 4px exact radius */
   --radius: 4px;
-
-  --sidebar: #0D1A48;
-  --sidebar-foreground: #F8FAFC;
-  --sidebar-primary: #305EFF;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #132644;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #203553;
-  --sidebar-ring: #305EFF;
 }
 
-/* Gradients */
+/* Custom UI Utilities */
+.rzp-navy-bg {
+  background-color: #0D1A48;
+}
+
+.flat-shadow {
+  box-shadow: 0px 4px 6px -1px rgba(0, 0, 0, 0.05), 0px 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
 .rp-gradient-green {
   background: linear-gradient(135deg, rgb(110, 230, 196) 0%, rgb(90, 165, 144) 29.66%, rgb(179, 216, 205) 63.86%, rgb(201, 255, 220) 100%);
 }
 
-.rp-gradient-overlay {
-  background: linear-gradient(rgba(34, 34, 34, 0) 48.5%, rgb(34, 34, 34) 100%);
-}
-
-.rp-shadow-soft {
-  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.04);
-}
-
-.rp-shadow-up {
-  box-shadow: 0px -2px 4px 0px rgba(0, 0, 0, 0.04);
-}
-
 @layer base {
   * {
-    @apply border-rp-border outline-ring/50;
-    border-radius: var(--radius);
+    @apply border-border-subtle;
+    border-radius: 4px;
   }
   body {
-    @apply bg-rp-bg text-rp-ink font-sans antialiased;
+    background-color: #F8FAFC;
+    color: #0D1C2D;
+    font-family: var(--font-sans);
   }
-  h1, h2, h3, .font-display {
+  h1, .font-headline-lg {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  h2, .font-headline-sm {
     font-family: var(--font-display);
   }
 }
