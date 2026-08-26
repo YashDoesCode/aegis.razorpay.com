@@ -1,0 +1,49 @@
+/* Color Palette - Extracted by MiroMiro */
+/* Generated on 8/26/2026 */
+
+:root {
+  /* Colors */
+  --color-1: #000000;
+  --color-2: #0000EE;
+  --color-3: #FFFFFF00;
+  --color-4: #2950DA;
+  --color-5: #FFFFFF;
+  --color-6: #192839;
+  --color-7: #333333;
+  --color-8: #132644;
+  --color-9: #305EFF;
+  --color-10: #40566D;
+  --color-11: #8794A7;
+  --color-12: #DFE3E9;
+  --color-13: #5D6D86;
+  --color-14: #8996A9;
+  --color-15: #F0F4F6;
+  --color-16: #009E5C;
+  --color-17: #FFFFFF7A;
+  --color-18: #FFFFFFCC;
+  --color-19: #40566D80;
+  --color-20: #D52B1E;
+  --color-21: #ED2939;
+  --color-22: #203553;
+  --color-23: #F1F5FA;
+  --color-24: #021C29;
+  --color-25: #000000B8;
+  --color-26: #768EA7;
+  --color-27: #F8FAFC;
+  --color-28: #D0E0FF;
+  --color-29: #00000033;
+  --color-30: #032A3E;
+  --color-31: #F2F4F8;
+  --color-32: #00A25117;
+  --color-33: #FFBFBF;
+  --color-34: #1B1B1B;
+  --color-35: #000000CC;
+  --color-36: #0239FF;
+  --color-37: #0000001A;
+  --color-38: #006C3F;
+  --color-39: #008743;
+
+  /* Gradients */
+  --gradient-1: linear-gradient(rgba(34, 34, 34, 0) 48.5001%, rgb(34, 34, 34) 100%);
+  --gradient-2: linear-gradient(rgb(110, 230, 196) 0%, rgb(90, 165, 144) 29.6574%, rgb(179, 216, 205) 63.8615%, rgb(201, 255, 220) 100%);
+}
