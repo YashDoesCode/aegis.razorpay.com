@@ -4,6 +4,7 @@ import { computeWinnability } from "@/lib/scoring";
 import { getInMemoryDisputes } from "@/lib/mockStore";
 import { fetchDisputes } from "@/lib/razorpay";
 import { getMerchantConnectionStatus } from "@/lib/merchantAccount";
+import { computeFraudSignal } from "@/lib/fraudSignal";
 
 export const dynamic = "force-dynamic";
 
@@ -120,9 +121,12 @@ export async function GET(request: NextRequest) {
             lowAmount += item.amount || 0;
           }
 
+          const fraudSignal = computeFraudSignal(disputeObj, [], disputeObj.order.customer);
+
           return {
             ...disputeObj,
             winnability,
+            fraudSignal,
           };
         });
 
@@ -230,6 +234,8 @@ export async function GET(request: NextRequest) {
         lowAmount += d.amount || 0;
       }
 
+      const fraudSignal = computeFraudSignal(d, evidenceItems, customer);
+
       return {
         ...d,
         mode: "test",
@@ -237,6 +243,7 @@ export async function GET(request: NextRequest) {
         data_source: dataSource,
         isDemo: true,
         winnability,
+        fraudSignal,
       };
     });
 

@@ -28,6 +28,8 @@ import {
   Info,
 } from "lucide-react";
 import { WinnabilityResult } from "@/lib/scoring/types";
+import { FraudSignalResult } from "@/lib/fraudSignal/types";
+import { FraudSignalCard } from "./fraud-signal-card";
 import { LocalErrorBoundary } from "@/components/ui/error-boundary";
 
 export interface DisputeDetailItem {
@@ -46,6 +48,7 @@ export interface DisputeDetailItem {
   respondBy: string | Date;
   createdAt: string | Date;
   winnability: WinnabilityResult;
+  fraudSignal?: FraudSignalResult;
   order?: {
     item?: string;
     amount?: number;
@@ -473,6 +476,11 @@ export function DisputeDetailSheet({
                   )}
                 </div>
               </div>
+            )}
+
+            {/* First-Party / Friendly-Fraud & Relationship Graph Card */}
+            {dispute.fraudSignal && (
+              <FraudSignalCard fraudSignal={dispute.fraudSignal} />
             )}
 
             {/* AI Rebuttal Drafting & Contest Panel */}

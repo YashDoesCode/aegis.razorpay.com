@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { computeWinnability, getReasonCodeDefinition } from "@/lib/scoring";
 import { getInMemoryDisputeById } from "@/lib/mockStore";
 import { fetchDispute } from "@/lib/razorpay";
+import { computeFraudSignal } from "@/lib/fraudSignal";
 
 export const dynamic = "force-dynamic";
 
@@ -140,12 +141,19 @@ export async function GET(
     );
     const reasonDefinition = getReasonCodeDefinition(dispute.reasonCode);
 
+    const fraudSignal = computeFraudSignal(
+      dispute,
+      evidenceItems,
+      customer
+    );
+
     return NextResponse.json({
       ok: true,
       data: {
         ...dispute,
         mode,
         winnability,
+        fraudSignal,
         reasonDefinition,
       },
     });

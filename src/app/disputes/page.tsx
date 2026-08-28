@@ -736,7 +736,7 @@ export default function DisputesPage() {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span
                                 className={`text-[11px] font-semibold px-2 py-0.5 rounded-[4px] ${
                                   band === "high"
@@ -748,6 +748,11 @@ export default function DisputesPage() {
                               >
                                 {score}% · {band.replace("_", " ")}
                               </span>
+                              {d.fraudSignal?.isRepeatDisputer && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-red-100 text-red-700 border border-red-200">
+                                  Repeat Disputer
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4 text-right">
