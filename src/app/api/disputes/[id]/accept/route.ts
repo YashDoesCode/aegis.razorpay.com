@@ -70,13 +70,14 @@ export async function POST(
     }
 
     // Call Razorpay accept endpoint with error resilience
+    const mode = (searchParams.get("mode") || "test").toLowerCase() as "test" | "live";
     let rzpResult: { success: boolean; disputeId?: string; message?: string; response?: unknown } = {
       success: true,
-      message: "Accepted locally in test mode",
+      message: `Accepted in ${mode} mode`,
     };
 
     try {
-      rzpResult = await acceptDispute(dispute.rzpDisputeId || dispute.id);
+      rzpResult = await acceptDispute(dispute.rzpDisputeId || dispute.id, mode);
     } catch (rzpErr) {
       console.warn("⚠️ Razorpay API accept call warning (continuing with local state update):", rzpErr);
     }

@@ -120,6 +120,7 @@ export async function POST(
     }
 
     // 4. Call Razorpay contest API in DRAFT mode with error tolerance
+    const mode = (searchParams.get("mode") || "test").toLowerCase() as "test" | "live";
     let rzpContestResult: Record<string, unknown> = {
       success: true,
       action: "draft",
@@ -138,7 +139,8 @@ export async function POST(
           summary: rebuttal.summary,
           action: "draft", // Strictly draft mode
           evidenceMap,
-        }
+        },
+        mode
       );
       if (liveContest) {
         rzpContestResult = liveContest as Record<string, unknown>;

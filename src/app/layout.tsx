@@ -3,6 +3,7 @@ import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { MerchantModeProvider } from "@/context/merchant-mode-context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,10 +31,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${interTight.variable} h-full`}>
       <body className="h-full bg-rp-bg text-rp-ink font-sans antialiased">
-        <TooltipProvider delay={200}>
-          {children}
-          <Toaster richColors position="top-right" />
-        </TooltipProvider>
+        <MerchantModeProvider>
+          <TooltipProvider delay={200}>
+            {children}
+            <Toaster richColors position="top-right" />
+          </TooltipProvider>
+        </MerchantModeProvider>
       </body>
     </html>
   );

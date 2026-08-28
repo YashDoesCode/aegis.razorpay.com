@@ -22,16 +22,21 @@ import {
   X,
   AlertCircle,
   FileQuestion,
+  PlusCircle,
+  Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LocalErrorBoundary } from "@/components/ui/error-boundary";
+import { useMerchantMode } from "@/context/merchant-mode-context";
 
 type SortField = "amount" | "winnability" | "date" | "id";
 type SortDirection = "asc" | "desc";
 type WinnabilityFilter = "all" | "high" | "needs_evidence" | "low";
 
 export default function DisputesPage() {
+  const { mode, setMode, merchant, setIsConnectModalOpen } = useMerchantMode();
+
   const [disputes, setDisputes] = useState<DisputeDetailItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +66,7 @@ export default function DisputesPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("/api/disputes");
+      const res = await fetch(`/api/disputes?mode=${mode}`);
       const json = await res.json();
       if (json.ok && Array.isArray(json.data)) {
         setDisputes(json.data);
@@ -81,7 +86,7 @@ export default function DisputesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     loadDisputes();
@@ -90,7 +95,7 @@ export default function DisputesPage() {
   const handleSync = async () => {
     try {
       setSyncing(true);
-      const res = await fetch("/api/disputes/sync", { method: "POST" });
+      const res = await fetch(`/api/disputes/sync?mode=${mode}`, { method: "POST" });
       const json = await res.json();
       if (json.ok) {
         toast.success(json.message || "Disputes synced successfully from Razorpay API");
@@ -116,6 +121,7 @@ export default function DisputesPage() {
       const reportData = disputes.map((d) => ({
         disputeId: d.id,
         rzpDisputeId: d.rzpDisputeId,
+        mode: d.dataSource === "seed" ? "test_seed" : "live_api",
         reasonCode: d.reasonCode,
         network: d.network,
         amountPaise: d.amount,
@@ -138,12 +144,12 @@ export default function DisputesPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `razorpay-aegis-disputes-report-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `razorpay-aegis-disputes-${mode}-report-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success("Dispute defense audit report downloaded");
+      toast.success(`Dispute defense ${mode.toUpperCase()} audit report downloaded`);
     } catch (err) {
       console.error("❌ Failed to download report:", err);
       toast.error("Failed to generate report file");
@@ -243,7 +249,7 @@ export default function DisputesPage() {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="w-full space-y-8"
+          className="w-full space-y-6"
         >
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -251,9 +257,17 @@ export default function DisputesPage() {
               <h1 className="font-headline-lg text-[32px] text-ink font-semibold tracking-tight">
                 Aegis — Dispute Defense
               </h1>
-              <p className="text-xs text-muted-slate mt-1 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-success" />
-                <span>Razorpay Disputes Engine connected · Test Mode Active</span>
+              <p className="text-xs text-muted-slate mt-1 flex items-center gap-2">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    mode === "live" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                  }`}
+                />
+                <span>
+                  {mode === "live"
+                    ? `Live Production Mode · Connected to ${merchant.name} (${merchant.merchantId})`
+                    : "Test Sandbox Mode · 6 Seeded Sample Disputes"}
+                </span>
               </p>
             </div>
 
@@ -262,14 +276,14 @@ export default function DisputesPage() {
                 onClick={handleSync}
                 disabled={syncing || loading}
                 className="flex items-center gap-2 px-3 py-2 rounded-[4px] border border-border-subtle bg-white text-ink hover:bg-page-bg text-sm font-semibold transition-colors h-10 flat-shadow cursor-pointer disabled:opacity-50"
-                title="Sync latest disputes from Razorpay API"
+                title={`Sync latest disputes from Razorpay ${mode.toUpperCase()} API`}
               >
                 <RefreshCw
                   className={`w-4 h-4 text-muted-slate ${
                     syncing ? "animate-spin text-primary" : ""
                   }`}
                 />
-                <span>{syncing ? "Syncing..." : "Sync Disputes"}</span>
+                <span>{syncing ? "Syncing..." : "Sync from Razorpay"}</span>
               </button>
 
               <button
@@ -282,6 +296,47 @@ export default function DisputesPage() {
               </button>
             </div>
           </div>
+
+          {/* Mode Context Banner */}
+          {mode === "test" ? (
+            <div className="flex items-center justify-between px-4 py-3 bg-amber-50 border border-amber-200 rounded-[4px] text-xs text-amber-900">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                <span>
+                  <strong>Test Sandbox Mode:</strong> Showing 6 representative demo dispute cases with winnability scoring & AI rebuttal drafts.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!merchant.isConnected) {
+                    setIsConnectModalOpen(true);
+                  } else {
+                    setMode("live");
+                  }
+                }}
+                className="text-amber-800 underline font-semibold hover:text-amber-950 flex-shrink-0 ml-4 cursor-pointer"
+              >
+                {merchant.isConnected ? "Switch to Live Mode &rarr;" : "Connect Razorpay Account &rarr;"}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-[4px] text-xs text-emerald-900">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
+                <span>
+                  <strong>Live Mode Active:</strong> Direct queries to Razorpay API for merchant <span className="font-mono font-semibold">{merchant.merchantId}</span>. Never shows fake/mock data.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMode("test")}
+                className="text-emerald-800 underline font-semibold hover:text-emerald-950 flex-shrink-0 ml-4 cursor-pointer"
+              >
+                Switch to Test Mode (Demo Data) &rarr;
+              </button>
+            </div>
+          )}
 
           {/* Error Alert Card (if fetch failed) */}
           {error && !loading && (
@@ -465,7 +520,7 @@ export default function DisputesPage() {
             <div className="px-6 py-5 border-b border-border-subtle flex justify-between items-center bg-white">
               <div className="flex items-center gap-3">
                 <h2 className="font-headline-sm text-xl font-semibold text-ink">
-                  Active Disputes
+                  {mode === "live" ? "Live Account Disputes" : "Demo Sandbox Disputes"}
                 </h2>
                 {loading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
               </div>
@@ -575,134 +630,136 @@ export default function DisputesPage() {
                   ) : paginatedDisputes.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-muted-slate">
-                        <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
-                          <div className="p-3 bg-rp-bg-2 rounded-full text-muted-slate">
-                            <FileQuestion className="w-6 h-6" />
+                        {mode === "live" ? (
+                          <div className="flex flex-col items-center justify-center space-y-3 max-w-md mx-auto p-4">
+                            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                              <ShieldCheck className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-ink text-sm">
+                                No Live Disputes Found
+                              </p>
+                              <p className="text-xs text-muted-slate mt-1 leading-relaxed">
+                                Connected merchant account <span className="font-mono font-medium text-slate-800">{merchant.merchantId}</span> has 0 active chargebacks or open disputes on Razorpay.
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3 pt-2">
+                              <button
+                                onClick={handleSync}
+                                className="px-3 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
+                              >
+                                Sync with Razorpay
+                              </button>
+                              <button
+                                onClick={() => setMode("test")}
+                                className="px-3 py-1.5 rounded-[4px] border border-border-subtle bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+                              >
+                                View Demo Disputes (Test Mode)
+                              </button>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-ink text-sm">
-                              No disputes found
-                            </p>
-                            <p className="text-xs text-muted-slate mt-0.5">
-                              {searchQuery || winnabilityFilter !== "all"
-                                ? "No dispute records match your current filter or search criteria."
-                                : "No active chargeback cases in your Razorpay merchant account."}
-                            </p>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
+                            <div className="p-3 bg-rp-bg-2 rounded-full text-muted-slate">
+                              <FileQuestion className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-ink text-sm">
+                                No disputes found
+                              </p>
+                              <p className="text-xs text-muted-slate mt-0.5">
+                                {searchQuery || winnabilityFilter !== "all"
+                                  ? "No dispute records match your current filter or search criteria."
+                                  : "No active disputes in sandbox."}
+                              </p>
+                            </div>
+                            {(searchQuery || winnabilityFilter !== "all") && (
+                              <button
+                                onClick={() => {
+                                  setWinnabilityFilter("all");
+                                  setSearchQuery("");
+                                  setCurrentPage(1);
+                                }}
+                                className="px-3 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
+                              >
+                                Reset Filters
+                              </button>
+                            )}
                           </div>
-                          {(searchQuery || winnabilityFilter !== "all") && (
-                            <button
-                              onClick={() => {
-                                setWinnabilityFilter("all");
-                                setSearchQuery("");
-                                setCurrentPage(1);
-                              }}
-                              className="px-3 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
-                            >
-                              Reset Filters
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </td>
                     </tr>
                   ) : (
-                    paginatedDisputes.map((item) => {
-                      const score = item.winnability?.score ?? 50;
-                      const band = item.winnability?.band ?? "needs_evidence";
-                      const rec = item.winnability?.recommendation ?? "gather_evidence";
-                      const dateStr = new Date(item.createdAt).toLocaleDateString(
-                        "en-IN",
-                        { day: "numeric", month: "short", year: "numeric" }
-                      );
+                    paginatedDisputes.map((d) => {
+                      const score = d.winnability?.score ?? 0;
+                      const band = d.winnability?.band ?? "low";
+                      const isSeed = d.dataSource === "seed" || d.data_source === "seed" || mode === "test";
 
                       return (
                         <tr
-                          key={item.id}
-                          onClick={() => openDetail(item)}
-                          className="border-b border-border-subtle hover:bg-page-bg transition-colors cursor-pointer"
+                          key={d.id}
+                          onClick={() => openDetail(d)}
+                          className="border-b border-border-subtle hover:bg-surface/60 transition-colors cursor-pointer"
                         >
-                          <td className="py-3 px-4 font-mono font-medium text-ink">
-                            <div className="flex items-center gap-2">
-                              <span>{item.id}</span>
-                              {(item.dataSource === "live" || (item as { data_source?: string }).data_source === "live") ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-[3px] text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                  LIVE
+                          <td className="py-3 px-4 font-mono font-medium text-xs text-primary">
+                            <div className="flex items-center gap-1.5">
+                              <span>{d.rzpDisputeId || d.id}</span>
+                              {isSeed ? (
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-sans border border-slate-200">
+                                  Demo
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                                  SEED
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-100 text-emerald-800 font-sans border border-emerald-300">
+                                  Live
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-muted-slate">{dateStr}</td>
-                          <td className="py-3 px-4 font-medium text-ink">
-                            ₹{((item.amount || 0) / 100).toLocaleString("en-IN")}
+                          <td className="py-3 px-4 text-muted-slate text-xs">
+                            {new Date(d.createdAt).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
                           </td>
-                          <td className="py-3 px-4 text-muted-slate max-w-xs truncate">
-                            {(item.network || "").toUpperCase()} ·{" "}
-                            {item.reasonCode === "1064"
-                              ? "Goods not received (1064)"
-                              : item.reasonCode === "108"
-                              ? "Beneficiary not credited (108)"
-                              : item.reasonCode === "4837"
-                              ? "No cardholder auth (4837)"
-                              : item.reasonCode === "1061"
-                              ? "Credit not processed (1061)"
-                              : item.reasonCode === "1084"
-                              ? "Duplicate processing (1084)"
-                              : item.reasonCode === "1062"
-                              ? "Goods not as described (1062)"
-                              : `Code ${item.reasonCode}`}
+                          <td className="py-3 px-4 font-medium">
+                            ₹{((d.amount || 0) / 100).toLocaleString("en-IN")}
                           </td>
                           <td className="py-3 px-4">
-                            {band === "high" && (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-[4px] bg-success/10 text-success text-[12px] font-semibold">
-                                High ({score}%)
+                            <div className="flex flex-col">
+                              <span className="font-medium text-xs text-ink">
+                                Code {d.reasonCode}
                               </span>
-                            )}
-                            {band === "needs_evidence" && (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-[4px] bg-attention/10 text-attention text-[12px] font-semibold">
-                                Needs Evidence ({score}%)
+                              <span className="text-[11px] text-muted-slate">
+                                {d.network?.toUpperCase()} Chargeback
                               </span>
-                            )}
-                            {band === "low" && (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-[4px] bg-danger/10 text-danger text-[12px] font-semibold">
-                                Low ({score}%)
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-[11px] font-semibold px-2 py-0.5 rounded-[4px] ${
+                                  band === "high"
+                                    ? "bg-success/15 text-success border border-success/30"
+                                    : band === "needs_evidence"
+                                    ? "bg-attention/15 text-attention border border-attention/30"
+                                    : "bg-danger/15 text-danger border border-danger/30"
+                                }`}
+                              >
+                                {score}% · {band.replace("_", " ")}
                               </span>
-                            )}
+                            </div>
                           </td>
                           <td className="py-3 px-4 text-right">
-                            {rec === "contest" ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openDetail(item);
-                                }}
-                                className="text-primary hover:text-primary-container text-sm font-semibold transition-colors cursor-pointer"
-                              >
-                                Draft rebuttal
-                              </button>
-                            ) : rec === "gather_evidence" ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openDetail(item);
-                                }}
-                                className="text-primary hover:text-primary-container text-sm font-semibold transition-colors cursor-pointer"
-                              >
-                                Add evidence
-                              </button>
-                            ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openDetail(item);
-                                }}
-                                className="text-muted-slate hover:text-ink text-sm font-semibold transition-colors cursor-pointer"
-                              >
-                                Accept dispute
-                              </button>
-                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDetail(d);
+                              }}
+                              className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                            >
+                              Review & Defense &rarr;
+                            </button>
                           </td>
                         </tr>
                       );
@@ -712,54 +769,55 @@ export default function DisputesPage() {
               </table>
             </div>
 
-            {/* Pagination Footer */}
-            <div className="px-6 py-4 border-t border-border-subtle flex justify-between items-center bg-white">
-              <span className="text-sm text-muted-slate">
-                Showing{" "}
-                {paginatedDisputes.length > 0
-                  ? (currentPage - 1) * pageSize + 1
-                  : 0}{" "}
-                to{" "}
-                {Math.min(
-                  currentPage * pageSize,
-                  filteredAndSortedDisputes.length
-                )}{" "}
-                of {filteredAndSortedDisputes.length} disputes
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-slate">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <div className="flex gap-1">
+            {/* Pagination Controls */}
+            {filteredAndSortedDisputes.length > pageSize && (
+              <div className="px-6 py-4 border-t border-border-subtle flex justify-between items-center bg-white text-xs text-muted-slate">
+                <div>
+                  Showing{" "}
+                  <span className="font-semibold text-ink">
+                    {(currentPage - 1) * pageSize + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold text-ink">
+                    {Math.min(currentPage * pageSize, filteredAndSortedDisputes.length)}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-ink">
+                    {filteredAndSortedDisputes.length}
+                  </span>{" "}
+                  disputes
+                </div>
+                <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage <= 1 || loading}
-                    className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-30 cursor-pointer"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1 rounded-[4px] border border-border-subtle hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
+                  <span className="px-2 font-medium text-ink">
+                    {currentPage} / {totalPages}
+                  </span>
                   <button
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(p + 1, totalPages))
-                    }
-                    disabled={currentPage >= totalPages || loading}
-                    className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-30 cursor-pointer"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1 rounded-[4px] border border-border-subtle hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Slide-out Detail Drawer */}
-          <DisputeDetailSheet
-            dispute={selectedDispute}
-            open={sheetOpen}
-            onOpenChange={setSheetOpen}
-            onDisputeUpdated={loadDisputes}
-          />
         </motion.div>
+
+        {/* Dispute Detail Sheet */}
+        <DisputeDetailSheet
+          dispute={selectedDispute}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          onDisputeUpdated={loadDisputes}
+        />
       </LocalErrorBoundary>
     </DashboardShell>
   );

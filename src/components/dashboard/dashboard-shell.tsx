@@ -22,6 +22,8 @@ import {
   LogOut,
   Sliders,
   ExternalLink,
+  PlusCircle,
+  Unlink,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,6 +34,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { ModeSwitcher } from "./mode-switcher";
+import { ConnectRazorpayModal } from "./connect-razorpay-modal";
+import { useMerchantMode } from "@/context/merchant-mode-context";
 
 interface NavItem {
   name: string;
@@ -61,47 +66,40 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isTestMode, setIsTestMode] = useState(true);
+  const { mode, toggleMode, merchant, setIsConnectModalOpen, disconnectAccount } = useMerchantMode();
+
   const [notifications, setNotifications] = useState<
     { id: string; title: string; time: string; unread: boolean; href: string }[]
   >([]);
 
   useEffect(() => {
-    // Fetch recent dispute alerts for notification bell
-    fetch("/api/disputes")
+    // Fetch recent dispute alerts for notification bell respecting active mode
+    fetch(`/api/disputes?mode=${mode}`)
       .then((res) => res.json())
       .then((json) => {
-        if (json.ok && Array.isArray(json.data)) {
+        if (json.ok && Array.isArray(json.data) && json.data.length > 0) {
           const items = json.data.slice(0, 4).map((d: { id: string; reasonCode: string; amount: number; respondBy: string }) => ({
             id: d.id,
-            title: `New dispute ${d.id} (Code ${d.reasonCode}) — ₹${(d.amount / 100).toLocaleString("en-IN")}`,
+            title: `Dispute ${d.id} (Code ${d.reasonCode}) — ₹${(d.amount / 100).toLocaleString("en-IN")}`,
             time: `Respond by ${new Date(d.respondBy).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}`,
             unread: true,
             href: "/disputes",
           }));
           setNotifications(items);
+        } else {
+          setNotifications([]);
         }
       })
       .catch(() => {
         // fallback
       });
-  }, []);
-
-  const toggleTestMode = () => {
-    const next = !isTestMode;
-    setIsTestMode(next);
-    toast.info(
-      next
-        ? "Switched to Razorpay Test Mode"
-        : "Switched to Razorpay Live Mode (Read-only)"
-    );
-  };
+  }, [mode]);
 
   const handleSignOut = () => {
     toast.success("Signed out of Razorpay Aegis Console");
     setTimeout(() => {
       router.push("/overview");
-    }, 1000);
+    }, 800);
   };
 
   return (
@@ -155,20 +153,17 @@ export function DashboardShell({
           })}
         </div>
 
-        {/* CTA & Sidebar Footer */}
+        {/* Sidebar Footer & Specs */}
         <div className="p-4 mt-auto">
-          <button
-            onClick={toggleTestMode}
-            className={`w-full flex items-center justify-center gap-2 py-2 mb-4 rounded-[4px] border transition-colors text-xs font-semibold cursor-pointer ${
-              isTestMode
-                ? "border-amber-400/40 text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
-                : "border-emerald-400/40 text-emerald-300 bg-emerald-400/10 hover:bg-emerald-400/20"
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>{isTestMode ? "Test Mode Active" : "Live Mode"}</span>
-          </button>
           <div className="border-t border-white/10 pt-4 space-y-1">
+            <button
+              type="button"
+              onClick={() => setIsConnectModalOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-2 text-white/70 hover:text-white transition-colors text-sm cursor-pointer text-left"
+            >
+              <PlusCircle className="w-4 h-4 text-primary" />
+              <span>Connect Account</span>
+            </button>
             <Link
               href="/settings"
               className="flex items-center gap-3 px-4 py-2 text-white/60 hover:text-white transition-colors text-sm"
@@ -270,8 +265,11 @@ export function DashboardShell({
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Right Actions */}
+        {/* Right Actions: Mode Switcher + Notifications + User Profile */}
         <div className="flex items-center gap-3 sm:gap-4">
+          {/* Razorpay Native Mode Switcher */}
+          <ModeSwitcher />
+
           {/* Notification Bell Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -287,29 +285,35 @@ export function DashboardShell({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 p-2 space-y-1">
               <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Dispute Alerts</span>
+                <span>Dispute Alerts ({mode === "live" ? "Live" : "Test"})</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-danger/10 text-danger font-semibold">
                   {notifications.length} Pending
                 </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {notifications.map((n) => (
-                <DropdownMenuItem
-                  key={n.id}
-                  onClick={() => router.push("/disputes")}
-                  className="flex flex-col items-start gap-1 p-2 cursor-pointer hover:bg-page-bg rounded-[4px]"
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                    <span className="font-semibold text-xs text-ink truncate">
-                      {n.title}
+              {notifications.length > 0 ? (
+                notifications.map((n) => (
+                  <DropdownMenuItem
+                    key={n.id}
+                    onClick={() => router.push("/disputes")}
+                    className="flex flex-col items-start gap-1 p-2 cursor-pointer hover:bg-page-bg rounded-[4px]"
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                      <span className="font-semibold text-xs text-ink truncate">
+                        {n.title}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-muted-slate pl-3.5">
+                      {n.time}
                     </span>
-                  </div>
-                  <span className="text-[11px] text-muted-slate pl-3.5">
-                    {n.time}
-                  </span>
-                </DropdownMenuItem>
-              ))}
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <div className="py-4 text-center text-xs text-slate-500">
+                  No pending dispute alerts in {mode.toUpperCase()} mode.
+                </div>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => router.push("/disputes")}
@@ -337,28 +341,41 @@ export function DashboardShell({
                 data-testid="user-profile-menu"
                 className="flex items-center gap-2 hover:bg-surface-container-low transition-colors p-1 pr-2 rounded-[4px] cursor-pointer outline-hidden"
               >
-                <div className="w-8 h-8 rounded-[4px] bg-rp-navy text-white flex items-center justify-center text-xs font-bold shadow-2xs">
-                  RA
+                <div className="w-8 h-8 rounded-[4px] bg-[#0D1A48] text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                  {merchant.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="text-left hidden md:block">
                   <span className="text-xs font-semibold text-ink block leading-tight">
-                    Acme Merchant
+                    {merchant.name}
                   </span>
-                  <span className="text-[10px] text-muted-slate block">
-                    acc_live_882914
+                  <span className="text-[10px] text-muted-slate block font-mono">
+                    {merchant.merchantId}
                   </span>
                 </div>
                 <ChevronDown className="w-4 h-4 text-muted-slate hidden md:block" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 p-1.5 space-y-1">
-              <DropdownMenuLabel>Merchant Account</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-60 p-1.5 space-y-1">
+              <DropdownMenuLabel>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-900">{merchant.name}</span>
+                  <span className="text-[11px] text-slate-500 font-mono">{merchant.merchantId}</span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => router.push("/settings")}
+                onClick={() => setIsConnectModalOpen(true)}
                 className="cursor-pointer gap-2 text-xs"
               >
-                <User className="w-3.5 h-3.5 text-muted-slate" />
-                <span>Profile & Team</span>
+                <PlusCircle className="w-3.5 h-3.5 text-primary" />
+                <span>Connect Razorpay Account</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={toggleMode}
+                className="cursor-pointer gap-2 text-xs"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>Switch to {mode === "test" ? "Live Mode" : "Test Mode"}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push("/settings")}
@@ -367,13 +384,18 @@ export function DashboardShell({
                 <Settings className="w-3.5 h-3.5 text-muted-slate" />
                 <span>Aegis Rules & Automation</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={toggleTestMode}
-                className="cursor-pointer gap-2 text-xs"
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>{isTestMode ? "Switch to Live Mode" : "Switch to Test Mode"}</span>
-              </DropdownMenuItem>
+              {merchant.isConnected && (
+                <DropdownMenuItem
+                  onClick={async () => {
+                    await disconnectAccount();
+                    toast.info("Disconnected live Razorpay account");
+                  }}
+                  className="cursor-pointer gap-2 text-xs text-amber-700"
+                >
+                  <Unlink className="w-3.5 h-3.5" />
+                  <span>Disconnect Live Account</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleSignOut}
@@ -391,6 +413,9 @@ export function DashboardShell({
       <main className="pt-16 md:ml-[260px] min-h-[calc(100vh-140px)] p-6 md:p-8 max-w-[1440px] w-full">
         {children}
       </main>
+
+      {/* Connect Razorpay Account Modal */}
+      <ConnectRazorpayModal />
 
       {/* Bottom Footer */}
       <footer className="md:ml-[260px] w-full max-w-[calc(100%-260px)] py-6 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center border-t border-border-subtle mt-auto bg-page-bg gap-4">

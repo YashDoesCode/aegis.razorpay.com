@@ -16,8 +16,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { LocalErrorBoundary } from "@/components/ui/error-boundary";
 import { toast } from "sonner";
+import { useMerchantMode } from "@/context/merchant-mode-context";
 
 export default function OverviewPage() {
+  const { mode, merchant, setIsConnectModalOpen } = useMerchantMode();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
@@ -32,7 +34,7 @@ export default function OverviewPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("/api/disputes");
+      const res = await fetch(`/api/disputes?mode=${mode}`);
       const json = await res.json();
       if (json.ok && json.stats) {
         setStats(json.stats);
@@ -45,7 +47,7 @@ export default function OverviewPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     loadStats();

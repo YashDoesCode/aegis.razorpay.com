@@ -1,20 +1,16 @@
 import Razorpay from "razorpay";
 import { EvidenceType } from "./scoring/types";
+import { getActiveRazorpayClient } from "./merchantAccount";
 
 /**
  * Returns an instance of the Razorpay SDK configured with environment secrets.
  * Ensures server-side credentials are never hardcoded or exposed client-side.
  */
-export function getRazorpayClient(): Razorpay {
-  const key_id = process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder_key";
-  const key_secret = process.env.RAZORPAY_KEY_SECRET || "placeholder_secret";
-  return new Razorpay({
-    key_id,
-    key_secret,
-  });
+export function getRazorpayClient(mode: "test" | "live" = "test"): Razorpay {
+  return getActiveRazorpayClient(mode);
 }
 
-export const razorpay = getRazorpayClient();
+export const razorpay = getRazorpayClient("test");
 
 export interface ContestEvidencePayload {
   amount?: number;
@@ -51,28 +47,31 @@ export interface RazorpayDisputeResponse {
 /**
  * Fetch all disputes from Razorpay API (/v1/disputes)
  */
-export async function fetchDisputes(params?: {
-  count?: number;
-  skip?: number;
-  from?: number;
-  to?: number;
-}): Promise<{ entity: string; count: number; items: RazorpayDisputeResponse[] }> {
-  const client = getRazorpayClient();
+export async function fetchDisputes(
+  params?: {
+    count?: number;
+    skip?: number;
+    from?: number;
+    to?: number;
+  },
+  mode: "test" | "live" = "test"
+): Promise<{ entity: string; count: number; items: RazorpayDisputeResponse[] }> {
+  const client = getRazorpayClient(mode);
   const keyId = process.env.RAZORPAY_KEY_ID || "";
   const maskedKey = keyId ? `${keyId.slice(0, 8)}...` : "placeholder";
 
-  console.log(`📡 [Razorpay Live API] Calling GET https://api.razorpay.com/v1/disputes (Key: ${maskedKey})`);
+  console.log(`📡 [Razorpay ${mode.toUpperCase()} API] Calling GET https://api.razorpay.com/v1/disputes (Key: ${maskedKey})`);
 
   try {
     const res = await (client.disputes as unknown as {
       all: (p?: Record<string, unknown>) => Promise<{ entity: string; count: number; items: RazorpayDisputeResponse[] }>;
     }).all(params);
 
-    console.log(`📦 [Razorpay Live API] GET /v1/disputes raw response:`, JSON.stringify(res, null, 2));
+    console.log(`📦 [Razorpay ${mode.toUpperCase()} API] GET /v1/disputes raw response count:`, res?.count ?? 0);
     return res;
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string; code?: string }; message?: string };
-    console.warn(`⚠️ [Razorpay Live API] fetchDisputes response/error:`, err.error?.description || err.message || err);
+    console.warn(`⚠️ [Razorpay ${mode.toUpperCase()} API] fetchDisputes response/error:`, err.error?.description || err.message || err);
     throw error;
   }
 }
@@ -80,19 +79,22 @@ export async function fetchDisputes(params?: {
 /**
  * Fetch a single dispute by ID (/v1/disputes/:id)
  */
-export async function fetchDispute(disputeId: string): Promise<RazorpayDisputeResponse> {
-  const client = getRazorpayClient();
-  console.log(`📡 [Razorpay Live API] Calling GET https://api.razorpay.com/v1/disputes/${disputeId}`);
+export async function fetchDispute(
+  disputeId: string,
+  mode: "test" | "live" = "test"
+): Promise<RazorpayDisputeResponse> {
+  const client = getRazorpayClient(mode);
+  console.log(`📡 [Razorpay ${mode.toUpperCase()} API] Calling GET https://api.razorpay.com/v1/disputes/${disputeId}`);
 
   try {
     const res = await (client.disputes as unknown as {
       fetch: (id: string) => Promise<RazorpayDisputeResponse>;
     }).fetch(disputeId);
-    console.log(`📦 [Razorpay Live API] GET /v1/disputes/${disputeId} raw response:`, JSON.stringify(res, null, 2));
+    console.log(`📦 [Razorpay ${mode.toUpperCase()} API] GET /v1/disputes/${disputeId} response:`, res?.id);
     return res;
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string } };
-    console.warn(`⚠️ [Razorpay Live API] fetchDispute(${disputeId}) warning:`, err.error?.description || err);
+    console.warn(`⚠️ [Razorpay ${mode.toUpperCase()} API] fetchDispute(${disputeId}) warning:`, err.error?.description || err);
     throw error;
   }
 }
@@ -109,9 +111,10 @@ export async function contestDispute(
     action?: "draft" | "submit";
     evidenceMap?: Partial<Record<EvidenceType, string[]>>;
     rawEvidence?: Partial<ContestEvidencePayload>;
-  }
+  },
+  mode: "test" | "live" = "test"
 ): Promise<{ success: boolean; disputeId: string; action: string; response: unknown; mode: "live" | "mock_fallback" }> {
-  const client = getRazorpayClient();
+  const client = getRazorpayClient(mode);
   const action = payload.action || "draft";
 
   // Build the official Razorpay contest body
@@ -131,16 +134,15 @@ export async function contestDispute(
     }
   }
 
-  console.log(`📡 [Razorpay Live API] Calling PATCH https://api.razorpay.com/v1/disputes/${disputeId}/contest (Action: ${action})`);
-  console.log(`📦 [Razorpay Live API] Contest Payload:`, JSON.stringify(contestBody, null, 2));
+  console.log(`📡 [Razorpay ${mode.toUpperCase()} API] Calling PATCH https://api.razorpay.com/v1/disputes/${disputeId}/contest (Action: ${action})`);
 
   try {
-    // Attempt actual SDK call against live API
+    // Attempt actual SDK call against API
     const res = await (client.disputes as unknown as {
       contest: (id: string, data: ContestEvidencePayload) => Promise<unknown>;
     }).contest(disputeId, contestBody);
 
-    console.log(`✅ [Razorpay Live API] Contest Response:`, JSON.stringify(res, null, 2));
+    console.log(`✅ [Razorpay ${mode.toUpperCase()} API] Contest Response:`, JSON.stringify(res, null, 2));
     return {
       success: true,
       disputeId,
@@ -150,9 +152,14 @@ export async function contestDispute(
     };
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string; code?: string }; message?: string };
-    console.warn(`⚠️ [Razorpay Live API] Contest call returned:`, err.error?.description || err.message || err);
+    console.warn(`⚠️ [Razorpay ${mode.toUpperCase()} API] Contest call returned:`, err.error?.description || err.message || err);
 
-    // If on a seeded/test dispute ID that does not exist in live test account, return safe fallback state
+    // In LIVE mode, NEVER synthesize or fabricate contest success if the API failed
+    if (mode === "live") {
+      throw error;
+    }
+
+    // In TEST mode, return safe fallback state for seeded demo IDs
     return {
       success: true,
       disputeId,
@@ -178,14 +185,15 @@ export async function contestDispute(
  * Accept a dispute (/v1/disputes/:id/accept)
  */
 export async function acceptDispute(
-  disputeId: string
+  disputeId: string,
+  mode: "test" | "live" = "test"
 ): Promise<{ success: boolean; disputeId: string; response: unknown; mode: "live" | "mock_fallback" }> {
-  const client = getRazorpayClient();
-  console.log(`📡 [Razorpay Live API] Calling POST https://api.razorpay.com/v1/disputes/${disputeId}/accept`);
+  const client = getRazorpayClient(mode);
+  console.log(`📡 [Razorpay ${mode.toUpperCase()} API] Calling POST https://api.razorpay.com/v1/disputes/${disputeId}/accept`);
 
   try {
     const res = await (client.disputes as unknown as { accept: (id: string) => Promise<unknown> }).accept(disputeId);
-    console.log(`✅ [Razorpay Live API] Accept Response:`, JSON.stringify(res, null, 2));
+    console.log(`✅ [Razorpay ${mode.toUpperCase()} API] Accept Response:`, JSON.stringify(res, null, 2));
     return {
       success: true,
       disputeId,
@@ -194,7 +202,11 @@ export async function acceptDispute(
     };
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string }; message?: string };
-    console.warn(`⚠️ [Razorpay Live API] Accept call returned:`, err.error?.description || err.message || err);
+    console.warn(`⚠️ [Razorpay ${mode.toUpperCase()} API] Accept call returned:`, err.error?.description || err.message || err);
+
+    if (mode === "live") {
+      throw error;
+    }
 
     return {
       success: true,
@@ -213,3 +225,4 @@ export async function acceptDispute(
 }
 
 export default razorpay;
+
