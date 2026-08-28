@@ -34,7 +34,7 @@ async function main() {
   const daysAhead = (d: number) => new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
 
   // -------------------------------------------------------------
-  // DISPUTE 1: UPI 1064 (Goods Not Received) — HIGH WINNABILITY
+  // DISPUTE 1: UPI 1064 (Goods Not Received) — Score: ~94 (HIGH / CONTEST)
   // -------------------------------------------------------------
   const customer1 = await prisma.customer.create({
     data: {
@@ -136,7 +136,7 @@ async function main() {
   });
 
   // -------------------------------------------------------------
-  // DISPUTE 2: UPI 108 (Debited, Beneficiary Not Credited) — HIGH/MEDIUM
+  // DISPUTE 2: UPI 108 (Beneficiary Not Credited) — Score: ~82 (HIGH / CONTEST)
   // -------------------------------------------------------------
   const customer2 = await prisma.customer.create({
     data: {
@@ -228,9 +228,9 @@ async function main() {
           },
           {
             type: "explanation_letter",
-            present: true,
-            documentRef: "docs/merchant_explanation_letter_108.pdf",
-            note: "Detailed explanation of digital service provisioning upon payment gateway authorization",
+            present: false,
+            documentRef: null,
+            note: "Explanation letter pending representment staging",
           },
         ],
       },
@@ -238,7 +238,7 @@ async function main() {
   });
 
   // -------------------------------------------------------------
-  // DISPUTE 3: Card 4837 (No Cardholder Authorisation) — MEDIUM
+  // DISPUTE 3: Card 4837 (No Cardholder Auth) — Score: ~68 (NEEDS_EVIDENCE)
   // -------------------------------------------------------------
   const customer3 = await prisma.customer.create({
     data: {
@@ -315,9 +315,9 @@ async function main() {
           },
           {
             type: "billing_proof",
-            present: true,
-            documentRef: "docs/invoice_INV8823.pdf",
-            note: "Billing and shipping address match cardholder records",
+            present: false,
+            documentRef: null,
+            note: "Invoice missing matching GST breakdown",
           },
           {
             type: "explanation_letter",
@@ -331,9 +331,92 @@ async function main() {
   });
 
   // -------------------------------------------------------------
-  // DISPUTE 4: UPI 1061 (Credit Not Processed / Refund Missing) — LOW
+  // DISPUTE 4: UPI 1062 (Goods Not As Described) — Score: ~45 (LOW / ACCEPT)
   // -------------------------------------------------------------
   const customer4 = await prisma.customer.create({
+    data: {
+      id: "cust_sneha_kulkarni_06",
+      name: "Sneha Kulkarni",
+      email: "sneha.kulkarni@example.com",
+      address: "Flat 501, Pride World City, Charholi Budruk, Pune, MH 412105",
+      priorOrdersCount: 2,
+      priorDisputesCount: 0,
+    },
+  });
+
+  const order4 = await prisma.order.create({
+    data: {
+      id: "order_upi_1062_006",
+      rzpPaymentId: "pay_O1062UPI0006",
+      customerId: customer4.id,
+      item: "Handcrafted Italian Leather Messenger Bag (Tan Brown)",
+      amount: 650000, // ₹6,500.00
+      currency: "INR",
+      status: "captured",
+      createdAt: daysAgo(6),
+    },
+  });
+
+  await prisma.delivery.create({
+    data: {
+      orderId: order4.id,
+      courier: "BlueDart",
+      trackingId: "BD-481920381IN",
+      deliveredAt: daysAgo(4),
+      deliveredToAddress: "Flat 501, Pride World City, Charholi Budruk, Pune, MH 412105",
+      signatureCaptured: true,
+    },
+  });
+
+  const dispute4 = await prisma.dispute.create({
+    data: {
+      id: "disp_1062_goods_not_as_described",
+      rzpDisputeId: "disp_rzp_1062_006",
+      orderId: order4.id,
+      paymentId: order4.rzpPaymentId,
+      reasonCode: "1062",
+      network: "upi",
+      amount: 650000,
+      currency: "INR",
+      phase: "chargeback",
+      status: "open",
+      respondBy: daysAhead(4),
+      createdAt: daysAgo(1),
+      evidenceItems: {
+        create: [
+          {
+            type: "billing_proof",
+            present: true,
+            documentRef: "docs/tax_invoice_INV8826.pdf",
+            note: "Invoice specifies item SKU LEATHER-MSG-TAN-01",
+          },
+          {
+            type: "refund_cancellation_policy",
+            present: true,
+            documentRef: "docs/replacement_policy.pdf",
+            note: "Merchant terms require inspection photos before dispute filing",
+          },
+          {
+            type: "shipping_proof",
+            present: false,
+            documentRef: null,
+            note: "Delivery note lacks detailed condition inspection sign-off",
+          },
+          {
+            type: "customer_communication",
+            present: false,
+            documentRef: null,
+            note: "Buyer filed chargeback before sharing defective item photos with support",
+          },
+        ],
+      },
+    },
+  });
+
+  // -------------------------------------------------------------
+  // DISPUTE 5: UPI 1061 (Credit Not Processed) — Score: ~23 (LOW / ACCEPT)
+  // -------------------------------------------------------------
+  const customer5 = await prisma.customer.create({
     data: {
       id: "cust_priya_nambiar_04",
       name: "Priya Nambiar",
@@ -344,11 +427,11 @@ async function main() {
     },
   });
 
-  const order4 = await prisma.order.create({
+  const order5 = await prisma.order.create({
     data: {
       id: "order_upi_1061_004",
       rzpPaymentId: "pay_O1061UPI0004",
-      customerId: customer4.id,
+      customerId: customer5.id,
       item: "Custom Mechanical Keyboard (Returned Item)",
       amount: 420000, // ₹4,200.00
       currency: "INR",
@@ -357,42 +440,12 @@ async function main() {
     },
   });
 
-  await prisma.delivery.create({
-    data: {
-      orderId: order4.id,
-      courier: "Shadowfax",
-      trackingId: "SF-492019482IN",
-      deliveredAt: daysAgo(10),
-      deliveredToAddress: "A-304, Palm Meadows, Whitefield, Bengaluru, KA 560066",
-      signatureCaptured: true,
-    },
-  });
-
-  await prisma.communication.createMany({
-    data: [
-      {
-        orderId: order4.id,
-        direction: "inbound",
-        channel: "email",
-        body: "I shipped the defective keyboard back 6 days ago via your return label. When will my ₹4,200 refund be credited?",
-        sentAt: daysAgo(4),
-      },
-      {
-        orderId: order4.id,
-        direction: "outbound",
-        channel: "email",
-        body: "We have received the returned unit at our warehouse and will process the refund shortly.",
-        sentAt: daysAgo(3),
-      },
-    ],
-  });
-
-  const dispute4 = await prisma.dispute.create({
+  const dispute5 = await prisma.dispute.create({
     data: {
       id: "disp_1061_credit_not_processed",
       rzpDisputeId: "disp_rzp_1061_004",
-      orderId: order4.id,
-      paymentId: order4.rzpPaymentId,
+      orderId: order5.id,
+      paymentId: order5.rzpPaymentId,
       reasonCode: "1061",
       network: "upi",
       amount: 420000,
@@ -410,16 +463,16 @@ async function main() {
             note: "CRITICAL: No refund transaction ARN or bank UTR exists in gateway records",
           },
           {
-            type: "customer_communication",
-            present: true,
-            documentRef: "docs/return_acknowledgement_email.pdf",
-            note: "Merchant email promised refund but banking settlement was never initiated",
-          },
-          {
             type: "refund_cancellation_policy",
             present: true,
             documentRef: "docs/return_policy.pdf",
             note: "Merchant 7-day return policy stating refund upon warehouse receipt",
+          },
+          {
+            type: "customer_communication",
+            present: true,
+            documentRef: "docs/return_acknowledgement_email.pdf",
+            note: "Merchant email promised refund but banking settlement was never initiated",
           },
         ],
       },
@@ -427,9 +480,9 @@ async function main() {
   });
 
   // -------------------------------------------------------------
-  // DISPUTE 5: UPI 1084 (Duplicate Processing) — LOW (Recommend Accept)
+  // DISPUTE 6: UPI 1084 (Duplicate Processing) — Score: ~12 (LOW / ACCEPT)
   // -------------------------------------------------------------
-  const customer5 = await prisma.customer.create({
+  const customer6 = await prisma.customer.create({
     data: {
       id: "cust_amitav_ghosh_05",
       name: "Amitav Ghosh",
@@ -440,11 +493,11 @@ async function main() {
     },
   });
 
-  const order5 = await prisma.order.create({
+  const order6 = await prisma.order.create({
     data: {
       id: "order_upi_1084_005",
       rzpPaymentId: "pay_O1084UPI0005B",
-      customerId: customer5.id,
+      customerId: customer6.id,
       item: "Annual Cloud Workspace Subscription (Duplicate Debit)",
       amount: 299900, // ₹2,999.00
       currency: "INR",
@@ -453,22 +506,12 @@ async function main() {
     },
   });
 
-  await prisma.communication.create({
-    data: {
-      orderId: order5.id,
-      direction: "inbound",
-      channel: "email",
-      body: "I was debited twice at 14:02:11 and 14:02:45 for ₹2,999 on UPI for the same single annual renewal! Please refund the duplicate.",
-      sentAt: daysAgo(3),
-    },
-  });
-
-  const dispute5 = await prisma.dispute.create({
+  const dispute6 = await prisma.dispute.create({
     data: {
       id: "disp_1084_duplicate_processing",
       rzpDisputeId: "disp_rzp_1084_005",
-      orderId: order5.id,
-      paymentId: order5.rzpPaymentId,
+      orderId: order6.id,
+      paymentId: order6.rzpPaymentId,
       reasonCode: "1084",
       network: "upi",
       amount: 299900,
@@ -481,9 +524,9 @@ async function main() {
         create: [
           {
             type: "billing_proof",
-            present: false,
-            documentRef: null,
-            note: "Double debit detected on gateway ledger without separate order or invoice. Merchant error confirmed.",
+            present: true,
+            documentRef: "docs/invoice_primary_order.pdf",
+            note: "Primary charge invoice verified; duplicate second charge confirmed unlinked to second order.",
           },
           {
             type: "explanation_letter",
@@ -496,109 +539,7 @@ async function main() {
     },
   });
 
-  // -------------------------------------------------------------
-  // DISPUTE 6: UPI 1062 (Goods Not As Described) — MEDIUM
-  // -------------------------------------------------------------
-  const customer6 = await prisma.customer.create({
-    data: {
-      id: "cust_sneha_kulkarni_06",
-      name: "Sneha Kulkarni",
-      email: "sneha.kulkarni@example.com",
-      address: "Flat 501, Pride World City, Charholi Budruk, Pune, MH 412105",
-      priorOrdersCount: 2,
-      priorDisputesCount: 0,
-    },
-  });
-
-  const order6 = await prisma.order.create({
-    data: {
-      id: "order_upi_1062_006",
-      rzpPaymentId: "pay_O1062UPI0006",
-      customerId: customer6.id,
-      item: "Handcrafted Italian Leather Messenger Bag (Tan Brown)",
-      amount: 650000, // ₹6,500.00
-      currency: "INR",
-      status: "captured",
-      createdAt: daysAgo(6),
-    },
-  });
-
-  await prisma.delivery.create({
-    data: {
-      orderId: order6.id,
-      courier: "BlueDart",
-      trackingId: "BD-481920381IN",
-      deliveredAt: daysAgo(4),
-      deliveredToAddress: "Flat 501, Pride World City, Charholi Budruk, Pune, MH 412105",
-      signatureCaptured: true,
-    },
-  });
-
-  await prisma.communication.createMany({
-    data: [
-      {
-        orderId: order6.id,
-        direction: "inbound",
-        channel: "chat",
-        body: "The bag received is darker chocolate brown instead of Tan Brown as pictured, and the strap clip feels loose.",
-        sentAt: daysAgo(3),
-      },
-      {
-        orderId: order6.id,
-        direction: "outbound",
-        channel: "chat",
-        body: "Hi Sneha, please share pictures of the strap clip and packaging so we can arrange a replacement under warranty.",
-        sentAt: daysAgo(3),
-      },
-    ],
-  });
-
-  const dispute6 = await prisma.dispute.create({
-    data: {
-      id: "disp_1062_goods_not_as_described",
-      rzpDisputeId: "disp_rzp_1062_006",
-      orderId: order6.id,
-      paymentId: order6.rzpPaymentId,
-      reasonCode: "1062",
-      network: "upi",
-      amount: 650000,
-      currency: "INR",
-      phase: "chargeback",
-      status: "open",
-      respondBy: daysAhead(4),
-      createdAt: daysAgo(1),
-      evidenceItems: {
-        create: [
-          {
-            type: "shipping_proof",
-            present: true,
-            documentRef: "docs/bluedart_delivery_pod.pdf",
-            note: "Physical delivery confirmed and received by customer",
-          },
-          {
-            type: "billing_proof",
-            present: true,
-            documentRef: "docs/tax_invoice_INV8826.pdf",
-            note: "Invoice specifies item SKU LEATHER-MSG-TAN-01",
-          },
-          {
-            type: "refund_cancellation_policy",
-            present: true,
-            documentRef: "docs/replacement_policy.pdf",
-            note: "Merchant terms require inspection photos before dispute filing",
-          },
-          {
-            type: "customer_communication",
-            present: false,
-            documentRef: null,
-            note: "Buyer filed chargeback before sharing defective item photos with support",
-          },
-        ],
-      },
-    },
-  });
-
-  console.log("✅ Seeded 6 Disputes spanning all outcome profiles:");
+  console.log("✅ Seeded 6 Disputes with realistic winnability spread (94, 82, 68, 45, 23, 12):");
   console.log([dispute1.id, dispute2.id, dispute3.id, dispute4.id, dispute5.id, dispute6.id]);
 }
 

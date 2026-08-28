@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -9,8 +9,12 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  FileQuestion,
+  Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LocalErrorBoundary } from "@/components/ui/error-boundary";
 
 interface TransactionItem {
   id: string;
@@ -25,7 +29,7 @@ interface TransactionItem {
   disputeId?: string | null;
 }
 
-const mockTransactions: TransactionItem[] = [
+const initialTransactions: TransactionItem[] = [
   {
     id: "ord_1064_001",
     paymentId: "pay_1064_xyz89",
@@ -125,184 +129,249 @@ const mockTransactions: TransactionItem[] = [
 ];
 
 export default function TransactionsPage() {
+  const [transactions] = useState<TransactionItem[]>(initialTransactions);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const filtered = mockTransactions.filter((tx) => {
-    const matchesSearch =
-      tx.id.toLowerCase().includes(search.toLowerCase()) ||
-      tx.paymentId.toLowerCase().includes(search.toLowerCase()) ||
-      tx.customerName.toLowerCase().includes(search.toLowerCase()) ||
-      tx.item.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    // Simulate brief smooth hydration
+    const timer = setTimeout(() => setLoading(false), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
-    const matchesStatus =
-      filterStatus === "all" || tx.status === filterStatus;
+  const filtered = useMemo(() => {
+    return transactions.filter((tx) => {
+      const q = search.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        tx.id.toLowerCase().includes(q) ||
+        tx.paymentId.toLowerCase().includes(q) ||
+        tx.customerName.toLowerCase().includes(q) ||
+        tx.item.toLowerCase().includes(q);
 
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus =
+        filterStatus === "all" || tx.status === filterStatus;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [transactions, search, filterStatus]);
 
   const handleExport = () => {
-    const blob = new Blob([JSON.stringify(filtered, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `razorpay-transactions-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Transactions exported");
+    try {
+      if (filtered.length === 0) {
+        toast.info("No matching transactions to export");
+        return;
+      }
+      const blob = new Blob([JSON.stringify(filtered, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `razorpay-transactions-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${filtered.length} transaction records`);
+    } catch (err) {
+      console.error("❌ Export error:", err);
+      toast.error("Failed to export transactions");
+    }
   };
 
   return (
     <DashboardShell searchQuery={search} onSearchChange={setSearch}>
-      <motion.div
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="w-full space-y-6"
-      >
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="font-headline-lg text-[32px] text-ink font-semibold tracking-tight">
-              Transactions
-            </h1>
-            <p className="text-xs text-muted-slate mt-1">
-              Payment records and dispute linkages across Razorpay gateway
-            </p>
-          </div>
+      <LocalErrorBoundary fallbackTitle="Transactions View Error">
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="w-full space-y-6"
+        >
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="font-headline-lg text-[32px] text-ink font-semibold tracking-tight">
+                Transactions
+              </h1>
+              <p className="text-xs text-muted-slate mt-1 flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-primary" />
+                <span>Payment records and dispute linkages across Razorpay gateway</span>
+              </p>
+            </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 rounded-[4px] bg-primary text-white hover:bg-primary-container text-sm font-semibold transition-colors h-10 flat-shadow cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV/JSON</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Filter bar */}
-        <div className="flex items-center gap-2">
-          {["all", "captured", "disputed"].map((st) => (
-            <button
-              key={st}
-              onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1.5 rounded-[4px] text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-                filterStatus === st
-                  ? "bg-rp-navy text-white"
-                  : "bg-white border border-border-subtle text-muted-slate hover:text-ink"
-              }`}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
-
-        {/* Transactions Table */}
-        <div className="bg-white rounded-[4px] border border-border-subtle flat-shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border-subtle bg-surface/50">
-                  <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
-                    PAYMENT ID
-                  </th>
-                  <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
-                    DATE
-                  </th>
-                  <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
-                    CUSTOMER & ITEM
-                  </th>
-                  <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
-                    AMOUNT
-                  </th>
-                  <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
-                    STATUS
-                  </th>
-                  <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
-                    AEGIS DEFENSE
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="text-sm text-ink bg-white">
-                {filtered.map((tx) => (
-                  <tr
-                    key={tx.id}
-                    className="border-b border-border-subtle hover:bg-page-bg transition-colors"
-                  >
-                    <td className="py-3 px-4 font-mono font-medium text-ink">
-                      {tx.paymentId}
-                    </td>
-                    <td className="py-3 px-4 text-muted-slate">{tx.date}</td>
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-xs text-ink">
-                        {tx.customerName}
-                      </div>
-                      <div className="text-xs text-muted-slate truncate max-w-xs">
-                        {tx.item}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 font-medium text-ink">
-                      ₹{(tx.amount / 100).toLocaleString("en-IN")}
-                    </td>
-                    <td className="py-3 px-4">
-                      {tx.status === "captured" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-success/10 text-success text-[11px] font-semibold">
-                          CAPTURED
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-danger/10 text-danger text-[11px] font-semibold">
-                          DISPUTED
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {tx.disputeId ? (
-                        <Link
-                          href="/disputes"
-                          className="inline-flex items-center gap-1 text-primary hover:text-primary-container text-xs font-semibold"
-                        >
-                          <span>Defense File</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
-                      ) : (
-                        <span className="text-xs text-muted-slate/60">
-                          No dispute
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="px-6 py-4 border-t border-border-subtle flex justify-between items-center bg-white">
-            <span className="text-xs text-muted-slate">
-              Showing {filtered.length} of {mockTransactions.length} payments
-            </span>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-3">
               <button
-                className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-50 cursor-pointer"
-                disabled
+                onClick={handleExport}
+                disabled={loading || filtered.length === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded-[4px] bg-primary text-white hover:bg-primary-container text-sm font-semibold transition-colors h-10 flat-shadow cursor-pointer disabled:opacity-50"
               >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-50 cursor-pointer"
-                disabled
-              >
-                <ChevronRight className="w-4 h-4" />
+                <Download className="w-4 h-4" />
+                <span>Export CSV/JSON</span>
               </button>
             </div>
           </div>
-        </div>
-      </motion.div>
+
+          {/* Filter bar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {["all", "captured", "disputed"].map((st) => (
+              <button
+                key={st}
+                onClick={() => setFilterStatus(st)}
+                className={`px-3 py-1.5 rounded-[4px] text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+                  filterStatus === st
+                    ? "bg-rp-navy text-white"
+                    : "bg-white border border-border-subtle text-muted-slate hover:text-ink"
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
+
+          {/* Transactions Table */}
+          <div className="bg-white rounded-[4px] border border-border-subtle flat-shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border-subtle bg-surface/50">
+                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                      PAYMENT ID
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                      DATE
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                      CUSTOMER & ITEM
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                      AMOUNT
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                      STATUS
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
+                      AEGIS DEFENSE
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm text-ink bg-white">
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <tr key={idx} className="border-b border-border-subtle">
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-32 bg-rp-bg-2" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-24 bg-rp-bg-2" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-40 bg-rp-bg-2" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-20 bg-rp-bg-2" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-5 w-20 bg-rp-bg-2" /></td>
+                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-24 ml-auto bg-rp-bg-2" /></td>
+                      </tr>
+                    ))
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-12 text-muted-slate">
+                        <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
+                          <div className="p-3 bg-rp-bg-2 rounded-full text-muted-slate">
+                            <FileQuestion className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-ink text-sm">
+                              No transactions found
+                            </p>
+                            <p className="text-xs text-muted-slate mt-0.5">
+                              No payments match your current query or filter status.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setFilterStatus("all");
+                              setSearch("");
+                            }}
+                            className="px-3 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
+                          >
+                            Reset Filters
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((tx) => (
+                      <tr
+                        key={tx.id}
+                        className="border-b border-border-subtle hover:bg-page-bg transition-colors"
+                      >
+                        <td className="py-3 px-4 font-mono font-medium text-ink">
+                          {tx.paymentId}
+                        </td>
+                        <td className="py-3 px-4 text-muted-slate">{tx.date}</td>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-xs text-ink">
+                            {tx.customerName}
+                          </div>
+                          <div className="text-xs text-muted-slate truncate max-w-xs">
+                            {tx.item}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-medium text-ink">
+                          ₹{((tx.amount || 0) / 100).toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-3 px-4">
+                          {tx.status === "captured" ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-success/10 text-success text-[11px] font-semibold">
+                              CAPTURED
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-danger/10 text-danger text-[11px] font-semibold">
+                              DISPUTED
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          {tx.disputeId ? (
+                            <Link
+                              href="/disputes"
+                              className="inline-flex items-center gap-1 text-primary hover:text-primary-container text-xs font-semibold"
+                            >
+                              <span>Defense File</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-muted-slate/60">
+                              No dispute
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-6 py-4 border-t border-border-subtle flex justify-between items-center bg-white">
+              <span className="text-xs text-muted-slate">
+                Showing {filtered.length} of {transactions.length} payments
+              </span>
+              <div className="flex gap-1">
+                <button
+                  className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-50 cursor-pointer"
+                  disabled
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-50 cursor-pointer"
+                  disabled
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </LocalErrorBoundary>
     </DashboardShell>
   );
 }

@@ -1,5 +1,5 @@
 # ==========================================
-# Razorpay Aegis — Comprehensive .gitignore
+# Razorpay Aegis — Production .gitignore
 # ==========================================
 
 # Operating System Files
@@ -34,13 +34,14 @@ $RECYCLE.BIN/
 *.sublime-project
 *.swp
 *.swo
-*~
 .project
 .settings/
 
-# AI Agents & IDE Cache
+# AI Agents, Tooling & IDE State
 .agents/
 .gemini/
+.claude/
+.cursor/
 
 # Node & Package Managers
 node_modules/
@@ -58,7 +59,7 @@ yarn-error.log*
 .pnpm-debug.log*
 lerna-debug.log*
 
-# Python & Virtual Environments
+# Python & Scratch Scripts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -79,8 +80,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.env
 .venv
+.venv/
 env/
 venv/
 ENV/
@@ -89,6 +90,7 @@ venv.bak/
 .pytest_cache/
 .coverage
 htmlcov/
+test_*.py
 
 # Next.js, Turbopack, Bundlers & Build Outputs
 .next/
@@ -111,21 +113,27 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+test-reports/
 
-# TypeScript
+# TypeScript & Build Cache
 *.tsbuildinfo
 next-env.d.ts
 
-# Vercel
+# Cloud, Vercel & Neon CLI
+.vercel/
 .vercel
+.neon
+.neon/
 
-# Environment & Secrets (Never commit .env files with real credentials)
+# Environment & Secrets (Never commit credentials)
+.env*
 .env
-.env*.local
 .env.local
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.vercel
 !.env.example
 
 # SQLite, Postgres & Database Dumps / Artifacts
@@ -159,4 +167,4 @@ prisma/*.db-journal
 chrome/
 .local-chromium/
 scratch/
-test-reports/
+useful links.md
