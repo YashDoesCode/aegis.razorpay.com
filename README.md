@@ -122,13 +122,16 @@ flowchart TB
 
     subgraph IngestionLayer ["Ingestion & Synchronization Layer"]
         SYNC_HANDLER["Sync Controller\n(/api/disputes/sync)"]
-        WEBHOOK_INGEST["Dispute Ingest Router\n(/api/disputes)"]
+        WEBHOOK_INGEST["Secure Webhook Ingest\n(/api/webhooks/razorpay)"]
+        SIGNATURE_VERIFIER["HMAC-SHA256 Verifier\n(Constant-Time Comparison)"]
         MODE_GATE["Merchant Mode Gateway\n(Test Sandbox vs Verified Live API)"]
     end
 
     subgraph DataStoreLayer ["Data & Persistence Layer (Neon Serverless)"]
         PRISMA["Prisma ORM 6 (PgBouncer Pooled)"]
         DB_DISPUTES[("Disputes Table")]
+        DB_WEBHOOKS[("Webhook Events Ledger")]
+        DB_AUDIT[("Immutable Audit Trail")]
         DB_ORDERS[("Orders & Invoices")]
         DB_DELIVERY[("Courier POD & Tracking")]
         DB_COMMS[("Customer Comms Log")]
@@ -492,6 +495,70 @@ POST /api/merchant/disconnect
 
 ---
 
+### Webhook Security & Ingestion Pipeline
+
+```http
+POST /api/webhooks/razorpay
+```
+- **Description:** Ingests real-time dispute lifecycle webhooks from Razorpay with HMAC-SHA256 signature verification, strict Zod validation, SHA-256 payload deduplication, and immutable audit event recording.
+- **Headers:**
+  - `x-razorpay-signature`: HMAC-SHA256 signature generated with `RAZORPAY_WEBHOOK_SECRET`
+  - `x-request-id`: Optional tracing request identifier
+- **Supported Events:**
+  - `dispute.created`: Staged into Aegis defense queue as `open` dispute with SLA countdown.
+  - `dispute.under_review`: Transitions dispute status to `under_review`.
+  - `dispute.won`: Resolves dispute as `won` in favor of merchant.
+  - `dispute.lost`: Closes dispute as `lost`.
+- **Response Codes:**
+  - `200 OK`: Successful ingestion (`status: "processed"`), duplicate skipped (`status: "duplicate"`), or unsupported event ignored (`status: "ignored"`).
+  - `400 Bad Request`: Empty request body, malformed JSON, or schema validation failure (`EMPTY_BODY`, `MALFORMED_JSON`, `SCHEMA_VALIDATION_ERROR`).
+  - `401 Unauthorized`: Missing or invalid HMAC-SHA256 signature (`UNAUTHORIZED_WEBHOOK`).
+  - `405 Method Not Allowed`: Non-POST HTTP methods.
+
+#### Webhook Ingestion Sequence Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant RZP as Razorpay Gateway
+    participant Route as Next.js Webhook Router (/api/webhooks/razorpay)
+    participant Auth as HMAC Verifier (crypto.timingSafeEqual)
+    participant Validator as Zod Schema Validator
+    participant Service as Webhook Ingestion Service
+    participant Store as Neon DB / Immutable Store
+
+    RZP->>Route: POST /api/webhooks/razorpay (Raw Body + Signature)
+    Route->>Auth: Verify HMAC-SHA256(rawBody, WEBHOOK_SECRET)
+    alt Invalid or Missing Signature
+        Auth-->>Route: Invalid Signature
+        Route-->>RZP: 401 Unauthorized (UNAUTHORIZED_WEBHOOK)
+    else Signature Valid
+        Auth-->>Route: Verified OK
+        Route->>Validator: Parse & Validate Payload Schema
+        alt Schema Validation Failed / Malformed JSON
+            Validator-->>Route: Validation Error
+            Route-->>RZP: 400 Bad Request
+        else Valid Schema
+            Validator-->>Route: Valid Payload
+            Route->>Service: processWebhookPayload(...)
+            Service->>Store: Check Payload Hash Deduplication
+            alt Duplicate Event
+                Store-->>Service: Duplicate Detected
+                Service-->>Route: status="duplicate"
+                Route-->>RZP: 200 OK (Duplicate Ignored)
+            else New Event
+                Service->>Store: Persist WebhookEvent (status="processed")
+                Service->>Store: Persist AuditEvent (WEBHOOK_RECEIVED + Event Action)
+                Service->>Store: Apply Dispute State Transition
+                Service-->>Route: status="processed"
+                Route-->>RZP: 200 OK (Successfully Processed)
+            end
+        end
+    end
+```
+
+---
+
 ## Design System & Interface Tokens
 
 Aegis implements an interface following Razorpay's design language:
@@ -559,6 +626,7 @@ DIRECT_URL="postgresql://user:password@ep-sample.us-east-2.aws.neon.tech/neondb?
 # Razorpay API Credentials (Optional for sandbox, required for live sync)
 RAZORPAY_KEY_ID="rzp_test_YourKeyId"
 RAZORPAY_KEY_SECRET="YourKeySecret"
+RAZORPAY_WEBHOOK_SECRET="whsec_YourWebhookSecret"
 
 # OpenAI API Key (Optional — system falls back to deterministic safe mode)
 OPENAI_API_KEY="sk-proj-YourKey"

@@ -50,12 +50,23 @@ const MerchantModeContext = createContext<MerchantModeContextType>({
 const STORAGE_KEY = "aegis_dashboard_mode";
 
 export function MerchantModeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<"test" | "live">("test");
+  const [mode, setModeState] = useState<"test" | "live">(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === "live" || saved === "test") {
+          return saved;
+        }
+      } catch {
+        // Ignore
+      }
+    }
+    return "test";
+  });
   const [merchant, setMerchant] = useState<ConnectedMerchantState>(defaultMerchant);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isConnectModalOpen, setIsConnectModalOpen] = useState<boolean>(false);
 
-  // Fetch status on initial mount
   const refreshStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/merchant/status", { cache: "no-store" });
@@ -81,17 +92,37 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    // Read persisted mode if available
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "live" || saved === "test") {
-        setModeState(saved);
+    let ignore = false;
+    async function load() {
+      try {
+        const res = await fetch("/api/merchant/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && !ignore) {
+            setMerchant({
+              isConnected: Boolean(data.isConnected),
+              merchantId: data.merchantId || "acc_demo_test_01",
+              name: data.name || "Acme India Retail Ltd",
+              mode: data.mode || "test",
+              authType: data.authType || "env",
+              maskedKeyId: data.maskedKeyId || null,
+              connectedAt: data.connectedAt,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("⚠️ [MerchantModeContext] Failed to load status:", err);
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
       }
-    } catch {
-      // Ignore localStorage errors
     }
-    refreshStatus();
-  }, [refreshStatus]);
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const setMode = useCallback((newMode: "test" | "live") => {
     setModeState(newMode);

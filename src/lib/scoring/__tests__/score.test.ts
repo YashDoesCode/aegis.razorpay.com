@@ -13,14 +13,6 @@ describe("Winnability Scoring Engine", () => {
     priorDisputesCount: 0,
   };
 
-  const mockCustomerLowTrust: CustomerData = {
-    name: "New Buyer",
-    email: "buyer@example.com",
-    address: "Mumbai",
-    priorOrdersCount: 0,
-    priorDisputesCount: 2,
-  };
-
   describe("Realistic Winnability Spread on Seeded Demo Disputes", () => {
     it("Dispute 1 (UPI 1064, Full Evidence) scores ~94 (High Band, Contest)", () => {
       const d1 = fallbackDisputes[0];

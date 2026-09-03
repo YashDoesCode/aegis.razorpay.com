@@ -22,8 +22,6 @@ import {
   X,
   AlertCircle,
   FileQuestion,
-  PlusCircle,
-  Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -79,7 +77,7 @@ export default function DisputesPage() {
         toast.error(errorMsg);
       }
     } catch (err) {
-      console.error("❌ [DisputesPage] Load error:", err);
+      console.error("DisputesPage load error:", err);
       const errorMsg = "Unable to connect to dispute defense service";
       setError(errorMsg);
       toast.error(errorMsg);
@@ -89,8 +87,42 @@ export default function DisputesPage() {
   }, [mode]);
 
   useEffect(() => {
-    loadDisputes();
-  }, [loadDisputes]);
+    let ignore = false;
+    async function init() {
+      try {
+        setError(null);
+        const res = await fetch(`/api/disputes?mode=${mode}`);
+        const json = await res.json();
+        if (!ignore) {
+          if (json.ok && Array.isArray(json.data)) {
+            setDisputes(json.data);
+            if (json.stats) {
+              setStats(json.stats);
+            }
+          } else {
+            const errorMsg = json.error || "Failed to load dispute records";
+            setError(errorMsg);
+            toast.error(errorMsg);
+          }
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error("DisputesPage load error:", err);
+          const errorMsg = "Unable to connect to dispute defense service";
+          setError(errorMsg);
+          toast.error(errorMsg);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+    init();
+    return () => {
+      ignore = true;
+    };
+  }, [mode]);
 
   const handleSync = async () => {
     try {
@@ -104,7 +136,7 @@ export default function DisputesPage() {
         toast.error(json.error || "Dispute synchronization failed");
       }
     } catch (err) {
-      console.error("❌ [DisputesPage] Sync error:", err);
+      console.error("DisputesPage sync error:", err);
       toast.error("Network error during dispute sync");
     } finally {
       setSyncing(false);
@@ -149,9 +181,9 @@ export default function DisputesPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success(`Dispute defense ${mode.toUpperCase()} audit report downloaded`);
+      toast.success(`Dispute defense audit report downloaded (${mode.toUpperCase()} mode)`);
     } catch (err) {
-      console.error("❌ Failed to download report:", err);
+      console.error("Failed to download report:", err);
       toast.error("Failed to generate report file");
     }
   };
@@ -248,14 +280,14 @@ export default function DisputesPage() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
           className="w-full space-y-6"
         >
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="font-headline-lg text-[32px] text-ink font-semibold tracking-tight">
-                Aegis — Dispute Defense
+              <h1 className="text-2xl font-bold tracking-tight text-ink">
+                Disputes Defense Console
               </h1>
               <p className="text-xs text-muted-slate mt-1 flex items-center gap-2">
                 <span
@@ -275,24 +307,24 @@ export default function DisputesPage() {
               <button
                 onClick={handleSync}
                 disabled={syncing || loading}
-                className="flex items-center gap-2 px-3 py-2 rounded-[4px] border border-border-subtle bg-white text-ink hover:bg-page-bg text-sm font-semibold transition-colors h-10 flat-shadow cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-[4px] border border-border-subtle bg-white text-ink hover:bg-slate-50 text-xs font-semibold transition-colors h-9 shadow-xs cursor-pointer disabled:opacity-50"
                 title={`Sync latest disputes from Razorpay ${mode.toUpperCase()} API`}
               >
                 <RefreshCw
-                  className={`w-4 h-4 text-muted-slate ${
+                  className={`w-3.5 h-3.5 text-muted-slate ${
                     syncing ? "animate-spin text-primary" : ""
                   }`}
                 />
-                <span>{syncing ? "Syncing..." : "Sync from Razorpay"}</span>
+                <span>{syncing ? "Syncing..." : "Sync Razorpay"}</span>
               </button>
 
               <button
                 onClick={handleDownloadReport}
                 disabled={loading || disputes.length === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded-[4px] bg-primary text-white hover:bg-primary-container text-sm font-semibold transition-colors h-10 flat-shadow cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-1.5 rounded-[4px] bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors h-9 shadow-xs cursor-pointer disabled:opacity-50"
               >
-                <Download className="w-[18px] h-[18px]" />
-                <span>Download Report</span>
+                <Download className="w-4 h-4" />
+                <span>Export Audit Report</span>
               </button>
             </div>
           </div>
@@ -301,7 +333,7 @@ export default function DisputesPage() {
           {mode === "test" ? (
             <div className="flex items-center justify-between px-4 py-3 bg-amber-50 border border-amber-200 rounded-[4px] text-xs text-amber-900">
               <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                 <span>
                   <strong>Test Sandbox Mode:</strong> Showing 6 representative demo dispute cases with winnability scoring & AI rebuttal drafts.
                 </span>
@@ -315,7 +347,7 @@ export default function DisputesPage() {
                     setMode("live");
                   }
                 }}
-                className="text-amber-800 underline font-semibold hover:text-amber-950 flex-shrink-0 ml-4 cursor-pointer"
+                className="text-amber-800 underline font-semibold hover:text-amber-950 shrink-0 ml-4 cursor-pointer"
               >
                 {merchant.isConnected ? "Switch to Live Mode &rarr;" : "Connect Razorpay Account &rarr;"}
               </button>
@@ -323,7 +355,7 @@ export default function DisputesPage() {
           ) : (
             <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-[4px] text-xs text-emerald-900">
               <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
                 <span>
                   <strong>Live Mode Active:</strong> Direct queries to Razorpay API for merchant <span className="font-mono font-semibold">{merchant.merchantId}</span>. Never shows fake/mock data.
                 </span>
@@ -331,18 +363,18 @@ export default function DisputesPage() {
               <button
                 type="button"
                 onClick={() => setMode("test")}
-                className="text-emerald-800 underline font-semibold hover:text-emerald-950 flex-shrink-0 ml-4 cursor-pointer"
+                className="text-emerald-800 underline font-semibold hover:text-emerald-950 shrink-0 ml-4 cursor-pointer"
               >
                 Switch to Test Mode (Demo Data) &rarr;
               </button>
             </div>
           )}
 
-          {/* Error Alert Card (if fetch failed) */}
+          {/* Error Alert Card */}
           {error && !loading && (
-            <div className="bg-white rounded-[4px] border border-danger/40 p-6 flat-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="bg-white rounded-[4px] border border-red-200 p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-[4px] bg-danger/10 text-danger shrink-0">
+                <div className="p-2 rounded-[4px] bg-red-50 text-red-600 shrink-0">
                   <AlertCircle className="w-5 h-5" />
                 </div>
                 <div>
@@ -354,90 +386,84 @@ export default function DisputesPage() {
               </div>
               <button
                 onClick={loadDisputes}
-                className="flex items-center gap-2 px-4 py-2 rounded-[4px] bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors flat-shadow cursor-pointer shrink-0"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-[4px] bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors shadow-xs cursor-pointer shrink-0"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Retry Loading</span>
+                <span>Retry</span>
               </button>
             </div>
           )}
 
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {loading ? (
-              <>
-                <div className="bg-white rounded-[4px] border border-border-subtle p-6 flat-shadow space-y-3">
-                  <Skeleton className="h-4 w-28 bg-rp-bg-2" />
-                  <Skeleton className="h-8 w-16 bg-rp-bg-2" />
-                  <Skeleton className="h-3 w-40 bg-rp-bg-2" />
+              Array.from({ length: 3 }).map((_, idx) => (
+                <div key={idx} className="bg-white rounded-[4px] border border-border-subtle p-5 shadow-xs space-y-3">
+                  <Skeleton className="h-3 w-28 bg-slate-100" />
+                  <Skeleton className="h-8 w-16 bg-slate-100" />
+                  <Skeleton className="h-3 w-40 bg-slate-100" />
                 </div>
-                <div className="bg-white rounded-[4px] border border-border-subtle p-6 flat-shadow space-y-3">
-                  <Skeleton className="h-4 w-28 bg-rp-bg-2" />
-                  <Skeleton className="h-8 w-16 bg-rp-bg-2" />
-                  <Skeleton className="h-3 w-40 bg-rp-bg-2" />
-                </div>
-                <div className="bg-white rounded-[4px] border border-border-subtle p-6 flat-shadow space-y-3">
-                  <Skeleton className="h-4 w-28 bg-rp-bg-2" />
-                  <Skeleton className="h-8 w-16 bg-rp-bg-2" />
-                  <Skeleton className="h-3 w-40 bg-rp-bg-2" />
-                </div>
-              </>
+              ))
             ) : (
               <>
                 {/* High Winnability */}
                 <div
                   onClick={() => handleCardFilterClick("high")}
-                  className={`bg-white rounded-[4px] border p-6 flat-shadow cursor-pointer transition-all duration-200 hover:border-success/60 ${
+                  className={`bg-white rounded-[4px] border p-5 shadow-xs cursor-pointer transition-all duration-150 hover:border-emerald-500 ${
                     winnabilityFilter === "high"
-                      ? "border-success ring-2 ring-success/20 bg-success/5"
+                      ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20"
                       : "border-border-subtle"
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs font-semibold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
-                      <span>High Winnability</span>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
+                      <span>High Winnability (&ge;80%)</span>
                       {winnabilityFilter === "high" && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-success text-white">
-                          FILTER ACTIVE
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-600 text-white font-mono">
+                          ACTIVE
                         </span>
                       )}
                     </span>
-                    <div className="w-2.5 h-2.5 rounded-full bg-success mt-1" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 mt-0.5" />
                   </div>
-                  <div className="font-headline-lg text-[32px] font-semibold text-ink leading-tight">
+                  <div className="font-mono text-2xl font-bold text-ink">
                     {stats.high.count}
                   </div>
-                  <div className="text-sm text-muted-slate mt-2">
-                    ₹{((stats.high.amount || 0) / 100).toLocaleString("en-IN")}{" "}
-                    pending · Click to filter
+                  <div className="text-xs text-muted-slate mt-1.5">
+                    <span className="font-mono font-semibold text-slate-700">
+                      ₹{((stats.high.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>{" "}
+                    recoverable · Click to filter
                   </div>
                 </div>
 
                 {/* Needs Evidence */}
                 <div
                   onClick={() => handleCardFilterClick("needs_evidence")}
-                  className={`bg-white rounded-[4px] border p-6 flat-shadow cursor-pointer transition-all duration-200 hover:border-attention/60 ${
+                  className={`bg-white rounded-[4px] border p-5 shadow-xs cursor-pointer transition-all duration-150 hover:border-amber-500 ${
                     winnabilityFilter === "needs_evidence"
-                      ? "border-attention ring-2 ring-attention/20 bg-attention/5"
+                      ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20"
                       : "border-border-subtle"
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs font-semibold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
-                      <span>Needs Evidence</span>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
+                      <span>Needs Evidence (50–79%)</span>
                       {winnabilityFilter === "needs_evidence" && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-attention text-white">
-                          FILTER ACTIVE
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500 text-white font-mono">
+                          ACTIVE
                         </span>
                       )}
                     </span>
-                    <div className="w-2.5 h-2.5 rounded-full bg-attention mt-1" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500 mt-0.5" />
                   </div>
-                  <div className="font-headline-lg text-[32px] font-semibold text-ink leading-tight">
+                  <div className="font-mono text-2xl font-bold text-ink">
                     {stats.needsEvidence.count}
                   </div>
-                  <div className="text-sm text-muted-slate mt-2">
-                    ₹{((stats.needsEvidence.amount || 0) / 100).toLocaleString("en-IN")}{" "}
+                  <div className="text-xs text-muted-slate mt-1.5">
+                    <span className="font-mono font-semibold text-slate-700">
+                      ₹{((stats.needsEvidence.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>{" "}
                     pending · Click to filter
                   </div>
                 </div>
@@ -445,28 +471,30 @@ export default function DisputesPage() {
                 {/* Low Winnability */}
                 <div
                   onClick={() => handleCardFilterClick("low")}
-                  className={`bg-white rounded-[4px] border p-6 flat-shadow cursor-pointer transition-all duration-200 hover:border-danger/60 ${
+                  className={`bg-white rounded-[4px] border p-5 shadow-xs cursor-pointer transition-all duration-150 hover:border-rose-500 ${
                     winnabilityFilter === "low"
-                      ? "border-danger ring-2 ring-danger/20 bg-danger/5"
+                      ? "border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20"
                       : "border-border-subtle"
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs font-semibold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
-                      <span>Low Winnability</span>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
+                      <span>Low Winnability (&lt;50%)</span>
                       {winnabilityFilter === "low" && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-danger text-white">
-                          FILTER ACTIVE
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-600 text-white font-mono">
+                          ACTIVE
                         </span>
                       )}
                     </span>
-                    <div className="w-2.5 h-2.5 rounded-full bg-danger mt-1" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-rose-600 mt-0.5" />
                   </div>
-                  <div className="font-headline-lg text-[32px] font-semibold text-ink leading-tight">
+                  <div className="font-mono text-2xl font-bold text-ink">
                     {stats.low.count}
                   </div>
-                  <div className="text-sm text-muted-slate mt-2">
-                    ₹{((stats.low.amount || 0) / 100).toLocaleString("en-IN")}{" "}
+                  <div className="text-xs text-muted-slate mt-1.5">
+                    <span className="font-mono font-semibold text-slate-700">
+                      ₹{((stats.low.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>{" "}
                     pending · Click to filter
                   </div>
                 </div>
@@ -481,22 +509,22 @@ export default function DisputesPage() {
                 Active Filters:
               </span>
               {winnabilityFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-rp-navy text-white text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[4px] bg-[#0D1A48] text-white text-xs font-semibold">
                   <span>Band: {winnabilityFilter.replace("_", " ")}</span>
                   <button
                     onClick={() => setWinnabilityFilter("all")}
-                    className="hover:text-danger cursor-pointer ml-1"
+                    className="hover:text-rose-300 cursor-pointer ml-1"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </span>
               )}
               {searchQuery.trim() && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-rp-bg-2 text-ink text-xs font-semibold border border-border-subtle">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[4px] bg-slate-100 text-ink text-xs font-semibold border border-border-subtle">
                   <span>Query: &ldquo;{searchQuery}&rdquo;</span>
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="hover:text-danger cursor-pointer ml-1"
+                    className="hover:text-rose-600 cursor-pointer ml-1"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -516,13 +544,13 @@ export default function DisputesPage() {
           )}
 
           {/* Data Table Container */}
-          <div className="bg-white rounded-[4px] border border-border-subtle flat-shadow overflow-hidden">
-            <div className="px-6 py-5 border-b border-border-subtle flex justify-between items-center bg-white">
+          <div className="bg-white rounded-[4px] border border-border-subtle shadow-xs overflow-hidden">
+            <div className="px-5 py-4 border-b border-border-subtle flex justify-between items-center bg-white">
               <div className="flex items-center gap-3">
-                <h2 className="font-headline-sm text-xl font-semibold text-ink">
-                  {mode === "live" ? "Live Account Disputes" : "Demo Sandbox Disputes"}
+                <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
+                  {mode === "live" ? "Live Razorpay Disputes" : "Demo Sandbox Disputes"}
                 </h2>
-                {loading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -530,13 +558,13 @@ export default function DisputesPage() {
                   className="p-1 text-muted-slate hover:text-ink transition-colors cursor-pointer rounded-[4px]"
                   title="Refresh disputes data"
                 >
-                  <Filter className="w-5 h-5" />
+                  <Filter className="w-4 h-4" />
                 </button>
                 <button
                   className="p-1 text-muted-slate hover:text-ink transition-colors cursor-pointer rounded-[4px]"
                   title="More options"
                 >
-                  <MoreVertical className="w-5 h-5" />
+                  <MoreVertical className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -544,7 +572,7 @@ export default function DisputesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-border-subtle bg-surface/50">
+                  <tr className="border-b border-border-subtle bg-slate-50/70">
                     <th
                       scope="col"
                       role="columnheader"
@@ -584,7 +612,7 @@ export default function DisputesPage() {
                       className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
                     >
                       <div className="flex items-center gap-1">
-                        <span>TRANSACTION DATE</span>
+                        <span>DATE</span>
                         {sortField === "date" &&
                           (sortDirection === "asc" ? (
                             <ArrowUp className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
@@ -605,9 +633,9 @@ export default function DisputesPage() {
                           handleSort("amount");
                         }
                       }}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px] text-right"
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-end gap-1">
                         <span>AMOUNT</span>
                         {sortField === "amount" ? (
                           sortDirection === "asc" ? (
@@ -621,7 +649,7 @@ export default function DisputesPage() {
                       </div>
                     </th>
                     <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
-                      REASON
+                      REASON CODE
                     </th>
                     <th
                       scope="col"
@@ -655,16 +683,16 @@ export default function DisputesPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="text-sm text-ink bg-white">
+                <tbody className="text-sm text-ink bg-white divide-y divide-border-subtle">
                   {loading ? (
                     Array.from({ length: 5 }).map((_, idx) => (
-                      <tr key={idx} className="border-b border-border-subtle">
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-36 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-24 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-20 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-44 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-5 w-24 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-rp-bg-2" /></td>
+                      <tr key={idx}>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-36 bg-slate-100" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-24 bg-slate-100" /></td>
+                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-44 bg-slate-100" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-5 w-24 bg-slate-100" /></td>
+                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100" /></td>
                       </tr>
                     ))
                   ) : paginatedDisputes.length === 0 ? (
@@ -700,7 +728,7 @@ export default function DisputesPage() {
                           </div>
                         ) : (
                           <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
-                            <div className="p-3 bg-rp-bg-2 rounded-full text-muted-slate">
+                            <div className="p-3 bg-slate-100 rounded-full text-muted-slate">
                               <FileQuestion className="w-6 h-6" />
                             </div>
                             <div>
@@ -739,7 +767,7 @@ export default function DisputesPage() {
                         <tr
                           key={d.id}
                           onClick={() => openDetail(d)}
-                          className="border-b border-border-subtle hover:bg-surface/60 transition-colors cursor-pointer"
+                          className="hover:bg-slate-50/80 transition-colors cursor-pointer"
                         >
                           <td className="py-3 px-4 font-mono font-medium text-xs text-primary">
                             <div className="flex items-center gap-1.5">
@@ -755,41 +783,41 @@ export default function DisputesPage() {
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-muted-slate text-xs">
+                          <td className="py-3 px-4 text-muted-slate text-xs font-mono">
                             {new Date(d.createdAt).toLocaleDateString("en-IN", {
                               day: "numeric",
                               month: "short",
                               year: "numeric",
                             })}
                           </td>
-                          <td className="py-3 px-4 font-medium">
-                            ₹{((d.amount || 0) / 100).toLocaleString("en-IN")}
+                          <td className="py-3 px-4 font-mono font-bold text-xs text-right">
+                            ₹{((d.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex flex-col">
-                              <span className="font-medium text-xs text-ink">
+                              <span className="font-semibold text-xs text-ink font-mono">
                                 Code {d.reasonCode}
                               </span>
-                              <span className="text-[11px] text-muted-slate">
-                                {d.network?.toUpperCase()} Chargeback
+                              <span className="text-[11px] text-muted-slate uppercase">
+                                {d.network} Chargeback
                               </span>
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span
-                                className={`text-[11px] font-semibold px-2 py-0.5 rounded-[4px] ${
+                                className={`text-[11px] font-bold px-2 py-0.5 rounded-[4px] border ${
                                   band === "high"
-                                    ? "bg-success/15 text-success border border-success/30"
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                     : band === "needs_evidence"
-                                    ? "bg-attention/15 text-attention border border-attention/30"
-                                    : "bg-danger/15 text-danger border border-danger/30"
+                                    ? "bg-amber-50 text-amber-800 border-amber-200"
+                                    : "bg-rose-50 text-rose-800 border-rose-200"
                                 }`}
                               >
                                 {score}% · {band.replace("_", " ")}
                               </span>
                               {d.fraudSignal?.isRepeatDisputer && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-red-100 text-red-700 border border-red-200">
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 border border-rose-200">
                                   Repeat Disputer
                                 </span>
                               )}
@@ -803,7 +831,7 @@ export default function DisputesPage() {
                               }}
                               className="text-xs font-semibold text-primary hover:underline cursor-pointer"
                             >
-                              Review & Defense &rarr;
+                              Review &rarr;
                             </button>
                           </td>
                         </tr>
@@ -816,18 +844,18 @@ export default function DisputesPage() {
 
             {/* Pagination Controls */}
             {filteredAndSortedDisputes.length > pageSize && (
-              <div className="px-6 py-4 border-t border-border-subtle flex justify-between items-center bg-white text-xs text-muted-slate">
+              <div className="px-5 py-3.5 border-t border-border-subtle flex justify-between items-center bg-white text-xs text-muted-slate">
                 <div>
                   Showing{" "}
-                  <span className="font-semibold text-ink">
+                  <span className="font-semibold text-ink font-mono">
                     {(currentPage - 1) * pageSize + 1}
                   </span>{" "}
                   to{" "}
-                  <span className="font-semibold text-ink">
+                  <span className="font-semibold text-ink font-mono">
                     {Math.min(currentPage * pageSize, filteredAndSortedDisputes.length)}
                   </span>{" "}
                   of{" "}
-                  <span className="font-semibold text-ink">
+                  <span className="font-semibold text-ink font-mono">
                     {filteredAndSortedDisputes.length}
                   </span>{" "}
                   disputes
@@ -836,17 +864,17 @@ export default function DisputesPage() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="p-1 rounded-[4px] border border-border-subtle hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1 rounded-[4px] border border-border-subtle hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="px-2 font-medium text-ink">
+                  <span className="px-2 font-medium text-ink font-mono">
                     {currentPage} / {totalPages}
                   </span>
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="p-1 rounded-[4px] border border-border-subtle hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1 rounded-[4px] border border-border-subtle hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>

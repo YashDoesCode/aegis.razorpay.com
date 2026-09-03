@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 export function ConnectRazorpayModal() {
-  const { isConnectModalOpen, setIsConnectModalOpen, connectAccount, merchant } =
+  const { isConnectModalOpen, setIsConnectModalOpen, connectAccount } =
     useMerchantMode();
 
   const [tab, setTab] = useState<"keys" | "oauth">("keys");

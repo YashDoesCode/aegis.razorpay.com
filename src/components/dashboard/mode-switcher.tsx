@@ -2,7 +2,6 @@
 
 import React from "react";
 import { useMerchantMode } from "@/context/merchant-mode-context";
-import { Radio } from "lucide-react";
 
 export function ModeSwitcher() {
   const { mode, setMode, merchant, setIsConnectModalOpen } = useMerchantMode();

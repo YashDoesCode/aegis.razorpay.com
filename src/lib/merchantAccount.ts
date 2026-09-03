@@ -68,7 +68,7 @@ export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantSt
         connectedAt: liveMerchantDb.createdAt.toISOString(),
       };
     }
-  } catch (err) {
+  } catch {
     // Non-fatal: proceed to env check
   }
 

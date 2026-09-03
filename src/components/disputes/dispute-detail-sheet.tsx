@@ -17,7 +17,6 @@ import {
   XCircle,
   FileText,
   Truck,
-  Sparkles,
   Send,
   Loader2,
   Copy,
@@ -25,7 +24,8 @@ import {
   Receipt,
   User,
   ShieldCheck,
-  Info,
+  Scale,
+  Clock,
 } from "lucide-react";
 import { WinnabilityResult } from "@/lib/scoring/types";
 import { FraudSignalResult } from "@/lib/fraudSignal/types";
@@ -55,23 +55,23 @@ export interface DisputeDetailItem {
     rzpPaymentId?: string;
     customer?: {
       name: string;
-      email?: string;
-      address?: string;
+      email?: string | null;
+      address?: string | null;
       priorOrdersCount: number;
       priorDisputesCount: number;
     };
     delivery?: {
-      courier: string;
-      trackingId: string;
+      courier?: string | null;
+      trackingId?: string | null;
       deliveredAt?: string | Date | null;
-      deliveredToAddress: string;
-      signatureCaptured: boolean;
+      deliveredToAddress?: string | null;
+      signatureCaptured?: boolean;
     } | null;
     communications?: {
       direction: string;
       channel: string;
       body: string;
-      sentAt: string | Date;
+      sentAt?: string | Date;
     }[];
     refunds?: {
       amount: number;
@@ -80,7 +80,7 @@ export interface DisputeDetailItem {
     }[];
   };
   evidenceItems: {
-    id: string;
+    id?: string;
     type: string;
     present: boolean;
     documentRef?: string | null;
@@ -146,12 +146,12 @@ export function DisputeDetailSheet({
       if (isSafeMode) {
         toast.info("Rebuttal generated in Safe Mode and staged in DRAFT mode on Razorpay.");
       } else {
-        toast.success("AI Rebuttal drafted & staged on Razorpay contest in DRAFT mode!");
+        toast.success("Rebuttal drafted & staged on Razorpay contest in DRAFT mode!");
       }
 
       if (onDisputeUpdated) onDisputeUpdated();
     } catch (err: unknown) {
-      console.error("❌ Failed to draft rebuttal:", err);
+      console.error("Failed to draft rebuttal:", err);
       const e = err as Error;
       toast.error(e.message || "Failed to draft rebuttal");
     } finally {
@@ -185,7 +185,7 @@ export function DisputeDetailSheet({
       if (onDisputeUpdated) onDisputeUpdated();
       onOpenChange(false);
     } catch (err: unknown) {
-      console.error("❌ Failed to accept dispute:", err);
+      console.error("Failed to accept dispute:", err);
       const e = err as Error;
       toast.error(e.message || "Failed to accept dispute");
     } finally {
@@ -209,7 +209,11 @@ export function DisputeDetailSheet({
     }
   };
 
-  const formattedAmount = `₹${((dispute.amount || 0) / 100).toLocaleString("en-IN")}`;
+  const formattedAmount = `₹${((dispute.amount || 0) / 100).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
   const respondDate = new Date(dispute.respondBy).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
@@ -218,18 +222,18 @@ export function DisputeDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0 bg-page-bg border-l border-border-subtle z-50">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0 bg-slate-50 border-l border-border-subtle z-50">
         <LocalErrorBoundary fallbackTitle="Dispute Details Drawer Encountered an Issue">
-          {/* Top Sticky Header */}
-          <div className="sticky top-0 bg-white border-b border-border-subtle p-6 z-10 shadow-2xs">
+          {/* 1. DISPUTE SUMMARY: Sticky Header */}
+          <div className="sticky top-0 bg-white border-b border-border-subtle p-5 z-10 shadow-xs">
             <SheetHeader className="space-y-1 text-left">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-semibold text-ink text-lg">
+                  <span className="font-mono font-bold text-ink text-base">
                     {dispute.id}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-[4px] bg-rp-bg-2 text-muted-slate font-medium">
-                    {dispute.network.toUpperCase()} · Code {dispute.reasonCode}
+                  <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                    {dispute.network.toUpperCase()} · Reason {dispute.reasonCode}
                   </span>
                   {(dispute.dataSource === "live" || (dispute as { data_source?: string }).data_source === "live") ? (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-[3px] bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
@@ -237,7 +241,7 @@ export function DisputeDetailSheet({
                     </span>
                   ) : (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-[3px] bg-slate-100 text-slate-600 font-medium border border-slate-200">
-                      SEED
+                      SANDBOX
                     </span>
                   )}
                 </div>
@@ -255,67 +259,99 @@ export function DisputeDetailSheet({
                   {dispute.status.toUpperCase()}
                 </Badge>
               </div>
-              <SheetTitle className="font-display text-xl font-semibold text-ink mt-1">
-                Dispute Defense File
+              <SheetTitle className="text-lg font-bold text-ink mt-1 tracking-tight">
+                Dispute Defense Dossier
               </SheetTitle>
-              <SheetDescription className="text-sm text-muted-slate">
-                Respond by {respondDate} · Razorpay Dispute Ref:{" "}
-                {dispute.rzpDisputeId || dispute.id}
+              <SheetDescription className="text-xs text-muted-slate flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                <span>Bank Representment Deadline: <strong>{respondDate}</strong></span>
+                <span>·</span>
+                <span className="font-mono">Ref: {dispute.rzpDisputeId || dispute.id}</span>
               </SheetDescription>
             </SheetHeader>
           </div>
 
-          {/* Scrollable Body Content */}
-          <div className="p-6 space-y-6">
-            {/* Key Metrics Row */}
+          {/* Scrollable Investigation Body */}
+          <div className="p-5 space-y-5">
+            {/* Key Financial Metrics Row */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-white p-3.5 rounded-[4px] border border-border-subtle flat-shadow">
-                <div className="text-[11px] font-semibold tracking-wider text-muted-slate uppercase">
+              <div className="bg-white p-3.5 rounded-[4px] border border-border-subtle shadow-xs">
+                <div className="text-[10px] font-bold tracking-wider text-muted-slate uppercase">
                   Dispute Amount
                 </div>
-                <div className="font-display text-lg font-semibold text-ink mt-0.5">
+                <div className="font-mono text-base font-bold text-ink mt-0.5">
                   {formattedAmount}
                 </div>
               </div>
-              <div className="bg-white p-3.5 rounded-[4px] border border-border-subtle flat-shadow">
-                <div className="text-[11px] font-semibold tracking-wider text-muted-slate uppercase">
-                  Payment Channel
+              <div className="bg-white p-3.5 rounded-[4px] border border-border-subtle shadow-xs">
+                <div className="text-[10px] font-bold tracking-wider text-muted-slate uppercase">
+                  Payment Rails
                 </div>
-                <div className="font-display text-lg font-semibold text-ink mt-0.5">
-                  {dispute.network.toUpperCase()}
+                <div className="text-sm font-bold text-ink mt-0.5 uppercase">
+                  {dispute.network}
                 </div>
               </div>
-              <div className="bg-white p-3.5 rounded-[4px] border border-border-subtle flat-shadow">
-                <div className="text-[11px] font-semibold tracking-wider text-muted-slate uppercase">
-                  Phase
+              <div className="bg-white p-3.5 rounded-[4px] border border-border-subtle shadow-xs">
+                <div className="text-[10px] font-bold tracking-wider text-muted-slate uppercase">
+                  Dispute Phase
                 </div>
-                <div className="font-display text-lg font-semibold text-ink mt-0.5 capitalize">
+                <div className="text-sm font-semibold text-ink mt-0.5 capitalize">
                   {dispute.phase}
                 </div>
               </div>
             </div>
 
-            {/* Winnability Score Meter & Engine Assessment */}
-            <div className="bg-white p-5 rounded-[4px] border border-border-subtle flat-shadow space-y-4">
-              <div className="flex items-center justify-between">
+            {/* 2. RECOMMENDED ACTION */}
+            <div
+              className={`p-4 rounded-[4px] border shadow-xs flex items-center justify-between gap-3 ${
+                winnability.recommendation === "contest"
+                  ? "bg-emerald-50/80 border-emerald-200 text-emerald-950"
+                  : winnability.recommendation === "gather_evidence"
+                  ? "bg-amber-50/80 border-amber-200 text-amber-950"
+                  : "bg-slate-100 border-slate-200 text-slate-900"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Scale className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-muted-slate">
+                    Aegis Action Recommendation
+                  </div>
+                  <div className="text-sm font-bold tracking-tight mt-0.5">
+                    {winnability.recommendation === "contest"
+                      ? "Contest Dispute (Strong Evidence Available)"
+                      : winnability.recommendation === "gather_evidence"
+                      ? "Gather Additional Evidence (Partial Coverage)"
+                      : "Accept Dispute (Low Winnability / High Risk)"}
+                  </div>
+                </div>
+              </div>
+              <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-[4px] bg-white border border-border-subtle shadow-xs shrink-0">
+                {score}% WIN
+              </span>
+            </div>
+
+            {/* 3. SCORE EXPLANATION */}
+            <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-border-subtle pb-3">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-primary" />
-                  <h3 className="font-display font-semibold text-ink text-base">
-                    Aegis Winnability Engine
+                  <ShieldAlert className="w-4 h-4 text-primary" />
+                  <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
+                    Deterministic Winnability Breakdown
                   </h3>
                 </div>
                 {band === "high" && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-[4px] bg-success/10 text-success text-xs font-semibold">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
                     High Winnability ({score}%)
                   </span>
                 )}
                 {band === "needs_evidence" && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-[4px] bg-attention/10 text-attention text-xs font-semibold">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
                     Needs Evidence ({score}%)
                   </span>
                 )}
                 {band === "low" && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-[4px] bg-danger/10 text-danger text-xs font-semibold">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-rose-50 text-rose-800 text-[11px] font-bold border border-rose-200">
                     Low Winnability ({score}%)
                   </span>
                 )}
@@ -324,17 +360,17 @@ export function DisputeDetailSheet({
               {/* Score Bar */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs text-muted-slate font-medium">
-                  <span>Deterministic Winnability Confidence</span>
-                  <span className="font-semibold text-ink">{score}/100</span>
+                  <span>Evidence Completeness Score</span>
+                  <span className="font-mono font-bold text-ink">{score} / 100</span>
                 </div>
-                <div className="w-full h-2.5 bg-rp-bg-2 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-500 ${
+                    className={`h-full transition-all duration-300 ${
                       band === "high"
-                        ? "bg-success"
+                        ? "bg-emerald-600"
                         : band === "needs_evidence"
-                        ? "bg-attention"
-                        : "bg-danger"
+                        ? "bg-amber-500"
+                        : "bg-rose-600"
                     }`}
                     style={{ width: `${Math.min(Math.max(score, 0), 100)}%` }}
                   />
@@ -342,25 +378,25 @@ export function DisputeDetailSheet({
               </div>
 
               {/* Scored Rule Checklist */}
-              <div className="border-t border-border-subtle pt-3.5 space-y-2">
-                <div className="text-xs font-semibold tracking-wider text-muted-slate uppercase mb-2">
-                  Scoring Rule Breakdown
+              <div className="space-y-2 pt-1">
+                <div className="text-[11px] font-bold tracking-wider text-muted-slate uppercase">
+                  Rule Evaluation Telemetry
                 </div>
                 {winnability?.reasons?.map((r, i) => (
                   <div
                     key={i}
-                    className="flex items-start justify-between text-xs py-1"
+                    className="flex items-start justify-between text-xs py-1.5 px-2 rounded-[3px] bg-slate-50 border border-slate-200"
                   >
                     <div className="flex items-center gap-2">
                       {r.met ? (
-                        <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-muted-slate/50 shrink-0" />
+                        <XCircle className="w-4 h-4 text-slate-400 shrink-0" />
                       )}
                       <span
                         className={
                           r.met
-                            ? "text-ink font-medium"
+                            ? "text-slate-900 font-semibold"
                             : "text-muted-slate line-through opacity-70"
                         }
                       >
@@ -368,8 +404,8 @@ export function DisputeDetailSheet({
                       </span>
                     </div>
                     <span
-                      className={`font-semibold shrink-0 ml-2 ${
-                        r.met ? "text-success" : "text-muted-slate/50"
+                      className={`font-mono text-[11px] font-bold shrink-0 ml-2 ${
+                        r.met ? "text-emerald-700" : "text-slate-400"
                       }`}
                     >
                       +{r.delta}
@@ -377,32 +413,27 @@ export function DisputeDetailSheet({
                   </div>
                 ))}
               </div>
-
-              <div className="bg-rp-bg-2 p-3 rounded-[4px] text-xs text-muted-slate flex items-center justify-between">
-                <span>Aegis Recommendation:</span>
-                <span className="font-bold text-ink uppercase tracking-wide">
-                  {winnability.recommendation === "contest"
-                    ? "Contest Dispute (Strong Evidence)"
-                    : winnability.recommendation === "gather_evidence"
-                    ? "Gather Additional Evidence"
-                    : "Accept Dispute (Low Winnability)"}
-                </span>
-              </div>
             </div>
 
-            {/* Evidence Checklist */}
-            <div className="bg-white p-5 rounded-[4px] border border-border-subtle flat-shadow space-y-3">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-muted-slate" />
-                <h3 className="font-display font-semibold text-ink text-sm uppercase tracking-wider">
-                  Required Evidence Checklist
-                </h3>
+            {/* 4. MISSING & VERIFIED EVIDENCE CHECKLIST */}
+            <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-slate-700" />
+                  <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
+                    Required Evidence Checklist
+                  </h3>
+                </div>
+                <span className="text-xs font-semibold text-muted-slate">
+                  {dispute.evidenceItems.filter((e) => e.present).length} of {dispute.evidenceItems.length} Verified
+                </span>
               </div>
-              <div className="space-y-2.5">
+
+              <div className="space-y-2">
                 {dispute.evidenceItems.map((item) => (
                   <div
-                    key={item.id}
-                    className="p-3 rounded-[4px] border border-border-subtle bg-surface flex items-start justify-between gap-3 text-xs"
+                    key={item.type}
+                    className="p-3 rounded-[4px] border border-border-subtle bg-slate-50/50 flex items-start justify-between gap-3 text-xs"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -410,21 +441,21 @@ export function DisputeDetailSheet({
                           {item.type.replace(/_/g, " ")}
                         </span>
                         {item.present ? (
-                          <span className="px-1.5 py-0.5 rounded-[4px] bg-success/10 text-success text-[10px] font-semibold">
+                          <span className="px-1.5 py-0.5 rounded-[3px] bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
                             VERIFIED PRESENT
                           </span>
                         ) : (
-                          <span className="px-1.5 py-0.5 rounded-[4px] bg-danger/10 text-danger text-[10px] font-semibold">
+                          <span className="px-1.5 py-0.5 rounded-[3px] bg-rose-100 text-rose-800 text-[10px] font-bold border border-rose-300">
                             MISSING
                           </span>
                         )}
                       </div>
                       {item.note && (
-                        <p className="text-muted-slate">{item.note}</p>
+                        <p className="text-muted-slate text-[11px]">{item.note}</p>
                       )}
                       {item.documentRef && (
                         <p className="font-mono text-[11px] text-primary">
-                          {item.documentRef}
+                          Ref: {item.documentRef}
                         </p>
                       )}
                     </div>
@@ -433,19 +464,24 @@ export function DisputeDetailSheet({
               </div>
             </div>
 
-            {/* Order & Customer Metadata */}
+            {/* 5. FRAUD INDICATORS & 6. RELATIONSHIP GRAPH */}
+            {dispute.fraudSignal && (
+              <FraudSignalCard fraudSignal={dispute.fraudSignal} />
+            )}
+
+            {/* Order & Customer Metadata Context */}
             {dispute.order && (
-              <div className="bg-white p-5 rounded-[4px] border border-border-subtle flat-shadow space-y-3">
-                <div className="flex items-center gap-2">
-                  <Receipt className="w-4 h-4 text-muted-slate" />
-                  <h3 className="font-display font-semibold text-ink text-sm uppercase tracking-wider">
-                    Order & Delivery Context
+              <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs space-y-3">
+                <div className="flex items-center gap-2 border-b border-border-subtle pb-3">
+                  <Receipt className="w-4 h-4 text-slate-700" />
+                  <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
+                    Order & Transaction Context
                   </h3>
                 </div>
                 <div className="text-xs space-y-2 text-ink">
                   <div>
-                    <span className="text-muted-slate">Item: </span>
-                    <span className="font-medium">{dispute.order.item}</span>
+                    <span className="text-muted-slate">Order Item: </span>
+                    <span className="font-semibold">{dispute.order.item}</span>
                   </div>
                   {dispute.order.customer && (
                     <div className="flex items-center gap-2">
@@ -463,13 +499,13 @@ export function DisputeDetailSheet({
                       <div>
                         <span>
                           Courier: {dispute.order.delivery.courier} (AWB:{" "}
-                          {dispute.order.delivery.trackingId})
+                          <span className="font-mono">{dispute.order.delivery.trackingId}</span>)
                         </span>
-                        <p className="text-muted-slate">
-                          Signature / OTP:{" "}
+                        <p className="text-muted-slate text-[11px] mt-0.5">
+                          Delivery Verification:{" "}
                           {dispute.order.delivery.signatureCaptured
-                            ? "Yes (Verified on file)"
-                            : "None"}
+                            ? "Customer OTP / Signature Verified"
+                            : "Standard Courier Confirmation"}
                         </p>
                       </div>
                     </div>
@@ -478,85 +514,37 @@ export function DisputeDetailSheet({
               </div>
             )}
 
-            {/* First-Party / Friendly-Fraud & Relationship Graph Card */}
-            {dispute.fraudSignal && (
-              <FraudSignalCard fraudSignal={dispute.fraudSignal} />
-            )}
-
-            {/* AI Rebuttal Drafting & Contest Panel */}
-            <div className="bg-white p-5 rounded-[4px] border border-primary/30 flat-shadow space-y-4">
-              <div className="flex items-center justify-between">
+            {/* 7. REBUTTAL DRAFT & CONTEST STAGING */}
+            <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-border-subtle pb-3">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <h3 className="font-display font-semibold text-ink text-base">
-                    Rebuttal Drafting Engine
+                  <FileText className="w-4 h-4 text-primary" />
+                  <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
+                    Representment Rebuttal Engine
                   </h3>
                 </div>
-                <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-primary/10 text-primary font-semibold">
-                  PROSE ONLY · GROUNDED
+                <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                  GROUNDED EVIDENCE ONLY
                 </span>
               </div>
 
-              <p className="text-xs text-muted-slate">
-                Synthesizes verified delivery proofs, GST invoices, customer
-                logs, and reason code rules into a formal representment letter.
-              </p>
-
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-ink">
-                  Custom Merchant Notes (Optional)
+                  Custom Merchant Notes (Optional, max 500 characters)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. emphasize customer signed delivery via BlueDart OTP..."
+                  maxLength={500}
+                  placeholder="e.g. emphasize customer confirmed receipt via SMS OTP on delivery..."
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
                   className="w-full h-9 px-3 text-xs rounded-[4px] border border-border-subtle bg-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                 />
               </div>
 
-              <div className="flex items-center gap-3 pt-1">
-                <Button
-                  onClick={handleDraftAndContest}
-                  disabled={drafting || accepting}
-                  className="flex-1 bg-primary text-white hover:bg-primary-container h-10 text-xs font-semibold rounded-[4px] flat-shadow cursor-pointer disabled:opacity-50"
-                >
-                  {drafting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Drafting & Staging Contest (Draft)...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Draft & Contest (Draft Mode)
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  onClick={handleAcceptDispute}
-                  disabled={accepting || drafting || dispute.status === "lost"}
-                  variant="outline"
-                  className="text-xs font-semibold text-danger border-danger/30 hover:bg-danger/5 h-10 rounded-[4px] cursor-pointer disabled:opacity-50"
-                >
-                  {accepting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                      Accepting...
-                    </>
-                  ) : dispute.status === "lost" ? (
-                    "Accepted"
-                  ) : (
-                    "Accept Dispute"
-                  )}
-                </Button>
-              </div>
-
               {/* Render Drafted Rebuttal Results */}
               {draftResult && (
-                <div className="border-t border-border-subtle pt-4 space-y-4 animate-in fade-in duration-300">
-                  {/* Safe mode vs AI badge */}
+                <div className="space-y-4 pt-2">
                   {draftResult.source === "fallback" ? (
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-[4px] text-xs text-amber-900 flex items-center gap-2.5">
                       <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
@@ -565,38 +553,36 @@ export function DisputeDetailSheet({
                           Generated in Safe Mode (Deterministic Fallback)
                         </span>
                         <span className="text-[11px] text-amber-800 block">
-                          Draft assembled reliably from verified present evidence and reason code rules without external latency.
+                          Draft assembled reliably from verified present evidence and reason code rules.
                         </span>
                       </div>
                     </div>
                   ) : (
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-[4px] text-xs text-blue-900 flex items-center gap-2.5">
-                      <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
+                      <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
                       <div className="flex-1">
                         <span className="font-semibold block">
-                          AI-Powered Representment Rebuttal
+                          Formal Representment Draft Assembled
                         </span>
                         <span className="text-[11px] text-blue-800 block">
-                          Synthesized and grounded in verified present evidence documents.
+                          Synthesized and strictly grounded in verified evidence documents.
                         </span>
                       </div>
                     </div>
                   )}
 
-                  <div className="bg-rp-bg-2 p-3.5 rounded-[4px] space-y-2 border border-border-subtle">
+                  <div className="bg-slate-50 p-3.5 rounded-[4px] space-y-2 border border-border-subtle">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-ink uppercase tracking-wider">
                         Razorpay Contest Summary (API Field &le; 1000 Chars)
                       </span>
                       <button
-                        onClick={() =>
-                          copyToClipboard(draftResult.summary, "summary")
-                        }
+                        onClick={() => copyToClipboard(draftResult.summary, "summary")}
                         className="p-1 text-muted-slate hover:text-ink cursor-pointer"
                         title="Copy summary"
                       >
                         {copiedSummary ? (
-                          <Check className="w-3.5 h-3.5 text-success" />
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
@@ -610,20 +596,15 @@ export function DisputeDetailSheet({
                   <div className="bg-white p-3.5 rounded-[4px] space-y-2 border border-border-subtle">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-ink uppercase tracking-wider">
-                        Full Formal Explanation Letter
+                        Full Formal Bank Explanation Letter
                       </span>
                       <button
-                        onClick={() =>
-                          copyToClipboard(
-                            draftResult.explanationLetter,
-                            "letter"
-                          )
-                        }
+                        onClick={() => copyToClipboard(draftResult.explanationLetter, "letter")}
                         className="p-1 text-muted-slate hover:text-ink cursor-pointer"
                         title="Copy letter"
                       >
                         {copiedLetter ? (
-                          <Check className="w-3.5 h-3.5 text-success" />
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
@@ -649,17 +630,55 @@ export function DisputeDetailSheet({
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[4px] text-xs text-emerald-800 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>
-                      Staged on Razorpay API:{" "}
-                      <code>PATCH /v1/disputes/{dispute.rzpDisputeId || dispute.id}/contest</code> in <strong>draft</strong> mode.
+                      Staged on Razorpay API: <code>PATCH /v1/disputes/{dispute.rzpDisputeId || dispute.id}/contest</code> in <strong>draft</strong> mode.
                     </span>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="text-[11px] text-muted-slate/70 text-center italic">
-              Hackathon prototype — all representment filings execute in DRAFT mode on Razorpay API.
+            <div className="text-[11px] text-muted-slate text-center">
+              Representments are staged in Draft mode on Razorpay API to allow merchant review before final settlement submission.
             </div>
+          </div>
+
+          {/* 8. ACTIONS: Sticky Footer */}
+          <div className="sticky bottom-0 bg-white border-t border-border-subtle p-4 z-10 shadow-xs flex items-center gap-3">
+            <Button
+              onClick={handleDraftAndContest}
+              disabled={drafting || accepting}
+              className="flex-1 bg-primary text-white hover:bg-primary-container h-10 text-xs font-semibold rounded-[4px] shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {drafting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Drafting & Staging Contest (Draft)...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Draft & Stage Contest (Draft Mode)
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={handleAcceptDispute}
+              disabled={accepting || drafting || dispute.status === "lost"}
+              variant="outline"
+              className="text-xs font-semibold text-rose-700 border-rose-200 hover:bg-rose-50 h-10 rounded-[4px] cursor-pointer disabled:opacity-50"
+            >
+              {accepting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Accepting...
+                </>
+              ) : dispute.status === "lost" ? (
+                "Accepted (Closed)"
+              ) : (
+                "Accept Liability"
+              )}
+            </Button>
           </div>
         </LocalErrorBoundary>
       </SheetContent>
