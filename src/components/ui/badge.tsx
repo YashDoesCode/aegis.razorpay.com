@@ -5,26 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-[4px] border border-transparent px-2 py-0.5 text-xs font-semibold whitespace-nowrap transition-all focus-visible:border-rp-blue focus-visible:ring-2 focus-visible:ring-rp-blue/30 [&>svg]:pointer-events-none [&>svg]:size-3!",
+  "group/badge inline-flex h-5.5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap transition-all focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
     variants: {
       variant: {
-        default: "bg-rp-blue text-white",
+        default: "bg-primary text-white border-transparent",
         secondary:
-          "bg-rp-bg-2 text-rp-slate border-rp-border",
+          "bg-slate-100 text-slate-700 border-slate-200/80",
         destructive:
-          "bg-rp-red-tint/40 text-rp-red border-[#ED293933]",
+          "bg-rose-50 text-rose-700 border-rose-200",
         success:
-          "bg-rp-green-tint text-rp-green border-[#00A25133]",
+          "bg-emerald-50 text-emerald-800 border-emerald-200",
         warning:
-          "bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]",
+          "bg-amber-50 text-amber-800 border-amber-200",
         ai:
-          "bg-rp-blue-bg text-rp-blue border-rp-blue/30",
+          "bg-blue-50 text-primary border-blue-200",
         outline:
-          "border-rp-border bg-rp-surface text-rp-slate",
+          "border-border-subtle bg-white text-slate-700",
         ghost:
-          "hover:bg-rp-bg-2 text-rp-muted",
-        link: "text-rp-blue underline-offset-4 hover:underline",
+          "hover:bg-slate-100 text-muted-slate",
+        link: "text-primary underline-offset-4 hover:underline",
       },
     },
     defaultVariants: {

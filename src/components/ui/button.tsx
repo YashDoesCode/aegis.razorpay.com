@@ -4,33 +4,33 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-[4px] border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-rp-blue focus-visible:ring-2 focus-visible:ring-rp-blue/30 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-xl border border-transparent bg-clip-padding text-xs font-semibold whitespace-nowrap transition-all duration-150 outline-none select-none cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/20 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
   {
     variants: {
       variant: {
-        default: "bg-rp-blue text-white hover:bg-rp-blue-hover rp-shadow-soft",
+        default: "bg-primary text-white hover:bg-primary-container shadow-xs",
         outline:
-          "border-rp-border bg-rp-surface text-rp-blue hover:bg-rp-bg-2 hover:text-rp-blue-hover rp-shadow-soft",
+          "border-border-subtle bg-white text-ink hover:bg-slate-50 hover:text-ink shadow-xs",
         secondary:
-          "bg-rp-bg-2 text-rp-ink hover:bg-rp-bg-3 border-rp-border rp-shadow-soft",
+          "bg-slate-100 text-ink hover:bg-slate-200/80 border-slate-200/60 shadow-xs",
         ghost:
-          "hover:bg-rp-bg-2 hover:text-rp-ink text-rp-muted",
+          "hover:bg-slate-100 text-muted-slate hover:text-ink",
         destructive:
-          "bg-rp-red text-white hover:bg-rp-red-dark rp-shadow-soft",
-        link: "text-rp-blue underline-offset-4 hover:underline",
+          "bg-danger text-white hover:bg-danger/90 shadow-xs",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default:
-          "h-8 gap-1.5 px-3 py-1.5 text-xs",
-        xs: "h-6 gap-1 rounded-[4px] px-2 text-xs [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[4px] px-2.5 text-xs [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-10 gap-2 rounded-[4px] px-4 text-sm font-semibold",
-        icon: "size-8 rounded-[4px]",
+          "h-9 gap-2 px-3.5 py-2",
+        xs: "h-6.5 gap-1 rounded-lg px-2 text-[11px] [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7.5 gap-1.5 rounded-lg px-2.5 text-xs [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "h-10.5 gap-2.5 rounded-xl px-5 text-sm font-semibold",
+        icon: "size-9 rounded-xl",
         "icon-xs":
-          "size-6 rounded-[4px] [&_svg:not([class*='size-'])]:size-3",
+          "size-6.5 rounded-lg [&_svg:not([class*='size-'])]:size-3",
         "icon-sm":
-          "size-7 rounded-[4px]",
-        "icon-lg": "size-10 rounded-[4px]",
+          "size-7.5 rounded-lg",
+        "icon-lg": "size-10.5 rounded-xl",
       },
     },
     defaultVariants: {

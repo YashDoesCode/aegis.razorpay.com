@@ -43,7 +43,6 @@ export default function DisputesPage() {
     useState<DisputeDetailItem | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Search, Filter, Sort, Pagination states
   const [searchQuery, setSearchQuery] = useState("");
   const [winnabilityFilter, setWinnabilityFilter] =
     useState<WinnabilityFilter>("all");
@@ -214,16 +213,13 @@ export default function DisputesPage() {
     setCurrentPage(1);
   };
 
-  // Filtered & Sorted Disputes
   const filteredAndSortedDisputes = useMemo(() => {
     let result = [...disputes];
 
-    // Filter by Winnability Band
     if (winnabilityFilter !== "all") {
       result = result.filter((d) => d.winnability?.band === winnabilityFilter);
     }
 
-    // Filter by Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
@@ -238,7 +234,6 @@ export default function DisputesPage() {
       );
     }
 
-    // Sort
     result.sort((a, b) => {
       let comparison = 0;
       if (sortField === "amount") {
@@ -250,7 +245,6 @@ export default function DisputesPage() {
       } else if (sortField === "id") {
         comparison = (a.id || "").localeCompare(b.id || "");
       } else {
-        // date
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
         comparison = dateA - dateB;
@@ -261,7 +255,6 @@ export default function DisputesPage() {
     return result;
   }, [disputes, winnabilityFilter, searchQuery, sortField, sortDirection]);
 
-  // Paginated Slices
   const totalPages = Math.ceil(filteredAndSortedDisputes.length / pageSize) || 1;
   const paginatedDisputes = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -283,13 +276,12 @@ export default function DisputesPage() {
           transition={{ duration: 0.15, ease: "easeOut" }}
           className="w-full space-y-6"
         >
-          {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-ink">
                 Disputes Defense Console
               </h1>
-              <p className="text-xs text-muted-slate mt-1 flex items-center gap-2">
+              <p className="text-xs text-muted-slate mt-1 flex items-center gap-2 flex-wrap">
                 <span
                   className={`w-2 h-2 rounded-full ${
                     mode === "live" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
@@ -303,11 +295,11 @@ export default function DisputesPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <button
                 onClick={handleSync}
                 disabled={syncing || loading}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-[4px] border border-border-subtle bg-white text-ink hover:bg-slate-50 text-xs font-semibold transition-colors h-9 shadow-xs cursor-pointer disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl border border-border-subtle bg-white text-ink hover:bg-slate-50 text-xs font-semibold transition-all h-9.5 shadow-xs cursor-pointer disabled:opacity-50 flex-1 sm:flex-initial"
                 title={`Sync latest disputes from Razorpay ${mode.toUpperCase()} API`}
               >
                 <RefreshCw
@@ -321,17 +313,16 @@ export default function DisputesPage() {
               <button
                 onClick={handleDownloadReport}
                 disabled={loading || disputes.length === 0}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-[4px] bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors h-9 shadow-xs cursor-pointer disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-all h-9.5 shadow-xs cursor-pointer disabled:opacity-50 flex-1 sm:flex-initial"
               >
                 <Download className="w-4 h-4" />
-                <span>Export Audit Report</span>
+                <span>Export Audit</span>
               </button>
             </div>
           </div>
 
-          {/* Mode Context Banner */}
           {mode === "test" ? (
-            <div className="flex items-center justify-between px-4 py-3 bg-amber-50 border border-amber-200 rounded-[4px] text-xs text-amber-900">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 py-3.5 bg-amber-50/80 border border-amber-200/80 rounded-2xl text-xs text-amber-900 shadow-xs">
               <div className="flex items-center gap-2.5">
                 <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                 <span>
@@ -347,13 +338,13 @@ export default function DisputesPage() {
                     setMode("live");
                   }
                 }}
-                className="text-amber-800 underline font-semibold hover:text-amber-950 shrink-0 ml-4 cursor-pointer"
+                className="text-amber-800 underline font-semibold hover:text-amber-950 shrink-0 cursor-pointer self-start sm:self-auto"
               >
                 {merchant.isConnected ? "Switch to Live Mode &rarr;" : "Connect Razorpay Account &rarr;"}
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-[4px] text-xs text-emerald-900">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 py-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs text-emerald-900 shadow-xs">
               <div className="flex items-center gap-2.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
                 <span>
@@ -363,18 +354,17 @@ export default function DisputesPage() {
               <button
                 type="button"
                 onClick={() => setMode("test")}
-                className="text-emerald-800 underline font-semibold hover:text-emerald-950 shrink-0 ml-4 cursor-pointer"
+                className="text-emerald-800 underline font-semibold hover:text-emerald-950 shrink-0 cursor-pointer self-start sm:self-auto"
               >
                 Switch to Test Mode (Demo Data) &rarr;
               </button>
             </div>
           )}
 
-          {/* Error Alert Card */}
           {error && !loading && (
-            <div className="bg-white rounded-[4px] border border-red-200 p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="bg-white rounded-2xl border border-red-200 p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-[4px] bg-red-50 text-red-600 shrink-0">
+                <div className="p-2.5 rounded-xl bg-red-50 text-red-600 shrink-0">
                   <AlertCircle className="w-5 h-5" />
                 </div>
                 <div>
@@ -386,7 +376,7 @@ export default function DisputesPage() {
               </div>
               <button
                 onClick={loadDisputes}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-[4px] bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors shadow-xs cursor-pointer shrink-0"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors shadow-xs cursor-pointer shrink-0"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Retry</span>
@@ -394,105 +384,101 @@ export default function DisputesPage() {
             </div>
           )}
 
-          {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {loading ? (
               Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="bg-white rounded-[4px] border border-border-subtle p-5 shadow-xs space-y-3">
-                  <Skeleton className="h-3 w-28 bg-slate-100" />
-                  <Skeleton className="h-8 w-16 bg-slate-100" />
-                  <Skeleton className="h-3 w-40 bg-slate-100" />
+                <div key={idx} className="bg-white rounded-2xl border border-border-subtle p-5 sm:p-6 shadow-xs space-y-3">
+                  <Skeleton className="h-3 w-28 bg-slate-100 rounded-lg" />
+                  <Skeleton className="h-8 w-16 bg-slate-100 rounded-lg" />
+                  <Skeleton className="h-3 w-40 bg-slate-100 rounded-lg" />
                 </div>
               ))
             ) : (
               <>
-                {/* High Winnability */}
                 <div
                   onClick={() => handleCardFilterClick("high")}
-                  className={`bg-white rounded-[4px] border p-5 shadow-xs cursor-pointer transition-all duration-150 hover:border-emerald-500 ${
+                  className={`bg-white rounded-2xl border p-5 sm:p-6 shadow-xs cursor-pointer transition-all duration-150 hover:border-emerald-500 hover:shadow-sm ${
                     winnabilityFilter === "high"
                       ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20"
                       : "border-border-subtle"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5 flex-wrap">
                       <span>High Winnability (&ge;80%)</span>
                       {winnabilityFilter === "high" && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-600 text-white font-mono">
+                        <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-600 text-white font-mono">
                           ACTIVE
                         </span>
                       )}
                     </span>
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 mt-0.5" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-600 mt-0.5 shrink-0" />
                   </div>
-                  <div className="font-mono text-2xl font-bold text-ink">
+                  <div className="font-mono tabular-nums text-2xl font-bold text-ink">
                     {stats.high.count}
                   </div>
                   <div className="text-xs text-muted-slate mt-1.5">
-                    <span className="font-mono font-semibold text-slate-700">
+                    <span className="font-mono tabular-nums font-semibold text-slate-800">
                       ₹{((stats.high.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>{" "}
                     recoverable · Click to filter
                   </div>
                 </div>
 
-                {/* Needs Evidence */}
                 <div
                   onClick={() => handleCardFilterClick("needs_evidence")}
-                  className={`bg-white rounded-[4px] border p-5 shadow-xs cursor-pointer transition-all duration-150 hover:border-amber-500 ${
+                  className={`bg-white rounded-2xl border p-5 sm:p-6 shadow-xs cursor-pointer transition-all duration-150 hover:border-amber-500 hover:shadow-sm ${
                     winnabilityFilter === "needs_evidence"
                       ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20"
                       : "border-border-subtle"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5 flex-wrap">
                       <span>Needs Evidence (50–79%)</span>
                       {winnabilityFilter === "needs_evidence" && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500 text-white font-mono">
+                        <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-500 text-white font-mono">
                           ACTIVE
                         </span>
                       )}
                     </span>
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500 mt-0.5" />
+                    <div className="w-3 h-3 rounded-full bg-amber-500 mt-0.5 shrink-0" />
                   </div>
-                  <div className="font-mono text-2xl font-bold text-ink">
+                  <div className="font-mono tabular-nums text-2xl font-bold text-ink">
                     {stats.needsEvidence.count}
                   </div>
                   <div className="text-xs text-muted-slate mt-1.5">
-                    <span className="font-mono font-semibold text-slate-700">
+                    <span className="font-mono tabular-nums font-semibold text-slate-800">
                       ₹{((stats.needsEvidence.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>{" "}
                     pending · Click to filter
                   </div>
                 </div>
 
-                {/* Low Winnability */}
                 <div
                   onClick={() => handleCardFilterClick("low")}
-                  className={`bg-white rounded-[4px] border p-5 shadow-xs cursor-pointer transition-all duration-150 hover:border-rose-500 ${
+                  className={`bg-white rounded-2xl border p-5 sm:p-6 shadow-xs cursor-pointer transition-all duration-150 hover:border-rose-500 hover:shadow-sm ${
                     winnabilityFilter === "low"
                       ? "border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20"
                       : "border-border-subtle"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-slate uppercase flex items-center gap-1.5 flex-wrap">
                       <span>Low Winnability (&lt;50%)</span>
                       {winnabilityFilter === "low" && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-600 text-white font-mono">
+                        <span className="text-[10px] px-2 py-0.2 rounded-full bg-rose-600 text-white font-mono">
                           ACTIVE
                         </span>
                       )}
                     </span>
-                    <div className="w-2.5 h-2.5 rounded-full bg-rose-600 mt-0.5" />
+                    <div className="w-3 h-3 rounded-full bg-rose-600 mt-0.5 shrink-0" />
                   </div>
-                  <div className="font-mono text-2xl font-bold text-ink">
+                  <div className="font-mono tabular-nums text-2xl font-bold text-ink">
                     {stats.low.count}
                   </div>
                   <div className="text-xs text-muted-slate mt-1.5">
-                    <span className="font-mono font-semibold text-slate-700">
+                    <span className="font-mono tabular-nums font-semibold text-slate-800">
                       ₹{((stats.low.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>{" "}
                     pending · Click to filter
@@ -502,14 +488,13 @@ export default function DisputesPage() {
             )}
           </div>
 
-          {/* Filter Pills / Active Search Bar */}
           {(winnabilityFilter !== "all" || searchQuery.trim()) && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-semibold text-muted-slate">
                 Active Filters:
               </span>
               {winnabilityFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[4px] bg-[#0D1A48] text-white text-xs font-semibold">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0D1A48] text-white text-xs font-semibold shadow-xs">
                   <span>Band: {winnabilityFilter.replace("_", " ")}</span>
                   <button
                     onClick={() => setWinnabilityFilter("all")}
@@ -520,7 +505,7 @@ export default function DisputesPage() {
                 </span>
               )}
               {searchQuery.trim() && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[4px] bg-slate-100 text-ink text-xs font-semibold border border-border-subtle">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-ink text-xs font-semibold border border-border-subtle shadow-xs">
                   <span>Query: &ldquo;{searchQuery}&rdquo;</span>
                   <button
                     onClick={() => setSearchQuery("")}
@@ -543,8 +528,7 @@ export default function DisputesPage() {
             </div>
           )}
 
-          {/* Data Table Container */}
-          <div className="bg-white rounded-[4px] border border-border-subtle shadow-xs overflow-hidden">
+          <div className="bg-white rounded-2xl border border-border-subtle shadow-xs overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle flex justify-between items-center bg-white">
               <div className="flex items-center gap-3">
                 <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
@@ -552,16 +536,16 @@ export default function DisputesPage() {
                 </h2>
                 {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={loadDisputes}
-                  className="p-1 text-muted-slate hover:text-ink transition-colors cursor-pointer rounded-[4px]"
+                  className="p-2 text-muted-slate hover:text-ink transition-colors cursor-pointer rounded-lg hover:bg-slate-50"
                   title="Refresh disputes data"
                 >
                   <Filter className="w-4 h-4" />
                 </button>
                 <button
-                  className="p-1 text-muted-slate hover:text-ink transition-colors cursor-pointer rounded-[4px]"
+                  className="p-2 text-muted-slate hover:text-ink transition-colors cursor-pointer rounded-lg hover:bg-slate-50"
                   title="More options"
                 >
                   <MoreVertical className="w-4 h-4" />
@@ -585,7 +569,7 @@ export default function DisputesPage() {
                           handleSort("id");
                         }
                       }}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-md"
                     >
                       <div className="flex items-center gap-1">
                         <span>DISPUTE ID</span>
@@ -609,7 +593,7 @@ export default function DisputesPage() {
                           handleSort("date");
                         }
                       }}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-md"
                     >
                       <div className="flex items-center gap-1">
                         <span>DATE</span>
@@ -633,7 +617,7 @@ export default function DisputesPage() {
                           handleSort("amount");
                         }
                       }}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px] text-right"
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-md text-right"
                     >
                       <div className="flex items-center justify-end gap-1">
                         <span>AMOUNT</span>
@@ -663,7 +647,7 @@ export default function DisputesPage() {
                           handleSort("winnability");
                         }
                       }}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-md"
                     >
                       <div className="flex items-center gap-1">
                         <span>WINNABILITY</span>
@@ -687,12 +671,12 @@ export default function DisputesPage() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, idx) => (
                       <tr key={idx}>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-36 bg-slate-100" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-24 bg-slate-100" /></td>
-                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-44 bg-slate-100" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-5 w-24 bg-slate-100" /></td>
-                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-36 bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-24 bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-44 bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-5 w-24 bg-slate-100 rounded-full" /></td>
+                        <td className="py-3.5 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100 rounded-lg" /></td>
                       </tr>
                     ))
                   ) : paginatedDisputes.length === 0 ? (
@@ -700,7 +684,7 @@ export default function DisputesPage() {
                       <td colSpan={6} className="text-center py-12 text-muted-slate">
                         {mode === "live" ? (
                           <div className="flex flex-col items-center justify-center space-y-3 max-w-md mx-auto p-4">
-                            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                               <ShieldCheck className="w-6 h-6" />
                             </div>
                             <div>
@@ -711,16 +695,16 @@ export default function DisputesPage() {
                                 Connected merchant account <span className="font-mono font-medium text-slate-800">{merchant.merchantId}</span> has 0 active chargebacks or open disputes on Razorpay.
                               </p>
                             </div>
-                            <div className="flex items-center gap-3 pt-2">
+                            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                               <button
                                 onClick={handleSync}
-                                className="px-3 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
+                                className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer shadow-xs"
                               >
                                 Sync with Razorpay
                               </button>
                               <button
                                 onClick={() => setMode("test")}
-                                className="px-3 py-1.5 rounded-[4px] border border-border-subtle bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+                                className="px-4 py-2 rounded-xl border border-border-subtle bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer shadow-xs"
                               >
                                 View Demo Disputes (Test Mode)
                               </button>
@@ -728,7 +712,7 @@ export default function DisputesPage() {
                           </div>
                         ) : (
                           <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
-                            <div className="p-3 bg-slate-100 rounded-full text-muted-slate">
+                            <div className="p-3 bg-slate-100 rounded-2xl text-muted-slate">
                               <FileQuestion className="w-6 h-6" />
                             </div>
                             <div>
@@ -748,7 +732,7 @@ export default function DisputesPage() {
                                   setSearchQuery("");
                                   setCurrentPage(1);
                                 }}
-                                className="px-3 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
+                                className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer shadow-xs"
                               >
                                 Reset Filters
                               </button>
@@ -769,31 +753,31 @@ export default function DisputesPage() {
                           onClick={() => openDetail(d)}
                           className="hover:bg-slate-50/80 transition-colors cursor-pointer"
                         >
-                          <td className="py-3 px-4 font-mono font-medium text-xs text-primary">
+                          <td className="py-3.5 px-4 font-mono font-medium text-xs text-primary">
                             <div className="flex items-center gap-1.5">
                               <span>{d.rzpDisputeId || d.id}</span>
                               {isSeed ? (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-sans border border-slate-200">
+                                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-sans border border-slate-200">
                                   Demo
                                 </span>
                               ) : (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-100 text-emerald-800 font-sans border border-emerald-300">
+                                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-sans border border-emerald-300">
                                   Live
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-muted-slate text-xs font-mono">
+                          <td className="py-3.5 px-4 text-muted-slate text-xs font-mono tabular-nums">
                             {new Date(d.createdAt).toLocaleDateString("en-IN", {
                               day: "numeric",
                               month: "short",
                               year: "numeric",
                             })}
                           </td>
-                          <td className="py-3 px-4 font-mono font-bold text-xs text-right">
+                          <td className="py-3.5 px-4 font-mono tabular-nums font-bold text-xs text-right">
                             ₹{((d.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-3.5 px-4">
                             <div className="flex flex-col">
                               <span className="font-semibold text-xs text-ink font-mono">
                                 Code {d.reasonCode}
@@ -803,10 +787,10 @@ export default function DisputesPage() {
                               </span>
                             </div>
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-3.5 px-4">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span
-                                className={`text-[11px] font-bold px-2 py-0.5 rounded-[4px] border ${
+                                className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                                   band === "high"
                                     ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                     : band === "needs_evidence"
@@ -817,13 +801,13 @@ export default function DisputesPage() {
                                 {score}% · {band.replace("_", " ")}
                               </span>
                               {d.fraudSignal?.isRepeatDisputer && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 border border-rose-200">
+                                <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
                                   Repeat Disputer
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3.5 px-4 text-right">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -842,39 +826,38 @@ export default function DisputesPage() {
               </table>
             </div>
 
-            {/* Pagination Controls */}
             {filteredAndSortedDisputes.length > pageSize && (
-              <div className="px-5 py-3.5 border-t border-border-subtle flex justify-between items-center bg-white text-xs text-muted-slate">
+              <div className="px-5 py-3.5 border-t border-border-subtle flex flex-col sm:flex-row justify-between items-center bg-white text-xs text-muted-slate gap-2">
                 <div>
                   Showing{" "}
-                  <span className="font-semibold text-ink font-mono">
+                  <span className="font-semibold text-ink font-mono tabular-nums">
                     {(currentPage - 1) * pageSize + 1}
                   </span>{" "}
                   to{" "}
-                  <span className="font-semibold text-ink font-mono">
+                  <span className="font-semibold text-ink font-mono tabular-nums">
                     {Math.min(currentPage * pageSize, filteredAndSortedDisputes.length)}
                   </span>{" "}
                   of{" "}
-                  <span className="font-semibold text-ink font-mono">
+                  <span className="font-semibold text-ink font-mono tabular-nums">
                     {filteredAndSortedDisputes.length}
                   </span>{" "}
                   disputes
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="p-1 rounded-[4px] border border-border-subtle hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1.5 rounded-lg border border-border-subtle hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="px-2 font-medium text-ink font-mono">
+                  <span className="px-2 font-medium text-ink font-mono tabular-nums">
                     {currentPage} / {totalPages}
                   </span>
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="p-1 rounded-[4px] border border-border-subtle hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1.5 rounded-lg border border-border-subtle hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -884,7 +867,6 @@ export default function DisputesPage() {
           </div>
         </motion.div>
 
-        {/* Dispute Detail Sheet */}
         <DisputeDetailSheet
           dispute={selectedDispute}
           open={sheetOpen}

@@ -24,7 +24,7 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
   ) => {
     return (
       <div
-        className={`relative w-full h-full flex items-center justify-center bg-black overflow-hidden transition-opacity duration-300 ${
+        className={`relative w-full h-full flex items-center justify-center bg-white overflow-hidden transition-opacity duration-300 ${
           startupState === "FADING_OUT" ? "opacity-0" : "opacity-100"
         }`}
       >
@@ -40,7 +40,7 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
           onCanPlay={onCanPlay}
           onEnded={onEnded}
           onError={onError}
-          className="w-full h-full object-contain pointer-events-none select-none transform-gpu"
+          className="w-full h-full object-contain pointer-events-none select-none transform-gpu bg-white"
         />
       </div>
     );

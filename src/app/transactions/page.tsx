@@ -189,23 +189,22 @@ export default function TransactionsPage() {
           transition={{ duration: 0.15, ease: "easeOut" }}
           className="w-full space-y-6"
         >
-          {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-ink">
                 Transactions Ledger
               </h1>
-              <p className="text-xs text-muted-slate mt-1 flex items-center gap-1.5">
-                <Receipt className="w-3.5 h-3.5 text-primary" />
+              <p className="text-xs text-muted-slate mt-1 flex items-center gap-1.5 flex-wrap">
+                <Receipt className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>Payment records and dispute defense linkages across Razorpay gateway</span>
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={handleExport}
                 disabled={loading || filtered.length === 0}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-[4px] bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors h-9 shadow-xs cursor-pointer disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-all h-9.5 shadow-xs cursor-pointer disabled:opacity-50 w-full sm:w-auto"
               >
                 <Download className="w-4 h-4" />
                 <span>Export Statement</span>
@@ -213,16 +212,15 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          {/* Filter bar */}
           <div className="flex items-center gap-2 flex-wrap">
             {["all", "captured", "disputed"].map((st) => (
               <button
                 key={st}
                 onClick={() => setFilterStatus(st)}
-                className={`px-3 py-1.5 rounded-[4px] text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs ${
                   filterStatus === st
                     ? "bg-[#0D1A48] text-white"
-                    : "bg-white border border-border-subtle text-muted-slate hover:text-ink"
+                    : "bg-white border border-border-subtle text-muted-slate hover:text-ink hover:bg-slate-50"
                 }`}
               >
                 {st}
@@ -230,8 +228,7 @@ export default function TransactionsPage() {
             ))}
           </div>
 
-          {/* Transactions Table */}
-          <div className="bg-white rounded-[4px] border border-border-subtle shadow-xs overflow-hidden">
+          <div className="bg-white rounded-2xl border border-border-subtle shadow-xs overflow-hidden">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -260,19 +257,19 @@ export default function TransactionsPage() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, idx) => (
                       <tr key={idx}>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-32 bg-slate-100" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-24 bg-slate-100" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-40 bg-slate-100" /></td>
-                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-5 w-20 bg-slate-100" /></td>
-                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-24 ml-auto bg-slate-100" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-32 bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-24 bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-40 bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-5 w-20 bg-slate-100 rounded-full" /></td>
+                        <td className="py-3.5 px-4 text-right"><Skeleton className="h-4 w-24 ml-auto bg-slate-100 rounded-lg" /></td>
                       </tr>
                     ))
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-muted-slate">
                         <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
-                          <div className="p-3 bg-slate-100 rounded-full text-muted-slate">
+                          <div className="p-3 bg-slate-100 rounded-2xl text-muted-slate">
                             <FileQuestion className="w-6 h-6" />
                           </div>
                           <div>
@@ -288,7 +285,7 @@ export default function TransactionsPage() {
                               setFilterStatus("all");
                               setSearch("");
                             }}
-                            className="px-3.5 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
+                            className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer shadow-xs"
                           >
                             Reset Filters
                           </button>
@@ -301,11 +298,11 @@ export default function TransactionsPage() {
                         key={tx.id}
                         className="hover:bg-slate-50/80 transition-colors"
                       >
-                        <td className="py-3 px-4 font-mono font-medium text-xs text-primary">
+                        <td className="py-3.5 px-4 font-mono font-medium text-xs text-primary">
                           {tx.paymentId}
                         </td>
-                        <td className="py-3 px-4 text-muted-slate text-xs font-mono">{tx.date}</td>
-                        <td className="py-3 px-4">
+                        <td className="py-3.5 px-4 text-muted-slate text-xs font-mono tabular-nums">{tx.date}</td>
+                        <td className="py-3.5 px-4">
                           <div className="font-semibold text-xs text-ink">
                             {tx.customerName}
                           </div>
@@ -313,21 +310,21 @@ export default function TransactionsPage() {
                             {tx.item}
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-xs text-right text-ink">
+                        <td className="py-3.5 px-4 font-mono tabular-nums font-bold text-xs text-right text-ink">
                           ₹{((tx.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3.5 px-4">
                           {tx.status === "captured" ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
                               CAPTURED
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-rose-50 text-rose-800 text-[11px] font-bold border border-rose-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 text-[11px] font-bold border border-rose-200">
                               DISPUTED
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right">
                           {tx.disputeId ? (
                             <Link
                               href="/disputes"
@@ -350,18 +347,18 @@ export default function TransactionsPage() {
             </div>
 
             <div className="px-5 py-3.5 border-t border-border-subtle flex justify-between items-center bg-white">
-              <span className="text-xs text-muted-slate font-mono">
+              <span className="text-xs text-muted-slate font-mono tabular-nums">
                 Showing {filtered.length} of {transactions.length} payments
               </span>
               <div className="flex gap-1">
                 <button
-                  className="p-1 rounded-[4px] text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  className="p-1.5 rounded-lg text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   disabled
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
-                  className="p-1 rounded-[4px] text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  className="p-1.5 rounded-lg text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   disabled
                 >
                   <ChevronRight className="w-4 h-4" />

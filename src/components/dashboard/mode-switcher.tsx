@@ -7,27 +7,25 @@ export function ModeSwitcher() {
   const { mode, setMode, merchant, setIsConnectModalOpen } = useMerchantMode();
 
   return (
-    <div className="flex items-center gap-1 bg-[#09153a] border border-[#1e293b] p-0.5 rounded-[4px]">
-      {/* Test Option */}
+    <div className="flex items-center gap-1 bg-[#09153A] border border-white/10 p-1 rounded-full shadow-xs">
       <button
         type="button"
         onClick={() => setMode("test")}
-        className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold tracking-wide uppercase transition-all rounded-[3px] ${
+        className={`flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase transition-all rounded-full cursor-pointer ${
           mode === "test"
-            ? "bg-[#1e293b] text-amber-300 shadow-sm border border-amber-500/30"
-            : "text-slate-400 hover:text-slate-200"
+            ? "bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-xs"
+            : "text-white/60 hover:text-white"
         }`}
         title="Test Mode (Demo Data & Sandbox Simulation)"
       >
         <span
           className={`w-1.5 h-1.5 rounded-full ${
-            mode === "test" ? "bg-amber-400 animate-pulse" : "bg-slate-600"
+            mode === "test" ? "bg-amber-400 animate-pulse" : "bg-white/40"
           }`}
         />
         Test
       </button>
 
-      {/* Live Option */}
       <button
         type="button"
         onClick={() => {
@@ -37,10 +35,10 @@ export function ModeSwitcher() {
             setMode("live");
           }
         }}
-        className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold tracking-wide uppercase transition-all rounded-[3px] ${
+        className={`flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase transition-all rounded-full cursor-pointer ${
           mode === "live"
-            ? "bg-[#052e16] text-emerald-300 shadow-sm border border-emerald-500/40"
-            : "text-slate-400 hover:text-slate-200"
+            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-xs"
+            : "text-white/60 hover:text-white"
         }`}
         title={
           merchant.isConnected
@@ -50,12 +48,12 @@ export function ModeSwitcher() {
       >
         <span
           className={`w-1.5 h-1.5 rounded-full ${
-            mode === "live" ? "bg-emerald-400 animate-pulse" : "bg-slate-600"
+            mode === "live" ? "bg-emerald-400 animate-pulse" : "bg-white/40"
           }`}
         />
         Live
         {!merchant.isConnected && (
-          <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1 py-0.2 rounded border border-blue-400/30 ml-0.5 lowercase font-normal">
+          <span className="text-[9px] bg-primary/30 text-blue-200 px-1.5 py-0.2 rounded-full border border-blue-400/30 ml-0.5 lowercase font-normal">
             connect
           </span>
         )}

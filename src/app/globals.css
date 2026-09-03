@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Self-hosted TASA Orbiter Display Font Faces */
 @font-face {
   font-family: 'TASA Orbiter Display';
   src: url('/fonts/tasa-orbiter-latin-400-normal.woff2') format('woff2');
@@ -38,7 +37,6 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* Font Family Mappings */
   --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-display: 'TASA Orbiter Display', var(--font-inter-tight), system-ui, sans-serif;
   --font-tight: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif;
@@ -49,13 +47,12 @@
   --font-body-md: var(--font-inter), sans-serif;
   --font-body-sm: var(--font-inter), sans-serif;
 
-  /* Exact Color Palette */
   --color-primary: #305EFF;
-  --color-primary-container: #2950DA;
+  --color-primary-container: #244BCC;
   --color-ink: #0D1C2D;
   --color-on-background: #0D1C2D;
   --color-muted-slate: #5D6D86;
-  --color-border-subtle: #DFE3E9;
+  --color-border-subtle: #E2E8F0;
   --color-success: #00A251;
   --color-attention: #E08600;
   --color-danger: #ED2939;
@@ -66,7 +63,6 @@
   --color-on-surface-variant: #434656;
   --color-rzp-navy: #0D1A48;
 
-  /* Theme Tokens */
   --color-rp-navy: #0D1A48;
   --color-rp-navy-800: #132644;
   --color-rp-navy-700: #192839;
@@ -78,33 +74,32 @@
   --color-rp-muted: #5D6D86;
   --color-rp-muted-2: #8794A7;
   --color-rp-blue: #305EFF;
-  --color-rp-blue-hover: #2950DA;
+  --color-rp-blue-hover: #244BCC;
   --color-rp-blue-light: #4D7FFF;
-  --color-rp-blue-bg: #D0E0FF;
+  --color-rp-blue-bg: #EAF0FF;
   --color-rp-green: #00A251;
   --color-rp-green-tint: #00A25117;
   --color-rp-red: #ED2939;
   --color-rp-red-tint: #FFBFBF;
   --color-rp-surface: #FFFFFF;
   --color-rp-bg: #F8FAFC;
-  --color-rp-border: #DFE3E9;
+  --color-rp-border: #E2E8F0;
   --color-ring: #305EFF;
-  --color-border: #DFE3E9;
+  --color-border: #E2E8F0;
   --color-background: #F8FAFC;
   --color-foreground: #0D1C2D;
 
-  /* 4px Border Radius Everywhere */
-  --radius: 4px;
-  --radius-xs: 4px;
-  --radius-sm: 4px;
-  --radius-md: 4px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius: 0.75rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
 
-  /* Shadows */
-  --shadow-flat: 0px 4px 6px -1px rgba(0, 0, 0, 0.05), 0px 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-rp-soft: 0px 2px 4px 0px rgba(0, 0, 0, 0.04);
-  --shadow-rp-up: 0px -2px 4px 0px rgba(0, 0, 0, 0.04);
+  --shadow-flat: 0px 1px 3px 0px rgba(0, 0, 0, 0.04), 0px 1px 2px 0px rgba(0, 0, 0, 0.02);
+  --shadow-rp-soft: 0px 2px 8px -2px rgba(13, 26, 72, 0.05), 0px 1px 3px 0px rgba(0, 0, 0, 0.03);
+  --shadow-rp-up: 0px -2px 8px 0px rgba(0, 0, 0, 0.04);
 }
 
 :root {
@@ -122,18 +117,28 @@
   --muted-foreground: #5D6D86;
   --destructive: #ED2939;
   --destructive-foreground: #FFFFFF;
-  --border: #DFE3E9;
-  --input: #DFE3E9;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
   --ring: #305EFF;
-  --radius: 4px;
+  --radius: 0.75rem;
 }
 
 .rzp-navy-bg {
   background-color: #0D1A48;
 }
 
+.pattern-subtle-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(148, 163, 184, 0.22),
+    rgba(148, 163, 184, 0.22) 1.5px,
+    transparent 1.5px,
+    transparent 6px
+  );
+}
+
 .flat-shadow {
-  box-shadow: 0px 4px 6px -1px rgba(0, 0, 0, 0.05), 0px 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.04), 0px 1px 2px 0px rgba(0, 0, 0, 0.02);
 }
 
 .rp-gradient-green {
@@ -189,7 +194,6 @@
 @layer base {
   * {
     @apply border-border-subtle;
-    border-radius: 4px;
   }
   html {
     scroll-behavior: smooth;

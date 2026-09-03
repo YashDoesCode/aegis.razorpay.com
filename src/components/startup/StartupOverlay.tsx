@@ -17,7 +17,6 @@ export function StartupOverlay({
 }: StartupOverlayProps) {
   const overlayRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto-focus the overlay for accessibility & immediate keyboard response
   useEffect(() => {
     if (overlayRef.current) {
       overlayRef.current.focus();
@@ -41,29 +40,27 @@ export function StartupOverlay({
           onUserGesture(e);
         }
       }}
-      className={`fixed inset-0 z-[99999] flex flex-col justify-between bg-[#030712] text-slate-200 select-none outline-none transition-all duration-300 ease-out ${
+      className={`fixed inset-0 z-[99999] flex flex-col justify-between bg-white text-slate-900 select-none outline-none transition-all duration-300 ease-out ${
         isFadingOut ? "opacity-0 scale-[1.01] pointer-events-none" : "opacity-100 scale-100"
       }`}
     >
-      {/* Background Video Layer */}
-      <div className="absolute inset-0 z-0 flex items-center justify-center">
+      <div className="absolute inset-0 z-0 flex items-center justify-center bg-white overflow-hidden">
         {children}
       </div>
 
-      {/* Minimalist Operational HUD Overlay when Waiting for User Gesture */}
       {isWaitingForGesture && (
-        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pointer-events-auto bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="flex flex-col items-center text-center px-4">
-            <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-white mb-6 shadow-sm">
-              <Shield className="w-6 h-6" />
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pointer-events-auto bg-white/70 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="flex flex-col items-center text-center px-6 py-8 rounded-2xl bg-white/90 border border-slate-200/80 shadow-xl max-w-sm mx-4">
+            <div className="w-12 h-12 rounded-xl bg-[#0D1A48] text-white flex items-center justify-center mb-4 shadow-sm">
+              <Shield className="w-6 h-6 text-[#305EFF]" />
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-sans font-semibold tracking-tight text-white mb-3">
+            <h1 className="text-lg sm:text-xl font-sans font-semibold tracking-tight text-slate-900 mb-2">
               Click anywhere to start Aegis
             </h1>
 
-            <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
-              <Volume2 className="w-4 h-4" />
+            <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+              <Volume2 className="w-4 h-4 text-[#305EFF]" />
               <span>Audio playback requires interaction</span>
             </div>
           </div>

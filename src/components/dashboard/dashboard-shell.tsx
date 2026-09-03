@@ -4,29 +4,16 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  Gavel,
-  Receipt,
-  Wallet,
-  Settings,
-  Zap,
-  HelpCircle,
-  Code,
   Search,
   Bell,
   ChevronDown,
   Menu,
   X,
-  Shield,
-  LogOut,
+  Zap,
   Sliders,
-  ExternalLink,
   PlusCircle,
   Unlink,
-  PanelLeftClose,
-  PanelLeftOpen,
-  ChevronLeft,
-  ChevronRight,
+  LogOut,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -36,14 +23,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { ModeSwitcher } from "./mode-switcher";
 import { ConnectRazorpayModal } from "./connect-razorpay-modal";
 import { useMerchantMode } from "@/context/merchant-mode-context";
 import { cn } from "@/lib/utils";
@@ -51,15 +32,27 @@ import { cn } from "@/lib/utils";
 interface NavItem {
   name: string;
   href: string;
-  icon: React.ElementType;
+  matchPrefix?: string;
+  hiddenClass?: string;
 }
 
 const navItems: NavItem[] = [
-  { name: "Overview", href: "/overview", icon: LayoutDashboard },
-  { name: "Disputes", href: "/disputes", icon: Gavel },
-  { name: "Transactions", href: "/transactions", icon: Receipt },
-  { name: "Settlements", href: "/settlements", icon: Wallet },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Dashboard", href: "/overview", matchPrefix: "/overview" },
+  { name: "Disputes", href: "/disputes", matchPrefix: "/disputes" },
+  { name: "Transactions", href: "/transactions", matchPrefix: "/transactions" },
+  { name: "Settlements", href: "/settlements", matchPrefix: "/settlements" },
+  {
+    name: "Fraud Engine",
+    href: "/disputes?filter=high_risk",
+    matchPrefix: "/disputes?filter=high_risk",
+    hiddenClass: "hidden sm:inline-block",
+  },
+  {
+    name: "Settings",
+    href: "/settings",
+    matchPrefix: "/settings",
+    hiddenClass: "hidden md:inline-block",
+  },
 ];
 
 interface DashboardShellProps {
@@ -76,42 +69,44 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        return localStorage.getItem("aegis_sidebar_collapsed") === "true";
-      } catch {
-        return false;
-      }
-    }
-    return false;
-  });
-  const { mode, toggleMode, merchant, setIsConnectModalOpen, disconnectAccount } = useMerchantMode();
+  const [internalSearch, setInternalSearch] = useState("");
+
+  const effectiveSearch = onSearchChange ? searchQuery : internalSearch;
+
+  const {
+    mode,
+    toggleMode,
+    merchant,
+    setIsConnectModalOpen,
+    disconnectAccount,
+  } = useMerchantMode();
+
   const [notifications, setNotifications] = useState<
     { id: string; title: string; time: string; unread: boolean; href: string }[]
   >([]);
-
-  const toggleCollapsed = () => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("aegis_sidebar_collapsed", String(next));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  };
 
   useEffect(() => {
     fetch(`/api/disputes?mode=${mode}`)
       .then((res) => res.json())
       .then((json) => {
         if (json.ok && Array.isArray(json.data) && json.data.length > 0) {
-          const items = json.data.slice(0, 4).map((d: { id: string; reasonCode: string; amount: number; respondBy: string }) => ({
+          const items = json.data.slice(0, 4).map((d: {
+            id: string;
+            reasonCode: string;
+            amount: number;
+            respondBy: string;
+          }) => ({
             id: d.id,
-            title: `Dispute ${d.id} (Code ${d.reasonCode}) — ₹${((d.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-            time: `Respond by ${new Date(d.respondBy).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}`,
+            title: `Dispute ${d.id} (Code ${d.reasonCode}) — ₹${(
+              (d.amount || 0) / 100
+            ).toLocaleString("en-IN", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`,
+            time: `Respond by ${new Date(d.respondBy).toLocaleDateString(
+              "en-IN",
+              { month: "short", day: "numeric" }
+            )}`,
             unread: true,
             href: "/disputes",
           }));
@@ -120,10 +115,26 @@ export function DashboardShell({
           setNotifications([]);
         }
       })
-      .catch(() => {
-        // ignore
-      });
+      .catch(() => {});
   }, [mode]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (onSearchChange) {
+        onSearchChange(effectiveSearch);
+      } else {
+        router.push(`/disputes?search=${encodeURIComponent(effectiveSearch)}`);
+      }
+    }
+  };
+
+  const handleSearchChange = (val: string) => {
+    if (onSearchChange) {
+      onSearchChange(val);
+    } else {
+      setInternalSearch(val);
+    }
+  };
 
   const handleSignOut = () => {
     toast.success("Signed out of Razorpay Aegis Console");
@@ -132,547 +143,365 @@ export function DashboardShell({
     }, 500);
   };
 
+  // Compute initials from merchant name
+  const merchantName = merchant?.name || "Merchant Corp";
+  const merchantInitials = React.useMemo(() => {
+    const parts = merchantName.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return merchantName.slice(0, 2).toUpperCase();
+  }, [merchantName]);
+
   return (
     <TooltipProvider delay={100}>
-      <div className="min-h-screen bg-slate-50 text-ink font-sans antialiased flex flex-col" suppressHydrationWarning>
-        <nav
-          className={cn(
-            "fixed left-0 top-0 h-screen bg-[#0D1A48] flex flex-col hidden md:flex border-r border-white/10 z-20 transition-all duration-200 ease-in-out custom-scrollbar-dark overflow-y-auto overflow-x-hidden",
-            collapsed ? "w-[68px]" : "w-[240px]"
-          )}
-        >
-          {collapsed ? (
-            <div className="py-4 px-2 border-b border-white/10 flex flex-col items-center justify-center gap-2">
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link href="/overview" className="p-1 rounded-[4px] hover:bg-white/10 transition-colors" />
-                  }
-                >
-                  <div className="w-8 h-8 rounded-[4px] bg-primary flex items-center justify-center text-white shadow-xs">
-                    <Shield className="w-4 h-4 text-white" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={12} className="bg-[#0D1A48] text-white border border-white/20 font-semibold text-xs">
-                  Razorpay Aegis
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <button
-                      onClick={toggleCollapsed}
-                      className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-[4px] transition-colors cursor-pointer"
+      <div
+        className="bg-[#ECEEF2] text-slate-900 min-h-screen p-3 md:p-6 lg:p-8 flex items-center justify-center font-sans antialiased selection:bg-slate-900 selection:text-white"
+        suppressHydrationWarning
+      >
+        {/* Outer 16:9 Balanced Frame Container inspired by FinPoint & Stitch Reference */}
+        <div className="w-full max-w-[1440px] bg-white rounded-[24px] md:rounded-[28px] p-4 sm:p-6 lg:p-7 shadow-xl shadow-slate-300/40 border border-slate-200/90 flex flex-col justify-between gap-5 relative overflow-hidden">
+          {/* ==================== TOP NAVIGATION HEADER ==================== */}
+          <header className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
+            {/* Left: Minimalist Razorpay Aegis geometric brand emblem & Segmented Tabs */}
+            <div className="flex items-center gap-4 sm:gap-5 flex-wrap">
+              {/* Minimalist Crisp Vector Logo */}
+              <Link href="/overview" className="flex items-center gap-2.5 group">
+                <div className="w-9 h-9 rounded-xl bg-slate-950 flex items-center justify-center text-white shadow-xs group-hover:bg-primary transition-colors duration-200">
+                  {/* Sharp Razorpay Geometric Glyph */}
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.75"
+                    viewBox="0 0 24 24"
+                  >
+                    <polygon
+                      fill="currentColor"
+                      fillOpacity="0.15"
+                      points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
                     />
-                  }
-                >
-                  <PanelLeftOpen className="w-3.5 h-3.5" />
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={12} className="bg-[#0D1A48] text-white border border-white/20 font-medium text-xs">
-                  Expand sidebar
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          ) : (
-            <div className="px-4 py-4 border-b border-white/10 flex items-center justify-between">
-              <Link href="/overview" className="flex items-center gap-2 overflow-hidden">
-                <span className="font-bold text-lg text-white tracking-tight">
-                  Razorpay
-                </span>
-                <div className="flex items-center gap-1 text-white/80 border-l border-white/20 pl-2">
-                  <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span className="text-[12px] font-bold tracking-wider text-white">
-                    AEGIS
+                  </svg>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[15px] font-extrabold tracking-tight text-slate-950 leading-none">
+                      Razorpay
+                    </span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100/60">
+                      Aegis
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-medium tracking-wide text-slate-400 uppercase mt-1">
+                    Dispute Operations
                   </span>
                 </div>
               </Link>
-              <button
-                onClick={toggleCollapsed}
-                className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-[4px] transition-colors cursor-pointer"
-                title="Collapse sidebar"
+
+              {/* Pill Nav Tabs matching Reference Top Bar */}
+              <nav
+                className="hidden lg:flex items-center bg-slate-100/80 p-1 rounded-full border border-slate-200/70 text-xs font-medium text-slate-600"
+                aria-label="Main Navigation"
               >
-                <PanelLeftClose className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          <div className="flex-1 py-3 space-y-0.5 px-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive =
-                item.href === "/disputes"
-                  ? pathname === "/disputes" || pathname === "/"
-                  : pathname === item.href;
-
-              if (collapsed) {
-                return (
-                  <Tooltip key={item.name}>
-                    <TooltipTrigger
-                      render={
-                        <Link
-                          href={item.href}
-                          className={cn(
-                            "flex items-center justify-center py-2.5 px-0 transition-all text-xs font-semibold rounded-[4px]",
-                            isActive
-                              ? "text-white bg-primary/25 border-l-[3px] border-primary"
-                              : "text-white/65 hover:bg-white/10 hover:text-white"
-                          )}
-                        />
-                      }
-                    >
-                      <Icon
-                        className={cn(
-                          "w-4 h-4 shrink-0",
-                          isActive ? "text-primary" : "text-white/65"
-                        )}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="right"
-                      sideOffset={12}
-                      className="bg-[#0D1A48] text-white border border-white/20 font-semibold text-xs"
-                    >
-                      {item.name}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 transition-all text-xs font-semibold rounded-[4px]",
-                    isActive
-                      ? "text-white bg-primary/25 border-l-[3px] border-primary"
-                      : "text-white/65 hover:bg-white/10 hover:text-white"
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      "w-4 h-4 shrink-0",
-                      isActive ? "text-primary" : "text-white/65"
-                    )}
-                  />
-                  <span className="truncate">{item.name}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className={cn("mt-auto border-t border-white/10", collapsed ? "p-2" : "p-3")}>
-            {collapsed ? (
-              <div className="space-y-1 flex flex-col items-center">
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <button
-                        type="button"
-                        onClick={() => setIsConnectModalOpen(true)}
-                        className="w-9 h-9 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 rounded-[4px] transition-colors cursor-pointer"
-                      />
-                    }
-                  >
-                    <PlusCircle className="w-4 h-4 text-primary" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={12} className="bg-[#0D1A48] text-white border border-white/20 text-xs">
-                    Connect Account
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Link
-                        href="/settings"
-                        className="w-9 h-9 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-[4px] transition-colors"
-                      />
-                    }
-                  >
-                    <Sliders className="w-4 h-4" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={12} className="bg-[#0D1A48] text-white border border-white/20 text-xs">
-                    Defense Rules
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <a
-                        href="https://razorpay.com/docs/payments/disputes/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-9 h-9 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-[4px] transition-colors"
-                      />
-                    }
-                  >
-                    <Code className="w-4 h-4" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={12} className="bg-[#0D1A48] text-white border border-white/20 text-xs">
-                    API Reference
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <button
-                        type="button"
-                        onClick={toggleCollapsed}
-                        className="w-9 h-9 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 rounded-[4px] transition-colors cursor-pointer mt-1"
-                      />
-                    }
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={12} className="bg-[#0D1A48] text-white border border-white/20 text-xs">
-                    Expand sidebar
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            ) : (
-              <div className="space-y-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setIsConnectModalOpen(true)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-white/70 hover:text-white transition-colors cursor-pointer text-left rounded-[4px] hover:bg-white/5"
-                >
-                  <PlusCircle className="w-3.5 h-3.5 text-primary" />
-                  <span>Connect Account</span>
-                </button>
-                <Link
-                  href="/settings"
-                  className="flex items-center gap-2.5 px-3 py-2 text-white/60 hover:text-white transition-colors rounded-[4px] hover:bg-white/5"
-                >
-                  <Sliders className="w-3.5 h-3.5" />
-                  <span>Defense Rules</span>
-                </Link>
-                <a
-                  href="https://razorpay.com/docs/payments/disputes/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2 text-white/60 hover:text-white transition-colors rounded-[4px] hover:bg-white/5"
-                >
-                  <Code className="w-3.5 h-3.5" />
-                  <span>API Reference</span>
-                  <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
-                </a>
-                <button
-                  type="button"
-                  onClick={toggleCollapsed}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-white/50 hover:text-white hover:bg-white/5 rounded-[4px] transition-colors cursor-pointer text-[11px] mt-1"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  <span>Collapse sidebar</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </nav>
-
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden flex">
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <nav className="relative w-[240px] h-full bg-[#0D1A48] flex flex-col p-4 z-50 text-white custom-scrollbar-dark overflow-y-auto">
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-lg text-white">
-                    Razorpay
-                  </span>
-                  <div className="flex items-center gap-1 text-white/80 border-l border-white/20 pl-2">
-                    <Shield className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-[12px] font-bold tracking-wider">
-                      AEGIS
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="p-1 text-white/60 hover:text-white cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="py-3 space-y-1">
                 {navItems.map((item) => {
-                  const Icon = item.icon;
                   const isActive =
-                    item.href === "/disputes"
-                      ? pathname === "/disputes" || pathname === "/"
-                      : pathname === item.href;
+                    item.href === "/overview"
+                      ? pathname === "/overview" || pathname === "/"
+                      : pathname === item.href ||
+                        (item.matchPrefix &&
+                          pathname.startsWith(item.matchPrefix) &&
+                          item.matchPrefix !== "/overview");
+
                   return (
                     <Link
                       key={item.name}
                       href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-[4px] text-xs font-semibold",
+                        "px-4 py-1.5 rounded-full transition-all duration-150 cursor-pointer",
+                        item.hiddenClass,
                         isActive
-                          ? "text-white border-l-[3px] border-primary bg-primary/20"
-                          : "text-white/60 hover:bg-white/5 hover:text-white"
+                          ? "bg-slate-950 text-white font-semibold shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                       )}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.name}</span>
+                      {item.name}
                     </Link>
                   );
                 })}
-              </div>
+              </nav>
+            </div>
 
-              <div className="mt-auto border-t border-white/10 pt-3 space-y-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setIsConnectModalOpen(true);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-white/70 hover:text-white transition-colors cursor-pointer text-left rounded-[4px] hover:bg-white/5"
-                >
-                  <PlusCircle className="w-3.5 h-3.5 text-primary" />
-                  <span>Connect Account</span>
-                </button>
-                <Link
-                  href="/settings"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-white/60 hover:text-white transition-colors rounded-[4px] hover:bg-white/5"
-                >
-                  <Sliders className="w-3.5 h-3.5" />
-                  <span>Defense Rules</span>
-                </Link>
-              </div>
-            </nav>
-          </div>
-        )}
-
-        <header
-          className={cn(
-            "fixed top-0 right-0 left-0 h-14 bg-white border-b border-border-subtle shadow-xs flex justify-between items-center px-4 md:px-6 z-10 transition-all duration-200 ease-in-out",
-            collapsed ? "md:left-[68px]" : "md:left-[240px]"
-          )}
-        >
-          <div className="flex items-center gap-2 flex-1 max-w-md">
-            <button
-              onClick={toggleCollapsed}
-              className="hidden md:flex items-center justify-center p-1.5 rounded-[4px] text-muted-slate hover:text-ink hover:bg-slate-100 transition-colors cursor-pointer outline-hidden"
-              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {collapsed ? (
-                <PanelLeftOpen className="w-4 h-4" />
-              ) : (
-                <PanelLeftClose className="w-4 h-4" />
-              )}
-            </button>
-
-            <div className="flex-1 hidden md:block">
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-slate" />
+            {/* Right Controls: Search, Alert Notification, Merchant Pill, Mobile Menu */}
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              {/* Search Input */}
+              <div className="relative hidden sm:block w-48 md:w-56 lg:w-68">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Search className="w-3.5 h-3.5" />
+                </div>
                 <input
                   type="text"
-                  placeholder="Search dispute ID, payment ID, customer, reason..."
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-                  className="w-full h-8 pl-8 pr-3 rounded-[4px] bg-slate-50 border border-border-subtle focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all text-xs text-ink placeholder:text-muted-slate"
+                  value={effectiveSearch}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search dispute, RRN, order ID..."
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-full text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-slate-400 focus:bg-white transition"
                 />
               </div>
-            </div>
-          </div>
 
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden text-ink p-1.5 hover:bg-slate-100 rounded-[4px] cursor-pointer"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <ModeSwitcher />
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  data-testid="notification-bell"
-                  className="hover:bg-slate-100 transition-colors p-1.5 rounded-[4px] relative cursor-pointer outline-hidden"
-                >
-                  <Bell className="w-4 h-4 text-muted-slate hover:text-ink" />
-                  {notifications.some((n) => n.unread) && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full border border-white" />
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2 space-y-1">
-                <DropdownMenuLabel className="flex items-center justify-between text-xs">
-                  <span>Dispute Alerts ({mode === "live" ? "Live" : "Test"})</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 font-bold">
-                    {notifications.length} Pending
-                  </span>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {notifications.length > 0 ? (
-                  notifications.map((n) => (
-                    <DropdownMenuItem
-                      key={n.id}
-                      onClick={() => router.push("/disputes")}
-                      className="flex flex-col items-start gap-0.5 p-2 cursor-pointer hover:bg-slate-50 rounded-[4px]"
-                    >
-                      <div className="flex items-center gap-2 w-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                        <span className="font-semibold text-xs text-ink truncate">
-                          {n.title}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-muted-slate pl-3.5 font-mono">
-                        {n.time}
-                      </span>
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <div className="py-4 text-center text-xs text-slate-500">
-                    No pending dispute alerts in {mode.toUpperCase()} mode.
-                  </div>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => router.push("/disputes")}
-                  className="text-center justify-center font-semibold text-xs text-primary cursor-pointer"
-                >
-                  View all in Defense Console
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Link
-              href="/settings"
-              className="hover:bg-slate-100 transition-colors p-1.5 rounded-[4px] hidden md:block"
-              title="Settings & Help"
-            >
-              <HelpCircle className="w-4 h-4 text-muted-slate hover:text-ink" />
-            </Link>
-
-            <div className="h-5 w-px bg-border-subtle mx-0.5 hidden md:block" />
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  data-testid="user-profile-menu"
-                  className="flex items-center gap-2 hover:bg-slate-100 transition-colors p-1 pr-1.5 rounded-[4px] cursor-pointer outline-hidden"
-                >
-                  <div className="w-7 h-7 rounded-[4px] bg-[#0D1A48] text-white flex items-center justify-center text-xs font-bold shadow-xs">
-                    {merchant.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="text-left hidden md:block">
-                    <span className="text-xs font-semibold text-ink block leading-tight">
-                      {merchant.name}
-                    </span>
-                    <span className="text-[10px] text-muted-slate block font-mono">
-                      {merchant.merchantId}
-                    </span>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-slate hidden md:block" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60 p-1.5 space-y-1 text-xs">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-slate-900">{merchant.name}</span>
-                    <span className="text-[11px] text-slate-500 font-mono">{merchant.merchantId}</span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setIsConnectModalOpen(true)}
-                  className="cursor-pointer gap-2 text-xs"
-                >
-                  <PlusCircle className="w-3.5 h-3.5 text-primary" />
-                  <span>Connect Razorpay Account</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={toggleMode}
-                  className="cursor-pointer gap-2 text-xs"
-                >
-                  <Zap className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Switch to {mode === "test" ? "Live Mode" : "Test Mode"}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => router.push("/settings")}
-                  className="cursor-pointer gap-2 text-xs"
-                >
-                  <Settings className="w-3.5 h-3.5 text-muted-slate" />
-                  <span>Aegis Rules & Automation</span>
-                </DropdownMenuItem>
-                {merchant.isConnected && (
-                  <DropdownMenuItem
-                    onClick={async () => {
-                      await disconnectAccount();
-                      toast.info("Disconnected live Razorpay account");
-                    }}
-                    className="cursor-pointer gap-2 text-xs text-amber-700"
+              {/* Minimal Outline Bell with Count Badge & Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Notifications"
+                    data-testid="notification-bell"
+                    className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-600 hover:text-slate-950 relative transition shadow-xs cursor-pointer outline-hidden"
                   >
-                    <Unlink className="w-3.5 h-3.5" />
-                    <span>Disconnect Live Account</span>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleSignOut}
-                  className="cursor-pointer gap-2 text-xs text-rose-600 focus:text-rose-700 focus:bg-rose-50"
+                    <Bell className="w-4 h-4 stroke-[1.75]" />
+                    {notifications.some((n) => n.unread) && (
+                      <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-80 p-2 space-y-1 rounded-2xl shadow-xl border border-slate-200 bg-white"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+                  <DropdownMenuLabel className="flex items-center justify-between text-xs px-2 py-1">
+                    <span className="font-bold text-slate-900">
+                      Dispute Alerts ({mode === "live" ? "Live" : "Test"})
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-100">
+                      {notifications.length} Pending
+                    </span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-100" />
+                  {notifications.length > 0 ? (
+                    notifications.map((n) => (
+                      <DropdownMenuItem
+                        key={n.id}
+                        onClick={() => router.push("/disputes")}
+                        className="flex flex-col items-start gap-0.5 p-2.5 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          <span className="font-semibold text-xs text-slate-900 truncate">
+                            {n.title}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 pl-3.5 font-mono">
+                          {n.time}
+                        </span>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="py-4 text-center text-xs text-slate-500">
+                      No pending dispute alerts in {mode.toUpperCase()} mode.
+                    </div>
+                  )}
+                  <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuItem
+                    onClick={() => router.push("/disputes")}
+                    className="text-center justify-center font-semibold text-xs text-primary cursor-pointer rounded-xl py-2 hover:bg-blue-50"
+                  >
+                    View all in Defense Console &rarr;
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-        <main
-          className={cn(
-            "pt-14 min-h-[calc(100vh-120px)] p-5 md:p-8 max-w-[1440px] w-full transition-all duration-200 ease-in-out",
-            collapsed ? "md:ml-[68px]" : "md:ml-[240px]"
+              {/* Merchant Account Selector Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    data-testid="user-profile-menu"
+                    className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/90 pl-1.5 pr-3 py-1 rounded-full cursor-pointer transition shadow-xs outline-hidden"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold tracking-tight">
+                      {merchantInitials}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-slate-800 max-w-[110px] truncate">
+                        {merchant.name || "Merchant Corp"}
+                      </span>
+                      <span
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full",
+                          mode === "live" && merchant.isConnected
+                            ? "bg-emerald-500"
+                            : mode === "live"
+                            ? "bg-blue-500"
+                            : "bg-amber-500"
+                        )}
+                        title={
+                          mode === "live"
+                            ? merchant.isConnected
+                              ? "Live Connected"
+                              : "Live Mode"
+                            : "Test Sandbox Mode"
+                        }
+                      />
+                    </div>
+                    <ChevronDown className="w-3 h-3 text-slate-400 stroke-[2]" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-64 p-2 space-y-1 text-xs rounded-2xl shadow-xl border border-slate-200 bg-white"
+                >
+                  <DropdownMenuLabel className="px-2 py-1">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-slate-900">
+                        {merchant.name || "Merchant Corp"}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        {merchant.merchantId || "acc_live_demo"}
+                      </span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuItem
+                    onClick={() => setIsConnectModalOpen(true)}
+                    className="cursor-pointer gap-2 text-xs rounded-xl p-2 hover:bg-slate-50"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 text-primary" />
+                    <span>Connect Razorpay Account</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={toggleMode}
+                    className="cursor-pointer gap-2 text-xs rounded-xl p-2 hover:bg-slate-50"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span>
+                      Switch to {mode === "test" ? "Live Mode" : "Test Sandbox"}
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/settings")}
+                    className="cursor-pointer gap-2 text-xs rounded-xl p-2 hover:bg-slate-50"
+                  >
+                    <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Aegis Rules & Automation</span>
+                  </DropdownMenuItem>
+                  {merchant.isConnected && (
+                    <DropdownMenuItem
+                      onClick={async () => {
+                        await disconnectAccount();
+                        toast.info("Disconnected live Razorpay account");
+                      }}
+                      className="cursor-pointer gap-2 text-xs text-amber-700 rounded-xl p-2 hover:bg-amber-50"
+                    >
+                      <Unlink className="w-3.5 h-3.5" />
+                      <span>Disconnect Live Account</span>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="cursor-pointer gap-2 text-xs text-rose-600 focus:text-rose-700 focus:bg-rose-50 rounded-xl p-2"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Mobile Hamburger Menu Button */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-700 transition shadow-xs cursor-pointer"
+                aria-label="Open Mobile Menu"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            </div>
+          </header>
+
+          {/* ==================== MOBILE NAVIGATION DRAWER ==================== */}
+          {mobileMenuOpen && (
+            <div className="fixed inset-0 z-50 lg:hidden flex">
+              <div
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <nav className="relative w-[280px] h-full bg-white flex flex-col p-5 z-50 text-slate-900 shadow-2xl overflow-y-auto">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-base text-slate-950">
+                      Razorpay
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100/60">
+                      Aegis
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1 text-slate-500 hover:text-slate-950 cursor-pointer rounded-lg hover:bg-slate-100"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="py-4 space-y-1.5">
+                  {navItems.map((item) => {
+                    const isActive =
+                      item.href === "/overview"
+                        ? pathname === "/overview" || pathname === "/"
+                        : pathname === item.href ||
+                          (item.matchPrefix &&
+                            pathname.startsWith(item.matchPrefix) &&
+                            item.matchPrefix !== "/overview");
+
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "flex items-center px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors",
+                          isActive
+                            ? "bg-slate-950 text-white shadow-xs"
+                            : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                        )}
+                      >
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-auto border-t border-slate-100 pt-4 space-y-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setIsConnectModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-slate-700 hover:text-slate-950 transition-colors cursor-pointer text-left rounded-xl hover:bg-slate-100 font-medium"
+                  >
+                    <PlusCircle className="w-4 h-4 text-primary" />
+                    <span>Connect Razorpay Account</span>
+                  </button>
+                  <Link
+                    href="/settings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-slate-700 hover:text-slate-950 transition-colors rounded-xl hover:bg-slate-100 font-medium"
+                  >
+                    <Sliders className="w-4 h-4 text-slate-500" />
+                    <span>Defense Rules</span>
+                  </Link>
+                </div>
+              </nav>
+            </div>
           )}
-        >
-          {children}
-        </main>
 
-        <ConnectRazorpayModal />
+          {/* ==================== MAIN PAGE CONTENT ==================== */}
+          <main className="flex flex-col gap-5 flex-1">{children}</main>
 
-        <footer
-          className={cn(
-            "w-full py-5 px-5 md:px-8 flex flex-col md:flex-row justify-between items-center border-t border-border-subtle mt-auto bg-white gap-3 text-xs transition-all duration-200 ease-in-out",
-            collapsed
-              ? "md:ml-[68px] md:max-w-[calc(100%-68px)]"
-              : "md:ml-[240px] md:max-w-[calc(100%-240px)]"
-          )}
-        >
-          <div className="text-muted-slate font-medium">
-            © 2026 Razorpay Software Pvt. Ltd. · Aegis Dispute Defense Engine
-          </div>
-          <div className="flex gap-5 font-semibold text-muted-slate justify-center">
-            <Link href="/disputes" className="hover:text-primary transition-colors">
-              Dispute Engine
-            </Link>
-            <Link href="/settings" className="hover:text-primary transition-colors">
-              Merchant Rules
-            </Link>
-            <a
-              href="https://razorpay.com/docs/payments/disputes/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
-            >
-              Razorpay Docs
-            </a>
-          </div>
-          <div className="text-[11px] text-muted-slate font-mono">
-            NPCI UPI 2.0 & Card Rails · Production Ready
-          </div>
-        </footer>
+          <ConnectRazorpayModal />
+        </div>
       </div>
     </TooltipProvider>
   );
