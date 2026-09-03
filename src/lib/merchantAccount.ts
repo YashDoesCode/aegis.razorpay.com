@@ -1,5 +1,6 @@
 import Razorpay from "razorpay";
 import { prisma } from "./prisma";
+import { encryptSecret, decryptSecret, isEncrypted } from "@/lib/crypto";
 
 export interface ConnectedMerchantState {
   isConnected: boolean;
@@ -11,29 +12,21 @@ export interface ConnectedMerchantState {
   connectedAt?: string;
 }
 
-// In-memory runtime state for serverless instances (with database sync)
 let activeLiveMerchant: {
   keyId: string;
-  keySecret: string;
+  encryptedSecret: string;
   merchantId: string;
   name: string;
   connectedAt: string;
   authType: "api_key" | "oauth";
 } | null = null;
 
-/**
- * Mask an API key for safe client display (e.g. "rzp_live_8829...491a")
- */
 export function maskKey(keyId: string): string {
   if (!keyId || keyId.length < 10) return "••••••••";
   return `${keyId.slice(0, 10)}...${keyId.slice(-4)}`;
 }
 
-/**
- * Retrieve the active merchant connection status
- */
 export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantState> {
-  // 1. Check if a dynamic merchant account is actively connected
   if (activeLiveMerchant) {
     return {
       isConnected: true,
@@ -46,7 +39,6 @@ export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantSt
     };
   }
 
-  // 2. Check database for persisted live merchant with fast timeout
   try {
     const dbPromise = prisma.merchant.findFirst({
       where: { mode: "live" },
@@ -69,10 +61,8 @@ export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantSt
       };
     }
   } catch {
-    // Non-fatal: proceed to env check
   }
 
-  // 3. Check environment credentials
   const envKeyId = process.env.RAZORPAY_KEY_ID || "";
   const isEnvLive = envKeyId.startsWith("rzp_live_");
 
@@ -88,7 +78,6 @@ export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantSt
     };
   }
 
-  // 4. Default Test Sandbox State
   return {
     isConnected: false,
     merchantId: "acc_demo_test_01",
@@ -100,10 +89,6 @@ export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantSt
   };
 }
 
-/**
- * Validate Razorpay credentials against the official API.
- * Makes a real test request to GET /v1/disputes or GET /v1/payments using the provided credentials.
- */
 export async function validateRazorpayCredentials(
   keyId: string,
   keySecret: string
@@ -129,14 +114,12 @@ export async function validateRazorpayCredentials(
       key_secret: cleanSecret,
     });
 
-    // Make a lightweight verification call to GET /v1/disputes?count=1
     console.log(`📡 [MerchantAccount] Verifying credentials for Key ID: ${maskKey(cleanKey)}...`);
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await (client.disputes as any).all({ count: 1 });
     console.log("✅ [MerchantAccount] Credentials verified successfully. Response entity:", res?.entity);
 
-    // Derive or synthesize clean merchant identifier
     const merchantId = cleanKey.startsWith("rzp_live_")
       ? `acc_live_${cleanKey.slice(9, 17)}`
       : `acc_test_${cleanKey.slice(9, 17)}`;
@@ -156,9 +139,6 @@ export async function validateRazorpayCredentials(
   }
 }
 
-/**
- * Connect a Razorpay live account using validated API keys
- */
 export async function connectMerchantAccount(params: {
   keyId: string;
   keySecret: string;
@@ -178,18 +158,17 @@ export async function connectMerchantAccount(params: {
   const merchantId = verification.merchantId || `acc_${cleanKey.slice(0, 12)}`;
   const name = params.merchantName?.trim() || "Connected Razorpay Merchant";
   const now = new Date().toISOString();
+  const encryptedSecret = encryptSecret(cleanSecret);
 
-  // Save to runtime active instance
   activeLiveMerchant = {
     keyId: cleanKey,
-    keySecret: cleanSecret,
+    encryptedSecret,
     merchantId,
     name,
     connectedAt: now,
     authType: "api_key",
   };
 
-  // Persist to Neon PostgreSQL
   try {
     await prisma.merchant.upsert({
       where: { rzpMerchantId: merchantId },
@@ -222,9 +201,6 @@ export async function connectMerchantAccount(params: {
   };
 }
 
-/**
- * Disconnect current live merchant and revert to test mode
- */
 export async function disconnectMerchantAccount(): Promise<{ ok: boolean }> {
   activeLiveMerchant = null;
 
@@ -240,22 +216,34 @@ export async function disconnectMerchantAccount(): Promise<{ ok: boolean }> {
   return { ok: true };
 }
 
-/**
- * Returns the active Razorpay client instance depending on mode and connected account.
- */
 export function getActiveRazorpayClient(mode: "test" | "live" = "test"): Razorpay {
   if (mode === "live" && activeLiveMerchant) {
+    const rawSecret = isEncrypted(activeLiveMerchant.encryptedSecret)
+      ? decryptSecret(activeLiveMerchant.encryptedSecret)
+      : activeLiveMerchant.encryptedSecret;
     return new Razorpay({
       key_id: activeLiveMerchant.keyId,
-      key_secret: activeLiveMerchant.keySecret,
+      key_secret: rawSecret,
     });
   }
 
-  // Fallback to environment credentials
   const key_id = process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder_key";
   const key_secret = process.env.RAZORPAY_KEY_SECRET || "placeholder_secret";
   return new Razorpay({
     key_id,
     key_secret,
   });
+}
+
+export function getDecryptedActiveMerchantCredentials(): { keyId: string; keySecret: string } | null {
+  if (!activeLiveMerchant) {
+    return null;
+  }
+  const rawSecret = isEncrypted(activeLiveMerchant.encryptedSecret)
+    ? decryptSecret(activeLiveMerchant.encryptedSecret)
+    : activeLiveMerchant.encryptedSecret;
+  return {
+    keyId: activeLiveMerchant.keyId,
+    keySecret: rawSecret,
+  };
 }
