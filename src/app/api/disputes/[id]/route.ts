@@ -1,9 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { computeWinnability, getReasonCodeDefinition } from "@/lib/scoring";
 import { getInMemoryDisputeById } from "@/lib/mockStore";
 import { fetchDispute } from "@/lib/razorpay";
 import { computeFraudSignal } from "@/lib/fraudSignal";
+import { DisputeWithRelations } from "@/lib/types/domain";
+import { apiSuccess, apiError } from "@/lib/api/response";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -16,28 +19,25 @@ export async function GET(
     const mode = (searchParams.get("mode") || "test").toLowerCase() as "test" | "live";
 
     if (searchParams.get("forceError") === "500") {
-      return NextResponse.json(
-        { ok: false, error: "Simulated database connection failure (500)" },
-        { status: 500 }
-      );
+      return apiError("Simulated database connection failure (500)", 500, "SIMULATED_FAILURE");
     }
 
     const resolvedParams = await context.params;
     const id = resolvedParams?.id?.trim();
 
     if (!id) {
-      return NextResponse.json(
-        { ok: false, error: "Dispute ID is required" },
-        { status: 400 }
-      );
+      return apiError("Dispute ID is required", 400, "INVALID_ID");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let dispute: any = null;
+    let dispute: DisputeWithRelations | null = null;
 
     if (mode === "live") {
       // In Live mode: check memory or fetch directly from Razorpay API
-      dispute = getInMemoryDisputeById(id);
+      const cached = getInMemoryDisputeById(id);
+      if (cached) {
+        dispute = cached as unknown as DisputeWithRelations;
+      }
+
       if (!dispute) {
         try {
           const liveRzp = await fetchDispute(id, "live");
@@ -87,7 +87,11 @@ export async function GET(
             };
           }
         } catch (liveFetchErr) {
-          console.warn(`⚠️ [API /api/disputes/${id}?mode=live] Live dispute fetch error:`, liveFetchErr);
+          logger.warn(`Live dispute fetch error for ID ${id}`, {
+            module: "ApiDisputeDetail",
+            disputeId: id,
+            error: liveFetchErr instanceof Error ? liveFetchErr.message : String(liveFetchErr),
+          });
         }
       }
     } else {
@@ -114,22 +118,32 @@ export async function GET(
           setTimeout(() => reject(new Error("DB Timeout")), 2000)
         );
 
-        dispute = await Promise.race([dbPromise, timeoutPromise]);
+        const dbResult = await Promise.race([dbPromise, timeoutPromise]);
+        if (dbResult) {
+          dispute = dbResult as unknown as DisputeWithRelations;
+        }
       } catch (dbError: unknown) {
-        console.warn(`⚠️ [API /api/disputes/${id}?mode=test] DB unreachable, falling back to mock store:`, dbError instanceof Error ? dbError.message : dbError);
-        dispute = getInMemoryDisputeById(id);
+        logger.warn(`Database unreachable for dispute ${id}, using mock store`, {
+          module: "ApiDisputeDetail",
+          disputeId: id,
+          error: dbError instanceof Error ? dbError.message : String(dbError),
+        });
+        const fallback = getInMemoryDisputeById(id);
+        if (fallback) {
+          dispute = fallback as unknown as DisputeWithRelations;
+        }
       }
 
       if (!dispute) {
-        dispute = getInMemoryDisputeById(id);
+        const fallback = getInMemoryDisputeById(id);
+        if (fallback) {
+          dispute = fallback as unknown as DisputeWithRelations;
+        }
       }
     }
 
     if (!dispute) {
-      return NextResponse.json(
-        { ok: false, error: `Dispute ${id} not found` },
-        { status: 404 }
-      );
+      return apiError(`Dispute ${id} not found`, 404, "NOT_FOUND");
     }
 
     const customer = dispute.order?.customer;
@@ -140,29 +154,24 @@ export async function GET(
       customer
     );
     const reasonDefinition = getReasonCodeDefinition(dispute.reasonCode);
-
     const fraudSignal = computeFraudSignal(
       dispute,
       evidenceItems,
       customer
     );
 
-    return NextResponse.json({
-      ok: true,
-      data: {
+    return apiSuccess(
+      {
         ...dispute,
         mode,
         winnability,
         fraudSignal,
         reasonDefinition,
       },
-    });
-  } catch (error: unknown) {
-    console.error("❌ [API /api/disputes/[id]] Error:", error);
-    const message = error instanceof Error ? error.message : "Internal server error fetching dispute detail";
-    return NextResponse.json(
-      { ok: false, error: message },
-      { status: 500 }
+      200
     );
+  } catch (error: unknown) {
+    logger.error("Error in GET /api/disputes/[id]", error, { module: "ApiDisputeDetail" });
+    return apiError("Internal server error fetching dispute detail", 500, "INTERNAL_ERROR");
   }
 }

@@ -546,71 +546,111 @@ export default function DisputesPage() {
                 <thead>
                   <tr className="border-b border-border-subtle bg-surface/50">
                     <th
+                      scope="col"
+                      role="columnheader"
+                      aria-sort={sortField === "id" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
                       onClick={() => handleSort("id")}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSort("id");
+                        }
+                      }}
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
                     >
                       <div className="flex items-center gap-1">
                         <span>DISPUTE ID</span>
                         {sortField === "id" &&
                           (sortDirection === "asc" ? (
-                            <ArrowUp className="w-3.5 h-3.5 text-primary" />
+                            <ArrowUp className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           ) : (
-                            <ArrowDown className="w-3.5 h-3.5 text-primary" />
+                            <ArrowDown className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           ))}
                       </div>
                     </th>
                     <th
+                      scope="col"
+                      role="columnheader"
+                      aria-sort={sortField === "date" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
                       onClick={() => handleSort("date")}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSort("date");
+                        }
+                      }}
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
                     >
                       <div className="flex items-center gap-1">
                         <span>TRANSACTION DATE</span>
                         {sortField === "date" &&
                           (sortDirection === "asc" ? (
-                            <ArrowUp className="w-3.5 h-3.5 text-primary" />
+                            <ArrowUp className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           ) : (
-                            <ArrowDown className="w-3.5 h-3.5 text-primary" />
+                            <ArrowDown className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           ))}
                       </div>
                     </th>
                     <th
+                      scope="col"
+                      role="columnheader"
+                      aria-sort={sortField === "amount" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
                       onClick={() => handleSort("amount")}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSort("amount");
+                        }
+                      }}
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
                     >
                       <div className="flex items-center gap-1">
                         <span>AMOUNT</span>
                         {sortField === "amount" ? (
                           sortDirection === "asc" ? (
-                            <ArrowUp className="w-3.5 h-3.5 text-primary" />
+                            <ArrowUp className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           ) : (
-                            <ArrowDown className="w-3.5 h-3.5 text-primary" />
+                            <ArrowDown className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           )
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-muted-slate/50" />
+                          <ArrowUpDown className="w-3 h-3 text-muted-slate/50" aria-hidden="true" />
                         )}
                       </div>
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       REASON
                     </th>
                     <th
+                      scope="col"
+                      role="columnheader"
+                      aria-sort={sortField === "winnability" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
                       onClick={() => handleSort("winnability")}
-                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSort("winnability");
+                        }
+                      }}
+                      className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase cursor-pointer hover:text-ink select-none focus:outline-none focus:ring-1 focus:ring-primary rounded-[2px]"
                     >
                       <div className="flex items-center gap-1">
                         <span>WINNABILITY</span>
                         {sortField === "winnability" ? (
                           sortDirection === "asc" ? (
-                            <ArrowUp className="w-3.5 h-3.5 text-primary" />
+                            <ArrowUp className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           ) : (
-                            <ArrowDown className="w-3.5 h-3.5 text-primary" />
+                            <ArrowDown className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           )
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-muted-slate/50" />
+                          <ArrowUpDown className="w-3 h-3 text-muted-slate/50" aria-hidden="true" />
                         )}
                       </div>
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
                       ACTIONS
                     </th>
                   </tr>

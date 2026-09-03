@@ -5,12 +5,15 @@ import { draftRebuttal } from "@/lib/drafting";
 import { contestDispute } from "@/lib/razorpay";
 import { EvidenceType } from "@/lib/scoring/types";
 import { getInMemoryDisputeById, updateInMemoryDisputeStatus } from "@/lib/mockStore";
+import { DisputeWithRelations } from "@/lib/types/domain";
+import { apiError } from "@/lib/api/response";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
 const DraftRequestBodySchema = z.object({
-  customInstructions: z.string().optional(),
+  customInstructions: z.string().max(1000).optional(),
 });
 
 export async function POST(
@@ -21,20 +24,14 @@ export async function POST(
     const { searchParams } = new URL(request.url);
 
     if (searchParams.get("forceError") === "500") {
-      return NextResponse.json(
-        { ok: false, error: "Simulated error during drafting (500)" },
-        { status: 500 }
-      );
+      return apiError("Simulated error during drafting (500)", 500, "SIMULATED_FAILURE");
     }
 
     const resolvedParams = await context.params;
     const id = resolvedParams?.id?.trim();
 
     if (!id) {
-      return NextResponse.json(
-        { ok: false, error: "Dispute ID is required" },
-        { status: 400 }
-      );
+      return apiError("Dispute ID is required", 400, "INVALID_ID");
     }
 
     let customInstructions: string | undefined;
@@ -48,8 +45,7 @@ export async function POST(
       // Optional body - proceed without custom instructions
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let dispute: any = null;
+    let dispute: DisputeWithRelations | null = null;
     try {
       const dbPromise = prisma.dispute.findFirst({
         where: {
@@ -70,21 +66,31 @@ export async function POST(
       const timeoutPromise = new Promise<null>((_, reject) =>
         setTimeout(() => reject(new Error("DB Timeout")), 2000)
       );
-      dispute = await Promise.race([dbPromise, timeoutPromise]);
+      const dbResult = await Promise.race([dbPromise, timeoutPromise]);
+      if (dbResult) {
+        dispute = dbResult as unknown as DisputeWithRelations;
+      }
     } catch (dbError: unknown) {
-      console.warn(`⚠️ [API /api/disputes/${id}/draft] Database query timeout/error, using mock store:`, dbError instanceof Error ? dbError.message : dbError);
-      dispute = getInMemoryDisputeById(id);
+      logger.warn(`Database query timeout/error for ${id}, using mock store`, {
+        module: "ApiDraft",
+        disputeId: id,
+        error: dbError instanceof Error ? dbError.message : String(dbError),
+      });
+      const fallback = getInMemoryDisputeById(id);
+      if (fallback) {
+        dispute = fallback as unknown as DisputeWithRelations;
+      }
     }
 
     if (!dispute) {
-      dispute = getInMemoryDisputeById(id);
+      const fallback = getInMemoryDisputeById(id);
+      if (fallback) {
+        dispute = fallback as unknown as DisputeWithRelations;
+      }
     }
 
     if (!dispute) {
-      return NextResponse.json(
-        { ok: false, error: `Dispute ${id} not found` },
-        { status: 404 }
-      );
+      return apiError(`Dispute ${id} not found`, 404, "NOT_FOUND");
     }
 
     const customer = dispute.order?.customer;
@@ -146,7 +152,11 @@ export async function POST(
         rzpContestResult = liveContest as Record<string, unknown>;
       }
     } catch (rzpErr) {
-      console.warn("⚠️ Razorpay contest API staging warning (proceeding with local draft state):", rzpErr);
+      logger.warn("Razorpay contest API staging warning (proceeding with draft state)", {
+        module: "ApiDraft",
+        disputeId: dispute.id,
+        error: rzpErr instanceof Error ? rzpErr.message : String(rzpErr),
+      });
     }
 
     // 5. Update status to under_review
@@ -163,7 +173,11 @@ export async function POST(
         );
         await Promise.race([updatePromise, timeoutPromise]);
       } catch (updateErr) {
-        console.warn("⚠️ Non-fatal: unable to update dispute status in remote DB:", updateErr);
+        logger.warn("Non-fatal: unable to update dispute status in remote DB", {
+          module: "ApiDraft",
+          disputeId: dispute.id,
+          error: updateErr instanceof Error ? updateErr.message : String(updateErr),
+        });
       }
     }
 
@@ -177,11 +191,7 @@ export async function POST(
       source: rebuttal.source || "fallback",
     });
   } catch (error: unknown) {
-    console.error("❌ [API /api/disputes/[id]/draft] Error:", error);
-    const message = error instanceof Error ? error.message : "Failed to draft dispute rebuttal";
-    return NextResponse.json(
-      { ok: false, error: message },
-      { status: 500 }
-    );
+    logger.error("Error in POST /api/disputes/[id]/draft", error, { module: "ApiDraft" });
+    return apiError("Failed to draft dispute rebuttal", 500, "INTERNAL_ERROR");
   }
 }

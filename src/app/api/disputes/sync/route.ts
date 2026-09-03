@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchDisputes, RazorpayDisputeResponse } from "@/lib/razorpay";
 import { getInMemoryDisputes, addInMemoryDispute, MockDisputeRecord } from "@/lib/mockStore";
+import { apiError } from "@/lib/api/response";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +13,7 @@ export async function POST(request: NextRequest) {
     const mode = (searchParams.get("mode") || "test").toLowerCase() as "test" | "live";
 
     if (searchParams.get("forceError") === "500") {
-      return NextResponse.json(
-        { ok: false, error: "Simulated error during sync (500)" },
-        { status: 500 }
-      );
+      return apiError("Simulated error during sync (500)", 500, "SIMULATED_FAILURE");
     }
 
     let liveDisputesCount = 0;
@@ -23,12 +22,15 @@ export async function POST(request: NextRequest) {
 
     // 1. Execute live call to Razorpay Disputes API
     try {
-      console.log(`📡 [API /api/disputes/sync?mode=${mode}] Initiating Razorpay API synchronization...`);
+      logger.info(`Initiating Razorpay API synchronization in ${mode} mode`, {
+        module: "ApiDisputesSync",
+        mode,
+      });
+
       const res = await fetchDisputes({ count: 50 }, mode);
       liveItems = res.items || [];
       liveDisputesCount = liveItems.length;
       liveCallSucceeded = true;
-      console.log(`✅ [API /api/disputes/sync] Razorpay sync completed: ${liveDisputesCount} live dispute(s) fetched.`);
 
       if (mode === "live") {
         // In live mode, store only live records
@@ -75,7 +77,11 @@ export async function POST(request: NextRequest) {
         });
       }
     } catch (rzpErr) {
-      console.warn(`ℹ️ [API /api/disputes/sync] Razorpay API call finished (${mode} mode):`, rzpErr instanceof Error ? rzpErr.message : rzpErr);
+      logger.warn(`Razorpay API sync finished with message: ${rzpErr instanceof Error ? rzpErr.message : String(rzpErr)}`, {
+        module: "ApiDisputesSync",
+        mode,
+      });
+
       if (mode === "live") {
         return NextResponse.json({
           ok: true,
@@ -98,7 +104,10 @@ export async function POST(request: NextRequest) {
       );
       localCount = await Promise.race([dbPromise, timeoutPromise]);
     } catch (dbErr) {
-      console.warn("⚠️ [API /api/disputes/sync] Database count timeout, using in-memory store:", dbErr instanceof Error ? dbErr.message : dbErr);
+      logger.warn("Database count timeout in sync, using in-memory store", {
+        module: "ApiDisputesSync",
+        error: dbErr instanceof Error ? dbErr.message : String(dbErr),
+      });
       localCount = getInMemoryDisputes().length;
     }
 
@@ -117,11 +126,7 @@ export async function POST(request: NextRequest) {
       message: `Synchronized with Razorpay Disputes API. ${localCount} demo disputes active in Aegis engine.`,
     });
   } catch (error: unknown) {
-    console.error("❌ [API /api/disputes/sync] Error:", error);
-    const message = error instanceof Error ? error.message : "Failed to sync disputes";
-    return NextResponse.json(
-      { ok: false, error: message },
-      { status: 500 }
-    );
+    logger.error("Error in POST /api/disputes/sync", error, { module: "ApiDisputesSync" });
+    return apiError("Failed to sync disputes", 500, "INTERNAL_ERROR");
   }
 }

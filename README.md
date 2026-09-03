@@ -1,194 +1,631 @@
 # Aegis — Autonomous Chargeback & Dispute Defense for Razorpay
 
-> **Aegis** is an autonomous chargeback defense and dispute win engine built natively for the Indian payment rails and integrated directly with Razorpay's Contest Dispute APIs.
+<p align="center">
+  <a href="https://razorpay.com" target="_blank" rel="noopener noreferrer">
+    <img src="https://razorpay.com/assets/razorpay-glyph.svg" width="48" height="48" alt="Razorpay Logo" />
+  </a>
+</p>
 
-🌐 **Live Production App:** [https://aegisrazorpaycom.vercel.app](https://aegisrazorpaycom.vercel.app)  
-🐘 **Database:** Neon Serverless PostgreSQL (`us-east-2`)  
-⚡ **Deployment:** Vercel Production Serverless  
+<p align="center">
+  <strong>Autonomous dispute win engine and evidence orchestration pipeline engineered natively for the Indian payment rails and integrated directly with Razorpay Dispute APIs.</strong>
+</p>
 
----
-
-> [!NOTE]
-> **Hackathon Prototype Note:** This project is an independent prototype built for the Razorpay Hackathon and is not an official Razorpay product.
-
----
-
-## 1. The Problem & The UPI-First Wedge
-
-### The Problem
-Indian digital merchants face an increasingly aggressive dispute environment:
-1. **Strict 3-Day SLA Window:** NPCI and card acquiring banks enforce a non-negotiable 3-calendar-day window to contest chargebacks before funds are permanently debited from the merchant settlement.
-2. **High Manual Friction:** Finding proof of delivery (POD), courier AWB numbers, customer communication logs, GST tax invoices, and refund status logs across disconnected portals takes **45 to 60 minutes per dispute**.
-3. **Abysmal Manual Win Rate:** Due to missed deadlines and poorly structured rebuttal letters, merchants win fewer than **12% of manual chargeback representments**, forfeiting millions in legitimate transaction revenue.
-
-### The UPI-First Wedge
-Global automated chargeback tools (Chargeflow, Signifyd, Riskified) are built exclusively for US/EU Visa and Mastercard credit cards. **None of them support NPCI's Unified Payments Interface (UPI)**, which accounts for over **80% of digital payment volume in India**.
-
-Aegis is the first automated defense engine with deep native support for NPCI UPI reason codes alongside traditional card rails:
-- **UPI 1064:** Goods / Services Not Received (AWB, OTP/signature verification)
-- **UPI 108:** Beneficiary Account Not Credited (Settlement UTR & gateway capture logs)
-- **UPI 1084:** Duplicate Processing / Multiple Debits (Distinct order & invoice indexing)
-- **UPI 1061:** Credit / Refund Not Processed (Refund ARN & banking UTR tracking)
-- **Card 4837:** No Cardholder Authorization (3D Secure OTP & IP telemetry)
-- **Card 1062:** Goods Not as Described / Defective (Return policy & support resolution)
+<p align="center">
+  <a href="https://aegisrazorpaycom.vercel.app">Production Deployment</a> &bull;
+  <a href="https://razorpay.com/docs/payments/disputes/">Razorpay Dispute Docs</a> &bull;
+  <a href="https://npci.org.in">NPCI UPI Guidelines</a> &bull;
+  <a href="#system-architecture">Architecture</a> &bull;
+  <a href="#application-dom--component-structure">DOM Tree</a>
+</p>
 
 ---
 
-## 2. How Aegis Works
+## Notice
 
-```mermaid
-flowchart LR
-    subgraph Gateway ["Razorpay Gateway"]
-        RZP_DISPUTES["GET /v1/disputes\n(Dispute Feed)"]
-        RZP_CONTEST["PATCH /v1/disputes/:id/contest\n(Draft Contest)"]
-        RZP_ACCEPT["POST /v1/disputes/:id/accept\n(Accept Dispute)"]
-    end
+> **Hackathon Prototype Notice:** Aegis is an independent technical prototype developed for the Razorpay Hackathon. It is designed to interface with Razorpay APIs and test-mode acquiring environments.
 
-    subgraph AegisEngine ["Aegis Core Defense Engine"]
-        NEON[(Neon Serverless\nPostgres)]
-        SCORE["Deterministic Scoring\n(0-100 Winnability)"]
-        LLM["Rebuttal Generator\n(GPT-4o + Safe-Mode Fallback)"]
-    end
+---
 
-    subgraph Dashboard ["Razorpay-Styled Console"]
-        UI_METRICS["Overview & KPIs"]
-        UI_TABLE["Disputes Table & Filters"]
-        UI_DRAWER["Slide-out Evidence Dossier"]
-    end
+## Table of Contents
 
-    RZP_DISPUTES -->|1. Ingest| NEON
-    NEON -->|2. Score Evidence| SCORE
-    SCORE -->|3. Winnability Band| UI_TABLE
-    UI_DRAWER -->|4. Trigger Draft| LLM
-    LLM -->|5. Stage Contest| RZP_CONTEST
-    UI_DRAWER -->|Accept Claim| RZP_ACCEPT
+1. [Executive Summary & Problem Statement](#executive-summary--problem-statement)
+2. [Ideation & Core Insights: Where Payment Gateways Fall Short](#ideation--core-insights-where-payment-gateways-fall-short)
+3. [Key Problems Solved](#key-problems-solved)
+4. [System Architecture](#system-architecture)
+5. [Dispute Lifecycle & State Machine](#dispute-lifecycle--state-machine)
+6. [Deterministic Winnability Scoring Engine](#deterministic-winnability-scoring-engine)
+7. [First-Party Fraud Detection & Entity Relationship Graph](#first-party-fraud-detection--entity-relationship-graph)
+8. [Application DOM & Component Structure](#application-dom--component-structure)
+9. [Supported Network Reason Codes](#supported-network-reason-codes)
+10. [API Reference](#api-reference)
+11. [Design System & Interface Tokens](#design-system--interface-tokens)
+12. [Local Setup & Development Guide](#local-setup--development-guide)
+13. [Verification & Testing](#verification--testing)
+14. [References & Standards](#references--standards)
+
+---
+
+## Executive Summary & Problem Statement
+
+Digital commerce in India operates under payment dynamics distinct from Western markets. Over 80% of retail transaction volume flows through the Unified Payments Interface (UPI) managed by the National Payments Corporation of India (NPCI), with the remainder split between RuPay, Visa, Mastercard, and net banking rails.
+
+When a customer initiates a chargeback or payment dispute, merchants encounter structural operational friction:
+
+1. **Strict 72-Hour Response SLA:** Acquiring banks and NPCI enforce a non-negotiable 3-calendar-day window to contest disputes. Missed deadlines result in permanent debit from merchant settlement accounts alongside dispute processing fees.
+2. **Extreme Evidence Fragmentation:** Constructing a legally sound representment packet requires aggregating data across disparate silos: courier Proof of Delivery (POD) from 3PL logistics, GST tax invoices from ERPs, customer support conversations from CRMs, and payment/refund Unique Transaction References (UTRs) from banking ledgers.
+3. **Manual Representment Inefficiency:** Merging these records manually takes 45 to 60 minutes per dispute. Due to missing evidence or non-standard formatting, merchants forfeit legitimate revenue with an average manual win rate below 12%.
+4. **Foreign Tool Incompatibility:** Existing automated chargeback tools (such as Chargeflow or Signifyd) are designed exclusively for Western credit card schemes (Visa/Mastercard reason codes). None support NPCI UPI reason codes, Indian GST invoice rules, or local 3PL courier tracking integrations.
+
+Aegis solves these challenges through an autonomous defense platform that reconciles payment telemetry, scores dispute winnability using deterministic bank rules, detects first-party friendly fraud via entity link analysis, and drafts evidence-grounded rebuttal dossiers staged directly onto Razorpay's Contest Dispute APIs.
+
+---
+
+## Ideation & Core Insights: Where Payment Gateways Fall Short
+
+During the architectural analysis of Razorpay's dispute lifecycle and merchant operations, four systemic product gaps were identified:
+
+```
++-----------------------------------------------------------------------------------+
+|                            GATEWAY LEVEL DEFICIT                                  |
+|                                                                                   |
+|  1. Passive Dispute Pipeline:                                                     |
+|     Gateways ingest dispute webhooks and present a file-upload form.              |
+|     No proactive assessment of whether a dispute is winnable or unwinnable.       |
+|                                                                                   |
+|  2. Absence of Pre-Contest Evidence Auditing:                                     |
+|     Merchants often submit incomplete documents, triggering immediate bank        |
+|     rejection and non-refundable arbitration fees.                                |
+|                                                                                   |
+|  3. First-Party / Friendly Fraud Blind Spot:                                      |
+|     Gateways evaluate transactions individually without historical graph analysis |
+|     linking customer email, phone, shipping addresses, and prior dispute counts.  |
+|                                                                                   |
+|  4. Disconnected Settlement Intelligence:                                         |
+|     Dispute reserves are held against merchant settlements without automated      |
+|     triage advising whether to accept immediately (reducing penalties) or fight.  |
++-----------------------------------------------------------------------------------+
 ```
 
-### 1. Ingestion & Multi-Source Reconciliation
-Aegis polls the real Razorpay Disputes API (`GET /v1/disputes`) via the official Razorpay Node SDK. Live test-mode dispute events are merged with structured order, delivery, customer history, and refund records stored in Neon PostgreSQL.
+### Insights Derived
 
-### 2. Deterministic Winnability Scoring Engine
-Unlike opaque LLM judges, Aegis calculates a mathematically transparent winnability score (0–100%) based on NPCI and card network rules:
-- **High Winnability (≥80%):** Strong evidence present (signed POD, matching OTP, GST invoice). Recommendation: `Auto-Contest`.
-- **Needs Evidence (50–79%):** Core evidence present but missing secondary logs (e.g. customer communication, specific return receipt). Recommendation: `Gather Evidence`.
-- **Low Winnability (<50%):** Missing mandatory proof or merchant error (e.g. missing refund ARN on duplicate charge). Recommendation: `Accept Dispute` to avoid arbitration penalties.
-
-### 3. Dual-Engine Rebuttal Generation (Zero-Failure Architecture)
-- **Primary LLM Generator:** Drafts formal representment letters adhering to acquiring bank guidelines. Strictly grounds all claims in verified evidence documents with **zero hallucination**.
-- **Deterministic Safe-Mode Fallback:** If the LLM times out (15s hard abort), hits rate limits, or credentials are unset, Aegis immediately falls back to a deterministic template engine built directly from the reason code and attached evidence IDs.
-
-### 4. Direct Razorpay Staging Loop
-Rebuttals and cited evidence URLs are submitted directly to Razorpay's Dispute Contest API (`PATCH /v1/disputes/:id/contest`) with `action: "draft"`, allowing dispute managers to review before final submission.
+- **Insight 1: Deterministic Rules Must Precede AI Drafting.** Generating legal rebuttals with large language models without prior evidence validation leads to hallucinated claims. The scoring engine must be 100% deterministic and rule-bound before any generative layer is invoked.
+- **Insight 2: Safe Mode Fallback is Critical for Financial Systems.** If LLM APIs experience rate limits or latency degradation, a payment defense system cannot drop the representment. Aegis implements a deterministic template fallback that compiles compliant rebuttal packets instantly.
+- **Insight 3: Strict Draft Staging Prevents Unintended Filings.** All automated contest operations are staged with `action: "draft"` via the Razorpay Contest API, allowing merchant oversight while ensuring compliance with network rules.
 
 ---
 
-## 3. Seeded Dispute Cases & Winnability Curve
+## Key Problems Solved
 
-Aegis includes 6 realistic dispute cases covering the complete winnability spectrum:
-
-| Dispute ID | Network | Reason Code | Title | Amount | Score | Band | Recommendation |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `disp_1064` | **UPI** | `1064` | Goods Not Received | ₹24,999 | **94%** | `High` | **Contest** (Signed BlueDart POD + OTP + GST Invoice) |
-| `disp_108` | **UPI** | `108` | Beneficiary Not Credited | ₹8,500 | **82%** | `High` | **Contest** (Razorpay Settlement UTR + Capture Log) |
-| `disp_4837` | **Card** | `4837` | No Cardholder Auth | ₹14,500 | **68%** | `Needs Evidence` | **Gather Evidence** (3DS OTP present, missing device IP) |
-| `disp_1084` | **UPI** | `1084` | Duplicate Processing | ₹2,999 | **62%** | `Needs Evidence` | **Gather Evidence** (Primary invoice present, explanation letter pending) |
-| `disp_1062` | **Card** | `1062` | Goods Not as Described | ₹6,500 | **45%** | `Low` | **Accept** (Buyer escalated prior to merchant RMA return) |
-| `disp_1061` | **UPI** | `1061` | Credit Not Processed | ₹4,200 | **23%** | `Low` | **Accept** (Refund was promised but banking UTR never initiated) |
-
----
-
-## 4. Tech Stack & Architecture
-
-- **Framework:** [Next.js 16 (App Router)](https://nextjs.org/) with React 19 and Turbopack
-- **Database:** [Neon Serverless PostgreSQL](https://neon.tech/) with PgBouncer connection pooling
-- **ORM:** [Prisma ORM 6](https://www.prisma.io/) (Serverless Singleton client)
-- **Payment Gateway Integration:** Official [Razorpay Node SDK](https://github.com/razorpay/razorpay-node)
-- **AI & Drafting:** OpenAI API (`gpt-4o-mini`) + Deterministic Rule-Based Safe Fallback
-- **Styling & Design System:** Vanilla CSS & Tailwind CSS adhering to Razorpay Core Design Tokens (`#0C2340`, `#0C2340`, `#525866`)
-- **Testing:** [Vitest](https://vitest.dev/) (26 unit/integration tests) & [Playwright](https://playwright.dev/) (E2E browser automation)
+| Operational Problem | Traditional Razorpay Workflow | Aegis Autonomous Defense Solution |
+| :--- | :--- | :--- |
+| **Response Window** | Manual discovery; frequently breaches 3-day SLA | Instant webhook ingestion; evidence auto-compiled in seconds |
+| **UPI Dispute Support** | Manual interpretation of numeric NPCI codes | Native decoding of UPI codes (1064, 108, 1084, 1061) + Card 4837 |
+| **Evidence Assembly** | 45-60 minutes across 4 distinct SaaS tools | Sub-second reconciliation of courier POD, invoices, and support logs |
+| **Winnability Assessment** | Guesswork; high time spent on losing disputes | 0-100% deterministic scoring with specific gap analysis |
+| **Friendly Fraud** | No correlation across customer transaction history | Multi-node entity graph analyzing repeat dispute ratios |
+| **Dispute Acceptance** | Manual UI navigation | One-click idempotent acceptance for unwinnable claims |
+| **Rebuttal Generation** | Generic Word/PDF templates | Grounded, zero-hallucination dossiers citing exact document references |
 
 ---
 
-## 5. Local Setup & Getting Started
+## System Architecture
+
+The following diagram illustrates the complete end-to-end data pipeline, from gateway webhook ingestion through evidence verification, AI drafting, and Razorpay API contest staging.
+
+```mermaid
+flowchart TB
+    subgraph GatewayLayer ["Payment Gateway & Network Layer"]
+        RZP_API["Razorpay Core API\n(GET /v1/disputes, PATCH /v1/disputes/:id/contest)"]
+        NPCI["NPCI UPI 2.0 Rails\n(Reason Codes: 1064, 108, 1084, 1061)"]
+        CARDS["Card Acquiring Networks\n(Visa / Mastercard 4837, 1062)"]
+    end
+
+    subgraph IngestionLayer ["Ingestion & Synchronization Layer"]
+        SYNC_HANDLER["Sync Controller\n(/api/disputes/sync)"]
+        WEBHOOK_INGEST["Dispute Ingest Router\n(/api/disputes)"]
+        MODE_GATE["Merchant Mode Gateway\n(Test Sandbox vs Verified Live API)"]
+    end
+
+    subgraph DataStoreLayer ["Data & Persistence Layer (Neon Serverless)"]
+        PRISMA["Prisma ORM 6 (PgBouncer Pooled)"]
+        DB_DISPUTES[("Disputes Table")]
+        DB_ORDERS[("Orders & Invoices")]
+        DB_DELIVERY[("Courier POD & Tracking")]
+        DB_COMMS[("Customer Comms Log")]
+        DB_REFUNDS[("Refund Ledgers & UTRs")]
+    end
+
+    subgraph IntelligenceLayer ["Aegis Defense Intelligence Engine"]
+        RULE_ENGINE["Deterministic Scoring Engine\n(reasonCodes.ts)"]
+        FRAUD_ENGINE["Fraud Signal & Entity Graph\n(computeFraudSignal.ts)"]
+        GRAPH_BUILDER["Entity Link Analyzer\n(Customer - Order - Payment - Courier)"]
+    end
+
+    subgraph GenerationLayer ["Dual-Engine Dossier Generator"]
+        LLM_GEN["Primary Generator\n(GPT-4o Grounded Prompt)"]
+        SAFE_FALLBACK["Safe-Mode Fallback Engine\n(Deterministic Template Compiler)"]
+        SAFETY_GATE["Zero-Hallucination Evidence Gate"]
+    end
+
+    subgraph PresentationLayer ["Razorpay-Styled Merchant Console"]
+        OVERVIEW_PAGE["Overview Analytics & KPI Summary"]
+        DISPUTE_CONSOLE["Dispute Management Table & Filters"]
+        DETAIL_DRAWER["Slide-out Evidence Dossier & Audit Sheet"]
+        GRAPH_CANVAS["Interactive SVG Relationship Graph"]
+    end
+
+    %% Flow Connections
+    NPCI --> RZP_API
+    CARDS --> RZP_API
+    RZP_API <--> SYNC_HANDLER
+    SYNC_HANDLER --> MODE_GATE
+    MODE_GATE --> PRISMA
+
+    PRISMA --> DB_DISPUTES
+    PRISMA --> DB_ORDERS
+    PRISMA --> DB_DELIVERY
+    PRISMA --> DB_COMMS
+    PRISMA --> DB_REFUNDS
+
+    DB_DISPUTES --> RULE_ENGINE
+    DB_ORDERS --> RULE_ENGINE
+    DB_DELIVERY --> RULE_ENGINE
+    DB_COMMS --> RULE_ENGINE
+    DB_REFUNDS --> RULE_ENGINE
+
+    RULE_ENGINE --> FRAUD_ENGINE
+    FRAUD_ENGINE --> GRAPH_BUILDER
+
+    RULE_ENGINE --> DISPUTE_CONSOLE
+    GRAPH_BUILDER --> GRAPH_CANVAS
+
+    DISPUTE_CONSOLE --> DETAIL_DRAWER
+    DETAIL_DRAWER --> SAFETY_GATE
+    SAFETY_GATE --> LLM_GEN
+    SAFETY_GATE -. Timeout / No Key .-> SAFE_FALLBACK
+
+    LLM_GEN --> RZP_API
+    SAFE_FALLBACK --> RZP_API
+    OVERVIEW_PAGE <--> DISPUTE_CONSOLE
+```
+
+---
+
+## Dispute Lifecycle & State Machine
+
+A dispute transitions through distinct evaluation and representment states within Aegis:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Ingested: Dispute Received from Razorpay Webhook / API Sync
+
+    state Ingested {
+        [*] --> EvidenceAudit
+        EvidenceAudit --> EntityGraphAnalysis
+        EntityGraphAnalysis --> ScoreComputed
+    }
+
+    ScoreComputed --> HighWinnability: Winnability >= 80%
+    ScoreComputed --> NeedsEvidence: Winnability 50% - 79%
+    ScoreComputed --> LowWinnability: Winnability < 50%
+
+    state HighWinnability {
+        [*] --> AutoDraft
+        AutoDraft --> StagedOnRazorpay: PATCH /v1/disputes/:id/contest (action=draft)
+    }
+
+    state NeedsEvidence {
+        [*] --> ManualReview
+        ManualReview --> UploadSupplementary: Merchant uploads missing document
+        UploadSupplementary --> ScoreComputed: Re-evaluate
+    }
+
+    state LowWinnability {
+        [*] --> RecommendationAccept
+        RecommendationAccept --> DisputeAccepted: POST /v1/disputes/:id/accept
+    }
+
+    StagedOnRazorpay --> Represented: Final Submission to Bank
+    Represented --> Won: Bank Rules in Merchant Favor
+    Represented --> Lost: Bank Rejects Representment
+    DisputeAccepted --> Closed: Forfeited to prevent penalty fees
+```
+
+---
+
+## Deterministic Winnability Scoring Engine
+
+Aegis rejects opaque, ungrounded scoring. Every dispute receives a deterministic score between 0 and 100 calculated by evaluating mandatory and supporting evidence items against acquiring network rules.
+
+### Mathematical Formulation
+
+$$\text{Score} = \min\left(100, \sum_{i=1}^{n} w_i \cdot \mathbb{I}(\text{evidence}_i \text{ is verified})\right)$$
+
+Where:
+- $w_i$ represents the rule weight assigned to evidence requirement $i$.
+- $\mathbb{I}(\cdot)$ is the binary indicator function returning $1$ if evidence is verified and $0$ if absent or unverified.
+
+### Classification Bands
+
+- **High Winnability ($\ge 80\%$):** Mandatory documents verified (e.g., Courier POD with customer signature/OTP, matching GST invoice). Recommendation: `Contest Dispute`.
+- **Needs Evidence ($50\% - 79\%$):** Primary transaction logs present, but secondary documentation missing (e.g., device IP telemetry, signed customer acknowledgement). Recommendation: `Gather Evidence`.
+- **Low Winnability ($< 50\%$):** Critical fulfillment or delivery proof missing, or confirmed merchant processing error (e.g., unissued refund on duplicate charge). Recommendation: `Accept Dispute` to avoid compounding arbitration penalties.
+
+---
+
+## First-Party Fraud Detection & Entity Relationship Graph
+
+First-party fraud ("friendly fraud") occurs when a legitimate customer makes a purchase and subsequently files a chargeback claiming non-receipt or unauthorized usage.
+
+### Algorithmic Evaluation Criteria
+
+Aegis computes a customer fraud index based on four telemetry dimensions:
+
+1. **Repeat Disputer Ratio:** Ratio of historic disputes to completed orders ($\text{Disputes} / \text{Orders}$).
+2. **Identity Verification:** Correlation between customer billing name, shipping address, and phone number.
+3. **Delivery Signature & OTP Validation:** Physical proof of delivery containing verified OTP or receiver signature.
+4. **Communication Sentiment & Timeline:** Documented pre-dispute support interactions acknowledging receipt.
+
+### Entity Relationship Graph Structure
+
+The fraud detection engine generates an interactive multi-node relationship graph connecting six entity types:
+
+```
+[Customer Profile] <---> [Order Record] <---> [Payment Transaction]
+       |                       |                      |
+       v                       v                      v
+[Dispute File]        [Courier Delivery]      [Refund Ledgers]
+```
+
+---
+
+## Application DOM & Component Structure
+
+The following tree details the complete document object model and component hierarchy across the application routes:
+
+```
+RootLayout (src/app/layout.tsx)
+│
+├── MerchantModeProvider (src/context/merchant-mode-context.tsx)
+│   ├── TooltipProvider (src/components/ui/tooltip.tsx)
+│   ├── Toaster (src/components/ui/sonner.tsx)
+│   │
+│   └── DashboardShell (src/components/dashboard/dashboard-shell.tsx)
+│       │
+│       ├── Desktop SideNav (<nav className="fixed left-0 top-0 h-screen w-[260px] ...">)
+│       │   ├── Brand Header (Razorpay AEGIS Shield)
+│       │   ├── Navigation Links List (<ul>)
+│       │   │   ├── NavItem: Overview (/overview)
+│       │   │   ├── NavItem: Disputes (/disputes)
+│       │   │   ├── NavItem: Transactions (/transactions)
+│       │   │   ├── NavItem: Settlements (/settlements)
+│       │   │   └── NavItem: Settings (/settings)
+│       │   ├── Documentation Link (Razorpay Dispute Guidelines)
+│       │   └── Mode Badge & Status Indicator
+│       │
+│       ├── Mobile TopNav (<header className="md:hidden ...">)
+│       │   ├── Hamburger Menu Trigger
+│       │   └── Brand Identity
+│       │
+│       ├── Main Content Wrapper (<main className="md:pl-[260px] ...">)
+│       │   │
+│       │   ├── Top Header Bar (<header className="bg-white border-b ...">)
+│       │   │   ├── Global Search Input (<input type="search" ...>)
+│       │   │   ├── ModeSwitcher (src/components/dashboard/mode-switcher.tsx)
+│       │   │   │   └── Toggle Pill: Test Sandbox (Seed) vs Live API (Production)
+│       │   │   ├── Notification Bell Drawer (<DropdownMenu ...>)
+│       │   │   │   └── Dispute SLA Warning Items List
+│       │   │   └── Merchant Account Menu (<DropdownMenu ...>)
+│       │   │       ├── Merchant ID & Verification Status
+│       │   │       ├── Connect Razorpay Account Button
+│       │   │       └── Sign Out Action
+│       │   │
+│       │   ├── Page Router Container (<div className="p-6 md:p-8 ...">)
+│       │   │   │
+│       │   │   ├── [Route: /overview] (src/app/overview/page.tsx)
+│       │   │   │   ├── Hero Problem / Solution Briefing Card
+│       │   │   │   ├── High-Level KPI Metric Cards (4-Grid)
+│       │   │   │   │   ├── Total Volume at Risk (INR)
+│       │   │   │   │   ├── Recoverable Amount (High Win Rate Volume)
+│       │   │   │   │   ├── Projected Win Rate Percentage
+│       │   │   │   │   └── Auto-Defense Engine Status
+│       │   │   │   ├── Winnability Distribution Gauge Card
+│       │   │   │   └── Razorpay Reason Code Defense Rules Matrix
+│       │   │   │
+│       │   │   ├── [Route: /disputes] (src/app/disputes/page.tsx)
+│       │   │   │   ├── Console Action Bar (Sync API, Download Audit Report)
+│       │   │   │   ├── Mode Context Banner (Sandbox Notice / Live Account Banner)
+│       │   │   │   ├── Interactive Filter Cards (High, Needs Evidence, Low)
+│       │   │   │   ├── Active Filter & Search Tag Strip
+│       │   │   │   ├── Disputes Data Table
+│       │   │   │   │   ├── Table Header (Sortable Columns: ID, Date, Amount, Winnability)
+│       │   │   │   │   ├── Table Body (Paginated Rows with Status Badges)
+│       │   │   │   │   └── Table Pagination Controls (Page Slices)
+│       │   │   │   │
+│       │   │   │   └── DisputeDetailSheet (src/components/disputes/dispute-detail-sheet.tsx)
+│       │   │   │       ├── SheetHeader (Dispute ID, Reason Code, SLA Countdown)
+│       │   │   │       ├── Winnability Gauge & Breakdown Reason List
+│       │   │   │       ├── Order & Customer Summary Dossier
+│       │   │   │       ├── Delivery & POD Verification Section
+│       │   │   │       ├── Evidence Checklist (Shipping, Invoices, Comms, Terms)
+│       │   │   │       ├── FraudSignalCard (src/components/disputes/fraud-signal-card.tsx)
+│       │   │   │       │   ├── Fraud Risk Score Pill
+│       │   │   │       │   ├── Contributing Factors List
+│       │   │   │       │   ├── Defense Strategy Impact Note
+│       │   │   │       │   └── RelationshipGraph (src/components/disputes/relationship-graph.tsx)
+│       │   │   │       │       └── Interactive SVG Node Canvas (Nodes + Links)
+│       │   │   │       ├── Custom Prompt Instructions Textarea
+│       │   │   │       ├── AI Rebuttal Drafting & Safe-Mode Generator Panel
+│       │   │   │       │   ├── Razorpay Contest Summary Box (<= 1000 Chars)
+│       │   │   │       │   ├── Formal Explanation Letter (Copy Action)
+│       │   │   │       │   └── Cited Evidence File References
+│       │   │   │       └── Action Footer (Draft on Razorpay, Accept Dispute)
+│       │   │   │
+│       │   │   ├── [Route: /transactions] (src/app/transactions/page.tsx)
+│       │   │   │   ├── Transaction Header & Export Controls
+│       │   │   │   ├── Status Filter Buttons (All, Captured, Disputed)
+│       │   │   │   └── Payment Gateway Transactions Table
+│       │   │   │
+│       │   │   ├── [Route: /settlements] (src/app/settlements/page.tsx)
+│       │   │   │   ├── Settlement Summary Cards (MTD Settled, Dispute Reserve Hold)
+│       │   │   │   └── Banking Settlements & UTR Payouts Table
+│       │   │   │
+│       │   │   └── [Route: /settings] (src/app/settings/page.tsx)
+│       │   │       ├── Merchant Integration Profile Card
+│       │   │       ├── Winnability Score Auto-Contest Slider
+│       │   │       ├── Autonomous Rules Checkboxes (Auto-Draft, Auto-Accept)
+│       │   │       └── Infrastructure & Database Topology Summary
+│       │   │
+│       │   └── ConnectRazorpayModal (src/components/dashboard/connect-razorpay-modal.tsx)
+│       │       ├── API Key ID & Secret Input Form
+│       │       ├── Server-Side Verification Action
+│       │       └── Razorpay OAuth 2.0 Partner Information
+│       │
+│       └── Application Footer (Copyright, SLA Notice, API Reference Links)
+```
+
+---
+
+## Supported Network Reason Codes
+
+Aegis includes tailored scoring rules and defense strategies for both NPCI UPI and traditional card network reason codes:
+
+| Code | Network | Description | Key Required Evidence | Target Winnability | Recommended Action |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **1064** | UPI | Goods / Services Not Received | Signed BlueDart/Delhivery POD, OTP, GST Invoice | **94% (High)** | Contest with POD & Delivery Logs |
+| **108** | UPI | Debited, Beneficiary Not Credited | Razorpay Settlement UTR, Digital Provisioning Log | **82% (High)** | Contest with Gateway Capture Log |
+| **4837** | Card | No Cardholder Authorisation | 3D-Secure OTP Auth, IP Geo-correlation, Billing Proof | **68% (Needs Evidence)** | Gather Device IP & Access Logs |
+| **1084** | UPI | Duplicate Processing / Multiple Debits | Distinct Invoices, Session Telemetry, Explanation Letter | **62% (Needs Evidence)** | Upload Invoices or Accept if Duplicate |
+| **1062** | Card | Goods Not As Described / Defective | SKU Catalog Match, Published Return Policy, Support Logs | **45% (Low)** | Accept unless Pre-Dispute RMA Resolved |
+| **1061** | UPI | Credit / Refund Not Processed | Banking Refund ARN, Settlement Payout UTR | **23% (Low)** | Accept (Refund was not initiated) |
+
+---
+
+## API Reference
+
+### Health & Diagnostics
+
+```http
+GET /api/health
+```
+- **Description:** Verifies service availability and operational readiness.
+- **Response:**
+  ```json
+  {
+    "ok": true,
+    "service": "razorpay-aegis",
+    "timestamp": "2026-09-03T04:00:00.000Z"
+  }
+  ```
+
+---
+
+### Dispute Management
+
+```http
+GET /api/disputes?mode=test|live
+```
+- **Description:** Retrieves active disputes with calculated winnability scores, fraud indicators, and aggregate KPI statistics.
+
+```http
+GET /api/disputes/:id
+```
+- **Description:** Fetches the full dispute dossier, including order history, courier delivery tracking, customer communication logs, evidence item checklist, and reason code rules.
+
+```http
+POST /api/disputes/:id/draft
+```
+- **Description:** Generates an evidence-grounded rebuttal letter and stages the representment on the Razorpay Contest Dispute API in `draft` mode.
+- **Request Body:**
+  ```json
+  {
+    "customInstructions": "Emphasize courier OTP verification and GST invoice"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "ok": true,
+    "mode": "draft",
+    "source": "llm",
+    "draftedRebuttal": {
+      "summary": "Formal rebuttal for Dispute disp_1064...",
+      "explanationLetter": "To the Acquiring Bank Disputes Committee...",
+      "citedEvidence": ["shipping_proof", "billing_proof"]
+    },
+    "razorpayContestResult": {
+      "success": true,
+      "action": "draft",
+      "disputeId": "disp_1064_goods_not_received"
+    }
+  }
+  ```
+
+```http
+POST /api/disputes/:id/accept
+```
+- **Description:** Idempotently accepts a dispute to prevent compounding penalty fees and notifies the Razorpay API.
+
+```http
+POST /api/disputes/sync?mode=test|live
+```
+- **Description:** Triggers live synchronization with the Razorpay Disputes API (`GET /v1/disputes`), merging live account events with the local datastore.
+
+---
+
+### Merchant Account Integration
+
+```http
+GET /api/merchant/status
+```
+- **Description:** Returns the active merchant connection status, merchant ID, and operating mode.
+
+```http
+POST /api/merchant/connect
+```
+- **Description:** Verifies and securely links merchant Razorpay Key ID and Key Secret credentials.
+
+```http
+POST /api/merchant/disconnect
+```
+- **Description:** Disconnects the live Razorpay merchant account and falls back to the test sandbox.
+
+---
+
+## Design System & Interface Tokens
+
+Aegis implements an interface following Razorpay's design language:
+
+```
++-------------------------------------------------------------------------------+
+| Razorpay Design Tokens                                                        |
++----------------------+--------------------+-----------------------------------+
+| Token Name           | Value              | Usage                             |
++----------------------+--------------------+-----------------------------------+
+| Primary Brand        | #305EFF            | Action buttons, active navigation |
+| Primary Hover        | #2950DA            | Button hover states               |
+| Deep Navy (RZP)      | #0D1A48            | Sidebar background, brand accents |
+| Ink / Primary Text   | #0D1C2D            | Headings, primary table text      |
+| Muted Slate          | #5D6D86            | Subheadings, column captions      |
+| Border Subtle        | #DFE3E9            | Card borders, divider lines       |
+| Page Background      | #F8FAFC            | Global background                 |
+| Success Green        | #00A251            | High winnability, captured status |
+| Attention Amber      | #E08600            | Needs evidence, pending action    |
+| Danger Red           | #ED2939            | Low winnability, disputed status  |
+| Component Radius     | 4px (Strict)       | All inputs, cards, tables, badges |
+| Display Typography   | TASA Orbiter       | Headline elements                 |
+| Body Typography      | Inter              | Data tables, prose, form controls |
++----------------------+--------------------+-----------------------------------+
+```
+
+---
+
+## Local Setup & Development Guide
 
 ### Prerequisites
-- Node.js 20+
+
+- Node.js 20.x or higher
 - npm or pnpm
-- A Neon PostgreSQL account or local PostgreSQL instance
-- Razorpay Test-Mode API Keys (optional for mock fallback, recommended for live sync)
+- PostgreSQL database instance (Neon Serverless PostgreSQL recommended)
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/YashDoesCode/aegis.razorpay.com.git
 cd aegis.razorpay.com
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 npm install
 ```
 
-### 3. Configure Environment Variables
-Copy `.env.example` to `.env`:
+### 3. Environment Configuration
+
+Create a `.env` file based on `.env.example`:
+
 ```bash
 cp .env.example .env
 ```
 
-Fill in the required variables:
+Configure the environment variables:
 
-| Variable | Description | Source |
-| :--- | :--- | :--- |
-| `DATABASE_URL` | Neon PostgreSQL pooled connection URI (for queries) | [Neon Console](https://console.neon.tech/) |
-| `DIRECT_URL` | Neon PostgreSQL direct connection URI (for migrations) | [Neon Console](https://console.neon.tech/) |
-| `RAZORPAY_KEY_ID` | Razorpay Test Key ID (`rzp_test_...`) | [Razorpay Dashboard](https://dashboard.razorpay.com/#/app/keys) |
-| `RAZORPAY_KEY_SECRET` | Razorpay Test Key Secret | [Razorpay Dashboard](https://dashboard.razorpay.com/#/app/keys) |
-| `OPENAI_API_KEY` | OpenAI API Key (optional — falls back to safe mode) | [OpenAI Platform](https://platform.openai.com/) |
+```env
+# Database Connection (Neon Serverless PostgreSQL)
+DATABASE_URL="postgresql://user:password@ep-sample-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&pgbouncer=true"
+DIRECT_URL="postgresql://user:password@ep-sample.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
-### 4. Database Setup & Seeding
+# Razorpay API Credentials (Optional for sandbox, required for live sync)
+RAZORPAY_KEY_ID="rzp_test_YourKeyId"
+RAZORPAY_KEY_SECRET="YourKeySecret"
+
+# OpenAI API Key (Optional — system falls back to deterministic safe mode)
+OPENAI_API_KEY="sk-proj-YourKey"
+```
+
+### 4. Database Migration & Seeding
+
 ```bash
-# Push schema and apply migrations
+# Push schema migrations to Neon PostgreSQL
 npx prisma migrate deploy
 
-# Seed the 6 dispute cases and evidence relationships
+# Seed the 6 dispute cases and evidence items
 npm run db:seed
 ```
 
-### 5. Start the Development Server
+### 5. Start Development Server
+
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+Navigate to `http://localhost:3000` in your browser.
 
 ---
 
-## 6. Running Tests & Production Verification
+## Verification & Testing
+
+Aegis includes automated test suites covering unit logic, integration endpoints, and live production flows:
 
 ```bash
-# Run unit & integration test suite (26 tests)
+# Run unit and integration test suite with Vitest
 npm test
 
-# Run build verification
+# Run Next.js production build verification
 npm run build
 
-# Run full live production QA against deployed URL
+# Run Playwright end-to-end browser automation tests
+npm run test:e2e
+
+# Run Python production verification script
 python3 test_production_qa.py
 ```
 
 ---
 
-## 7. API Reference
+## References & Standards
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/health` | Service health status and timestamp |
-| `GET` | `/api/disputes` | List all disputes with winnability scores & KPI stats |
-| `GET` | `/api/disputes/:id` | Fetch dispute dossier, evidence checklist, and reason code rules |
-| `POST` | `/api/disputes/:id/draft` | Generate evidence-grounded rebuttal and stage contest on Razorpay |
-| `POST` | `/api/disputes/:id/accept` | Idempotently accept dispute and notify Razorpay API |
-| `POST` | `/api/disputes/sync` | Perform live synchronization with Razorpay Disputes API |
+1. **Razorpay Developer Documentation:**
+   - [Razorpay Disputes API Guide](https://razorpay.com/docs/payments/disputes/)
+   - [Razorpay Payment Gateway Integration](https://razorpay.com/docs/payments/payment-gateway/)
+   - [Razorpay API Authentication & Keys](https://razorpay.com/docs/api/)
+
+2. **NPCI (National Payments Corporation of India):**
+   - [NPCI Unified Payments Interface (UPI) Procedural Guidelines](https://www.npci.org.in/what-we-do/upi/product-overview)
+   - [UPI Dispute Management System (UDIR) Framework](https://www.npci.org.in/)
+
+3. **Card Scheme Dispute Standards:**
+   - [Visa Core Rules and Visa Product and Service Rules (Dispute Management)](https://usa.visa.com/support/consumer/visa-rules.html)
+   - [Mastercard Chargeback Guide and Dispute Resolution](https://www.mastercard.us/en-us/business/overview/support/rules.html)
+
+4. **Internal Research & Design Artifacts:**
+   - `References/Checkout Page Design _ B2B Design Tips & Insights - Razorpay Payment Gateway.pdf`
+   - `References/Payment Gateway Integration - SDK & API, Web, Android, PHP, iOS.pdf`
+   - `References/Razorpay — UX_UI Design by Juhi Chitra.pdf`
 
 ---
 
-## 8. License
+## License
 
-Licensed under the [MIT License](LICENSE).
+Distributed under the [MIT License](LICENSE).

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { acceptDispute } from "@/lib/razorpay";
 import { getInMemoryDisputeById, updateInMemoryDisputeStatus } from "@/lib/mockStore";
+import { DisputeWithRelations } from "@/lib/types/domain";
+import { apiError } from "@/lib/api/response";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -13,24 +16,17 @@ export async function POST(
     const { searchParams } = new URL(request.url);
 
     if (searchParams.get("forceError") === "500") {
-      return NextResponse.json(
-        { ok: false, error: "Simulated error accepting dispute (500)" },
-        { status: 500 }
-      );
+      return apiError("Simulated error accepting dispute (500)", 500, "SIMULATED_FAILURE");
     }
 
     const resolvedParams = await context.params;
     const id = resolvedParams?.id?.trim();
 
     if (!id) {
-      return NextResponse.json(
-        { ok: false, error: "Dispute ID is required" },
-        { status: 400 }
-      );
+      return apiError("Dispute ID is required", 400, "INVALID_ID");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let dispute: any = null;
+    let dispute: DisputeWithRelations | null = null;
     try {
       const dbPromise = prisma.dispute.findFirst({
         where: {
@@ -40,21 +36,31 @@ export async function POST(
       const timeoutPromise = new Promise<null>((_, reject) =>
         setTimeout(() => reject(new Error("DB Timeout")), 2000)
       );
-      dispute = await Promise.race([dbPromise, timeoutPromise]);
+      const dbResult = await Promise.race([dbPromise, timeoutPromise]);
+      if (dbResult) {
+        dispute = dbResult as unknown as DisputeWithRelations;
+      }
     } catch (dbError: unknown) {
-      console.warn(`⚠️ [API /api/disputes/${id}/accept] DB query timeout/error, using mock store:`, dbError instanceof Error ? dbError.message : dbError);
-      dispute = getInMemoryDisputeById(id);
+      logger.warn(`Database query timeout/error for ${id}, using mock store`, {
+        module: "ApiAccept",
+        disputeId: id,
+        error: dbError instanceof Error ? dbError.message : String(dbError),
+      });
+      const fallback = getInMemoryDisputeById(id);
+      if (fallback) {
+        dispute = fallback as unknown as DisputeWithRelations;
+      }
     }
 
     if (!dispute) {
-      dispute = getInMemoryDisputeById(id);
+      const fallback = getInMemoryDisputeById(id);
+      if (fallback) {
+        dispute = fallback as unknown as DisputeWithRelations;
+      }
     }
 
     if (!dispute) {
-      return NextResponse.json(
-        { ok: false, error: `Dispute ${id} not found` },
-        { status: 404 }
-      );
+      return apiError(`Dispute ${id} not found`, 404, "NOT_FOUND");
     }
 
     // Idempotency check: if dispute was already accepted and marked lost, return existing state safely
@@ -79,7 +85,11 @@ export async function POST(
     try {
       rzpResult = await acceptDispute(dispute.rzpDisputeId || dispute.id, mode);
     } catch (rzpErr) {
-      console.warn("⚠️ Razorpay API accept call warning (continuing with local state update):", rzpErr);
+      logger.warn("Razorpay API accept call warning (continuing with local update)", {
+        module: "ApiAccept",
+        disputeId: dispute.id,
+        error: rzpErr instanceof Error ? rzpErr.message : String(rzpErr),
+      });
     }
 
     // Update in-memory store
@@ -95,9 +105,16 @@ export async function POST(
       const timeoutPromise = new Promise<typeof updated>((_, reject) =>
         setTimeout(() => reject(new Error("DB Timeout")), 1500)
       );
-      updated = await Promise.race([updatePromise, timeoutPromise]);
+      const dbUpdateResult = await Promise.race([updatePromise, timeoutPromise]);
+      if (dbUpdateResult) {
+        updated = { ...updated, ...dbUpdateResult };
+      }
     } catch (updateErr) {
-      console.warn("⚠️ Non-fatal: unable to persist accepted status to remote DB:", updateErr);
+      logger.warn("Non-fatal: unable to persist accepted status to remote DB", {
+        module: "ApiAccept",
+        disputeId: dispute.id,
+        error: updateErr instanceof Error ? updateErr.message : String(updateErr),
+      });
     }
 
     return NextResponse.json({
@@ -108,11 +125,7 @@ export async function POST(
       idempotent: false,
     });
   } catch (error: unknown) {
-    console.error("❌ [API /api/disputes/[id]/accept] Error:", error);
-    const message = error instanceof Error ? error.message : "Failed to accept dispute";
-    return NextResponse.json(
-      { ok: false, error: message },
-      { status: 500 }
-    );
+    logger.error("Error in POST /api/disputes/[id]/accept", error, { module: "ApiAccept" });
+    return apiError("Failed to accept dispute", 500, "INTERNAL_ERROR");
   }
 }

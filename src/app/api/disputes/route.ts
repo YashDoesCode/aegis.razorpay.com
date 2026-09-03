@@ -1,24 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { computeWinnability } from "@/lib/scoring";
 import { getInMemoryDisputes } from "@/lib/mockStore";
 import { fetchDisputes } from "@/lib/razorpay";
 import { getMerchantConnectionStatus } from "@/lib/merchantAccount";
 import { computeFraudSignal } from "@/lib/fraudSignal";
+import { DisputeWithRelations, DisputeKpiStats } from "@/lib/types/domain";
+import { apiSuccess, apiError } from "@/lib/api/response";
+import { logger } from "@/lib/logger";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+
+const QuerySchema = z.object({
+  mode: z.enum(["test", "live"]).default("test"),
+  forceError: z.string().optional(),
+});
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const mode = (searchParams.get("mode") || "test").toLowerCase() as "test" | "live";
+    const parsedQuery = QuerySchema.safeParse({
+      mode: searchParams.get("mode") || "test",
+      forceError: searchParams.get("forceError") || undefined,
+    });
+
+    if (!parsedQuery.success) {
+      return apiError("Invalid query parameters", 400, "INVALID_QUERY");
+    }
+
+    const { mode, forceError } = parsedQuery.data;
 
     // Support simulated failure for resilience testing
-    if (searchParams.get("forceError") === "500") {
-      return NextResponse.json(
-        { ok: false, error: "Simulated database connection failure (500)" },
-        { status: 500 }
-      );
+    if (forceError === "500") {
+      return apiError("Simulated database connection failure (500)", 500, "SIMULATED_FAILURE");
     }
 
     const merchantStatus = await getMerchantConnectionStatus();
@@ -29,27 +44,32 @@ export async function GET(request: NextRequest) {
     // =========================================================================
     if (mode === "live") {
       try {
-        console.log("📡 [API /api/disputes?mode=live] Querying real Razorpay API for live dispute records...");
+        logger.info("Querying Razorpay API for live dispute records", {
+          module: "ApiDisputes",
+          mode: "live",
+          merchantId: merchantStatus.merchantId,
+        });
+
         const liveRes = await fetchDisputes({ count: 50 }, "live");
         const liveItems = liveRes.items || [];
 
         // If no live disputes exist on the merchant's Razorpay account, return honest empty state
         if (liveItems.length === 0) {
-          return NextResponse.json({
-            ok: true,
+          const emptyStats: DisputeKpiStats = {
+            totalCount: 0,
+            totalPendingAmount: 0,
+            high: { count: 0, amount: 0 },
+            needsEvidence: { count: 0, amount: 0 },
+            low: { count: 0, amount: 0 },
+          };
+
+          return apiSuccess([], 200, {
             mode: "live",
             isConnected: merchantStatus.isConnected,
             merchantId: merchantStatus.merchantId,
             merchantName: merchantStatus.name,
             count: 0,
-            data: [],
-            stats: {
-              totalCount: 0,
-              totalPendingAmount: 0,
-              high: { count: 0, amount: 0 },
-              needsEvidence: { count: 0, amount: 0 },
-              low: { count: 0, amount: 0 },
-            },
+            stats: emptyStats,
           });
         }
 
@@ -62,8 +82,8 @@ export async function GET(request: NextRequest) {
         let lowCount = 0;
         let lowAmount = 0;
 
-        const liveDisputesWithScores = liveItems.map((item) => {
-          const disputeObj = {
+        const liveDisputesWithScores: DisputeWithRelations[] = liveItems.map((item) => {
+          const disputeObj: DisputeWithRelations = {
             id: item.id,
             rzpDisputeId: item.id,
             orderId: `order_${item.payment_id}`,
@@ -74,9 +94,9 @@ export async function GET(request: NextRequest) {
             currency: item.currency || "INR",
             phase: item.phase || "chargeback",
             status: item.status || "open",
-            mode: "live" as const,
-            dataSource: "live" as const,
-            data_source: "live" as const,
+            mode: "live",
+            dataSource: "live",
+            data_source: "live",
             isDemo: false,
             respondBy: item.respond_by
               ? new Date(item.respond_by * 1000).toISOString()
@@ -107,7 +127,7 @@ export async function GET(request: NextRequest) {
             evidenceItems: [],
           };
 
-          const winnability = computeWinnability(disputeObj, [], disputeObj.order.customer);
+          const winnability = computeWinnability(disputeObj, [], disputeObj.order?.customer);
           totalPendingAmount += item.amount || 0;
 
           if (winnability.band === "high") {
@@ -121,7 +141,7 @@ export async function GET(request: NextRequest) {
             lowAmount += item.amount || 0;
           }
 
-          const fraudSignal = computeFraudSignal(disputeObj, [], disputeObj.order.customer);
+          const fraudSignal = computeFraudSignal(disputeObj, [], disputeObj.order?.customer);
 
           return {
             ...disputeObj,
@@ -130,40 +150,43 @@ export async function GET(request: NextRequest) {
           };
         });
 
-        return NextResponse.json({
-          ok: true,
+        const liveStats: DisputeKpiStats = {
+          totalCount: liveDisputesWithScores.length,
+          totalPendingAmount,
+          high: { count: highCount, amount: highAmount },
+          needsEvidence: { count: needsEvidenceCount, amount: needsEvidenceAmount },
+          low: { count: lowCount, amount: lowAmount },
+        };
+
+        return apiSuccess(liveDisputesWithScores, 200, {
           mode: "live",
           isConnected: merchantStatus.isConnected,
           merchantId: merchantStatus.merchantId,
           merchantName: merchantStatus.name,
           count: liveDisputesWithScores.length,
-          data: liveDisputesWithScores,
-          stats: {
-            totalCount: liveDisputesWithScores.length,
-            totalPendingAmount,
-            high: { count: highCount, amount: highAmount },
-            needsEvidence: { count: needsEvidenceCount, amount: needsEvidenceAmount },
-            low: { count: lowCount, amount: lowAmount },
-          },
+          stats: liveStats,
         });
       } catch (liveError: unknown) {
-        console.warn("⚠️ [API /api/disputes?mode=live] Live call error or unconfigured account:", liveError instanceof Error ? liveError.message : liveError);
-        // In Live mode, NEVER fallback to seed/mock data
-        return NextResponse.json({
-          ok: true,
+        logger.warn("Live dispute fetch returned empty or error", {
+          module: "ApiDisputes",
+          error: liveError instanceof Error ? liveError.message : String(liveError),
+        });
+
+        const fallbackStats: DisputeKpiStats = {
+          totalCount: 0,
+          totalPendingAmount: 0,
+          high: { count: 0, amount: 0 },
+          needsEvidence: { count: 0, amount: 0 },
+          low: { count: 0, amount: 0 },
+        };
+
+        return apiSuccess([], 200, {
           mode: "live",
           isConnected: merchantStatus.isConnected,
           merchantId: merchantStatus.merchantId,
           merchantName: merchantStatus.name,
           count: 0,
-          data: [],
-          stats: {
-            totalCount: 0,
-            totalPendingAmount: 0,
-            high: { count: 0, amount: 0 },
-            needsEvidence: { count: 0, amount: 0 },
-            low: { count: 0, amount: 0 },
-          },
+          stats: fallbackStats,
           warning: "No live disputes returned or live account returned empty list.",
         });
       }
@@ -173,10 +196,10 @@ export async function GET(request: NextRequest) {
     // TEST MODE: THE SEEDED DEMO DISPUTES
     // Clearly labeled as demo/sample test data with representative winnability spread.
     // =========================================================================
-    let disputes: unknown[] | null = null;
+    let disputes: DisputeWithRelations[] | null = null;
 
     try {
-      // Race Prisma query against a 2000ms timeout
+      // Race Prisma query against a timeout
       const dbPromise = prisma.dispute.findMany({
         include: {
           order: {
@@ -196,14 +219,20 @@ export async function GET(request: NextRequest) {
         setTimeout(() => reject(new Error("DB Timeout")), 800)
       );
 
-      disputes = (await Promise.race([dbPromise, timeoutPromise])) as unknown[];
+      const dbResult = await Promise.race([dbPromise, timeoutPromise]);
+      if (dbResult && Array.isArray(dbResult) && dbResult.length > 0) {
+        disputes = dbResult as unknown as DisputeWithRelations[];
+      }
     } catch (dbError: unknown) {
-      console.warn("⚠️ [API /api/disputes?mode=test] Prisma DB query timeout, using in-memory store:", dbError instanceof Error ? dbError.message : dbError);
-      disputes = getInMemoryDisputes();
+      logger.warn("Prisma DB query timeout, using mock store", {
+        module: "ApiDisputes",
+        error: dbError instanceof Error ? dbError.message : String(dbError),
+      });
+      disputes = getInMemoryDisputes() as unknown as DisputeWithRelations[];
     }
 
     if (!disputes || !Array.isArray(disputes) || disputes.length === 0) {
-      disputes = getInMemoryDisputes();
+      disputes = getInMemoryDisputes() as unknown as DisputeWithRelations[];
     }
 
     let highCount = 0;
@@ -214,8 +243,7 @@ export async function GET(request: NextRequest) {
     let lowAmount = 0;
     let totalPendingAmount = 0;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const disputesWithScores = (disputes as any[]).map((d) => {
+    const disputesWithScores: DisputeWithRelations[] = disputes.map((d) => {
       const customer = d.order?.customer;
       const evidenceItems = d.evidenceItems || [];
       const winnability = computeWinnability(d, evidenceItems, customer);
@@ -247,37 +275,33 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
-      ok: true,
+    const testStats: DisputeKpiStats = {
+      totalCount: disputesWithScores.length,
+      totalPendingAmount,
+      high: {
+        count: highCount,
+        amount: highAmount,
+      },
+      needsEvidence: {
+        count: needsEvidenceCount,
+        amount: needsEvidenceAmount,
+      },
+      low: {
+        count: lowCount,
+        amount: lowAmount,
+      },
+    };
+
+    return apiSuccess(disputesWithScores, 200, {
       mode: "test",
       isConnected: merchantStatus.isConnected,
       merchantId: merchantStatus.merchantId,
       merchantName: merchantStatus.name,
       count: disputesWithScores.length,
-      data: disputesWithScores,
-      stats: {
-        totalCount: disputesWithScores.length,
-        totalPendingAmount,
-        high: {
-          count: highCount,
-          amount: highAmount,
-        },
-        needsEvidence: {
-          count: needsEvidenceCount,
-          amount: needsEvidenceAmount,
-        },
-        low: {
-          count: lowCount,
-          amount: lowAmount,
-        },
-      },
+      stats: testStats,
     });
   } catch (error: unknown) {
-    console.error("❌ [API /api/disputes] Unexpected error:", error);
-    const message = error instanceof Error ? error.message : "Failed to fetch disputes";
-    return NextResponse.json(
-      { ok: false, error: message },
-      { status: 500 }
-    );
+    logger.error("Unexpected error in GET /api/disputes", error, { module: "ApiDisputes" });
+    return apiError("Failed to fetch disputes", 500, "INTERNAL_ERROR");
   }
 }

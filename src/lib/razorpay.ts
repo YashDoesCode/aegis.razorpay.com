@@ -1,6 +1,7 @@
 import Razorpay from "razorpay";
 import { EvidenceType } from "./scoring/types";
 import { getActiveRazorpayClient } from "./merchantAccount";
+import { logger } from "./logger";
 
 /**
  * Returns an instance of the Razorpay SDK configured with environment secrets.
@@ -60,18 +61,28 @@ export async function fetchDisputes(
   const keyId = process.env.RAZORPAY_KEY_ID || "";
   const maskedKey = keyId ? `${keyId.slice(0, 8)}...` : "placeholder";
 
-  console.log(`📡 [Razorpay ${mode.toUpperCase()} API] Calling GET https://api.razorpay.com/v1/disputes (Key: ${maskedKey})`);
+  logger.info(`Fetching dispute feed from Razorpay API`, {
+    module: "RazorpaySDK",
+    mode,
+    maskedKey,
+  });
 
   try {
     const res = await (client.disputes as unknown as {
       all: (p?: Record<string, unknown>) => Promise<{ entity: string; count: number; items: RazorpayDisputeResponse[] }>;
     }).all(params);
 
-    console.log(`📦 [Razorpay ${mode.toUpperCase()} API] GET /v1/disputes raw response count:`, res?.count ?? 0);
+    logger.debug(`Razorpay API disputes returned count: ${res?.count ?? 0}`, {
+      module: "RazorpaySDK",
+      count: res?.count ?? 0,
+    });
     return res;
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string; code?: string }; message?: string };
-    console.warn(`⚠️ [Razorpay ${mode.toUpperCase()} API] fetchDisputes response/error:`, err.error?.description || err.message || err);
+    logger.warn(`Razorpay fetchDisputes API call returned error: ${err.error?.description || err.message}`, {
+      module: "RazorpaySDK",
+      mode,
+    });
     throw error;
   }
 }
@@ -84,17 +95,23 @@ export async function fetchDispute(
   mode: "test" | "live" = "test"
 ): Promise<RazorpayDisputeResponse> {
   const client = getRazorpayClient(mode);
-  console.log(`📡 [Razorpay ${mode.toUpperCase()} API] Calling GET https://api.razorpay.com/v1/disputes/${disputeId}`);
+  logger.info(`Fetching dispute ${disputeId} from Razorpay API`, {
+    module: "RazorpaySDK",
+    disputeId,
+    mode,
+  });
 
   try {
     const res = await (client.disputes as unknown as {
       fetch: (id: string) => Promise<RazorpayDisputeResponse>;
     }).fetch(disputeId);
-    console.log(`📦 [Razorpay ${mode.toUpperCase()} API] GET /v1/disputes/${disputeId} response:`, res?.id);
     return res;
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string } };
-    console.warn(`⚠️ [Razorpay ${mode.toUpperCase()} API] fetchDispute(${disputeId}) warning:`, err.error?.description || err);
+    logger.warn(`Razorpay fetchDispute(${disputeId}) returned warning: ${err.error?.description}`, {
+      module: "RazorpaySDK",
+      disputeId,
+    });
     throw error;
   }
 }
@@ -134,7 +151,12 @@ export async function contestDispute(
     }
   }
 
-  console.log(`📡 [Razorpay ${mode.toUpperCase()} API] Calling PATCH https://api.razorpay.com/v1/disputes/${disputeId}/contest (Action: ${action})`);
+  logger.info(`Staging contest on Razorpay API for dispute ${disputeId} (Action: ${action})`, {
+    module: "RazorpaySDK",
+    disputeId,
+    action,
+    mode,
+  });
 
   try {
     // Attempt actual SDK call against API
@@ -142,7 +164,10 @@ export async function contestDispute(
       contest: (id: string, data: ContestEvidencePayload) => Promise<unknown>;
     }).contest(disputeId, contestBody);
 
-    console.log(`✅ [Razorpay ${mode.toUpperCase()} API] Contest Response:`, JSON.stringify(res, null, 2));
+    logger.info(`Razorpay contest draft staged successfully for ${disputeId}`, {
+      module: "RazorpaySDK",
+      disputeId,
+    });
     return {
       success: true,
       disputeId,
@@ -152,7 +177,11 @@ export async function contestDispute(
     };
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string; code?: string }; message?: string };
-    console.warn(`⚠️ [Razorpay ${mode.toUpperCase()} API] Contest call returned:`, err.error?.description || err.message || err);
+    logger.warn(`Razorpay contest call returned error/warning: ${err.error?.description || err.message}`, {
+      module: "RazorpaySDK",
+      disputeId,
+      mode,
+    });
 
     // In LIVE mode, NEVER synthesize or fabricate contest success if the API failed
     if (mode === "live") {
@@ -189,11 +218,18 @@ export async function acceptDispute(
   mode: "test" | "live" = "test"
 ): Promise<{ success: boolean; disputeId: string; response: unknown; mode: "live" | "mock_fallback" }> {
   const client = getRazorpayClient(mode);
-  console.log(`📡 [Razorpay ${mode.toUpperCase()} API] Calling POST https://api.razorpay.com/v1/disputes/${disputeId}/accept`);
+  logger.info(`Accepting dispute ${disputeId} on Razorpay API`, {
+    module: "RazorpaySDK",
+    disputeId,
+    mode,
+  });
 
   try {
     const res = await (client.disputes as unknown as { accept: (id: string) => Promise<unknown> }).accept(disputeId);
-    console.log(`✅ [Razorpay ${mode.toUpperCase()} API] Accept Response:`, JSON.stringify(res, null, 2));
+    logger.info(`Dispute ${disputeId} accepted successfully`, {
+      module: "RazorpaySDK",
+      disputeId,
+    });
     return {
       success: true,
       disputeId,
@@ -202,7 +238,11 @@ export async function acceptDispute(
     };
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string }; message?: string };
-    console.warn(`⚠️ [Razorpay ${mode.toUpperCase()} API] Accept call returned:`, err.error?.description || err.message || err);
+    logger.warn(`Razorpay accept call returned: ${err.error?.description || err.message}`, {
+      module: "RazorpaySDK",
+      disputeId,
+      mode,
+    });
 
     if (mode === "live") {
       throw error;
@@ -225,4 +265,3 @@ export async function acceptDispute(
 }
 
 export default razorpay;
-
