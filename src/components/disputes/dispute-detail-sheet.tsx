@@ -102,6 +102,7 @@ export function DisputeDetailSheet({
   onDisputeUpdated,
 }: DisputeDetailSheetProps) {
   const [drafting, setDrafting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -156,6 +157,34 @@ export function DisputeDetailSheet({
       toast.error(e.message || "Failed to draft rebuttal");
     } finally {
       setDrafting(false);
+    }
+  };
+
+  const handleSubmitContest = async () => {
+    try {
+      setSubmitting(true);
+      const res = await fetch(`/api/disputes/${encodeURIComponent(dispute.id)}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          summary: draftResult?.summary,
+          customInstructions: customPrompt,
+        }),
+      });
+
+      const json = await res.json();
+      if (!json.ok) {
+        throw new Error(json.error || "Failed to submit contest");
+      }
+
+      toast.success("Dispute rebuttal submitted to Razorpay! Status transitioned to Under Review.");
+      if (onDisputeUpdated) onDisputeUpdated();
+    } catch (err: unknown) {
+      console.error("Failed to submit contest:", err);
+      const e = err as Error;
+      toast.error(e.message || "Failed to submit contest");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -642,29 +671,71 @@ export function DisputeDetailSheet({
             </div>
           </div>
 
-          {/* 8. ACTIONS: Sticky Footer */}
-          <div className="sticky bottom-0 bg-white border-t border-border-subtle p-4 z-10 shadow-xs flex items-center gap-3">
-            <Button
-              onClick={handleDraftAndContest}
-              disabled={drafting || accepting}
-              className="flex-1 bg-primary text-white hover:bg-primary-container h-10 text-xs font-semibold rounded-[4px] shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              {drafting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Drafting & Staging Contest (Draft)...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Draft & Stage Contest (Draft Mode)
-                </>
-              )}
-            </Button>
+          <div className="sticky bottom-0 bg-white border-t border-border-subtle p-4 z-10 shadow-xs flex flex-wrap items-center gap-2.5">
+            {dispute.status === "under_review" ? (
+              <div className="flex-1 flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 h-10 px-3 rounded-[4px] text-xs font-semibold text-slate-700">
+                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                <span>Contest Submitted & Under Review</span>
+              </div>
+            ) : draftResult ? (
+              <>
+                <Button
+                  onClick={handleSubmitContest}
+                  disabled={submitting || drafting || accepting}
+                  className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 h-10 text-xs font-semibold rounded-[4px] shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Submitting to Razorpay...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Submit Contest to Razorpay
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={handleDraftAndContest}
+                  disabled={drafting || submitting || accepting}
+                  variant="outline"
+                  className="text-xs font-semibold text-slate-700 border-border-subtle hover:bg-slate-50 h-10 rounded-[4px] cursor-pointer disabled:opacity-50"
+                >
+                  {drafting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Re-drafting...
+                    </>
+                  ) : (
+                    "Re-Draft"
+                  )}
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={handleDraftAndContest}
+                disabled={drafting || accepting}
+                className="flex-1 bg-primary text-white hover:bg-primary-container h-10 text-xs font-semibold rounded-[4px] shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {drafting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Drafting & Staging Contest (Draft)...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Draft & Stage Contest
+                  </>
+                )}
+              </Button>
+            )}
 
             <Button
               onClick={handleAcceptDispute}
-              disabled={accepting || drafting || dispute.status === "lost"}
+              disabled={accepting || drafting || submitting || dispute.status === "lost"}
               variant="outline"
               className="text-xs font-semibold text-rose-700 border-rose-200 hover:bg-rose-50 h-10 rounded-[4px] cursor-pointer disabled:opacity-50"
             >

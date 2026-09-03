@@ -3,10 +3,6 @@ import { EvidenceType } from "./scoring/types";
 import { getActiveRazorpayClient } from "./merchantAccount";
 import { logger } from "./logger";
 
-/**
- * Returns an instance of the Razorpay SDK configured with environment secrets.
- * Ensures server-side credentials are never hardcoded or exposed client-side.
- */
 export function getRazorpayClient(mode: "test" | "live" = "test"): Razorpay {
   return getActiveRazorpayClient(mode);
 }
@@ -45,9 +41,6 @@ export interface RazorpayDisputeResponse {
   [key: string]: unknown;
 }
 
-/**
- * Fetch all disputes from Razorpay API (/v1/disputes)
- */
 export async function fetchDisputes(
   params?: {
     count?: number;
@@ -87,9 +80,6 @@ export async function fetchDisputes(
   }
 }
 
-/**
- * Fetch a single dispute by ID (/v1/disputes/:id)
- */
 export async function fetchDispute(
   disputeId: string,
   mode: "test" | "live" = "test"
@@ -116,10 +106,6 @@ export async function fetchDispute(
   }
 }
 
-/**
- * Contest a dispute in draft or submit mode (/v1/disputes/:id/contest)
- * Default action is strictly "draft" to ensure no accidental live submissions.
- */
 export async function contestDispute(
   disputeId: string,
   payload: {
@@ -134,7 +120,6 @@ export async function contestDispute(
   const client = getRazorpayClient(mode);
   const action = payload.action || "draft";
 
-  // Build the official Razorpay contest body
   const contestBody: ContestEvidencePayload = {
     amount: payload.amount,
     summary: payload.summary.slice(0, 1000),
@@ -142,7 +127,6 @@ export async function contestDispute(
     ...payload.rawEvidence,
   };
 
-  // Map typed evidence arrays if provided
   if (payload.evidenceMap) {
     for (const [key, docs] of Object.entries(payload.evidenceMap)) {
       if (docs && docs.length > 0) {
@@ -159,7 +143,6 @@ export async function contestDispute(
   });
 
   try {
-    // Attempt actual SDK call against API
     const res = await (client.disputes as unknown as {
       contest: (id: string, data: ContestEvidencePayload) => Promise<unknown>;
     }).contest(disputeId, contestBody);
@@ -183,12 +166,10 @@ export async function contestDispute(
       mode,
     });
 
-    // In LIVE mode, NEVER synthesize or fabricate contest success if the API failed
     if (mode === "live") {
       throw error;
     }
 
-    // In TEST mode, return safe fallback state for seeded demo IDs
     return {
       success: true,
       disputeId,
@@ -210,9 +191,6 @@ export async function contestDispute(
   }
 }
 
-/**
- * Accept a dispute (/v1/disputes/:id/accept)
- */
 export async function acceptDispute(
   disputeId: string,
   mode: "test" | "live" = "test"
