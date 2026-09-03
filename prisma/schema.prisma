@@ -145,3 +145,35 @@ model EvidenceItem {
   @@index([type])
   @@map("evidence_items")
 }
+
+model WebhookEvent {
+  id                String    @id @default(cuid())
+  disputeId         String?
+  eventType         String
+  signatureVerified Boolean   @default(false)
+  payloadHash       String    @unique
+  receivedAt        DateTime  @default(now())
+  processedAt       DateTime?
+  rawHeaders        String?
+  status            String    @default("processed")
+  payload           String?
+  createdAt         DateTime  @default(now())
+
+  @@index([disputeId])
+  @@index([eventType])
+  @@index([status])
+  @@map("webhook_events")
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  disputeId String?
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([disputeId])
+  @@index([action])
+  @@map("audit_events")
+}
+

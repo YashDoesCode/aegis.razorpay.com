@@ -546,3 +546,62 @@ export function addInMemoryDispute(dispute: MockDisputeRecord): void {
     inMemoryStore.unshift(dispute);
   }
 }
+
+export interface MockWebhookEventRecord {
+  id: string;
+  disputeId?: string | null;
+  eventType: string;
+  signatureVerified: boolean;
+  payloadHash: string;
+  receivedAt: Date;
+  processedAt?: Date | null;
+  rawHeaders?: string | null;
+  status: string;
+  payload?: string | null;
+  createdAt: Date;
+}
+
+export interface MockAuditEventRecord {
+  id: string;
+  disputeId?: string | null;
+  action: string;
+  details?: string | null;
+  createdAt: Date;
+}
+
+const inMemoryWebhookEvents: MockWebhookEventRecord[] = [];
+const inMemoryAuditEvents: MockAuditEventRecord[] = [];
+
+export function getInMemoryWebhookEvents(): MockWebhookEventRecord[] {
+  return inMemoryWebhookEvents;
+}
+
+export function getInMemoryWebhookEventByHash(payloadHash: string): MockWebhookEventRecord | undefined {
+  return inMemoryWebhookEvents.find((e) => e.payloadHash === payloadHash);
+}
+
+export function addInMemoryWebhookEvent(event: MockWebhookEventRecord): void {
+  const existingIdx = inMemoryWebhookEvents.findIndex((e) => e.payloadHash === event.payloadHash || e.id === event.id);
+  if (existingIdx >= 0) {
+    inMemoryWebhookEvents[existingIdx] = event;
+  } else {
+    inMemoryWebhookEvents.unshift(event);
+  }
+}
+
+export function getInMemoryAuditEvents(disputeId?: string): MockAuditEventRecord[] {
+  if (disputeId) {
+    return inMemoryAuditEvents.filter((a) => a.disputeId === disputeId);
+  }
+  return inMemoryAuditEvents;
+}
+
+export function addInMemoryAuditEvent(event: MockAuditEventRecord): void {
+  inMemoryAuditEvents.unshift(event);
+}
+
+export function resetInMemoryWebhookStore(): void {
+  inMemoryWebhookEvents.length = 0;
+  inMemoryAuditEvents.length = 0;
+}
+

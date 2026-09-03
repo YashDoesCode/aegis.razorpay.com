@@ -1,0 +1,343 @@
+import crypto from "crypto";
+import { prisma } from "../prisma";
+import { logger } from "../logger";
+import {
+  RazorpayWebhookPayload,
+  isSupportedDisputeEvent,
+  SupportedDisputeEvent,
+} from "./schemas";
+import { computePayloadHash } from "./verifySignature";
+import {
+  getInMemoryWebhookEventByHash,
+  addInMemoryWebhookEvent,
+  addInMemoryAuditEvent,
+  updateInMemoryDisputeStatus,
+  addInMemoryDispute,
+  getInMemoryDisputeById,
+  MockDisputeRecord,
+} from "../mockStore";
+
+export interface ProcessWebhookResult {
+  status: "processed" | "duplicate" | "ignored" | "error";
+  disputeId?: string;
+  eventType?: string;
+  message?: string;
+}
+
+export async function processWebhookPayload(params: {
+  payload: RazorpayWebhookPayload;
+  rawBody: string;
+  rawHeaders?: string;
+  signatureVerified: boolean;
+  requestId: string;
+}): Promise<ProcessWebhookResult> {
+  const { payload, rawBody, rawHeaders, signatureVerified, requestId } = params;
+  const eventType = payload.event;
+  const payloadHash = computePayloadHash(rawBody);
+
+  const inMemoryDuplicate = getInMemoryWebhookEventByHash(payloadHash);
+  if (inMemoryDuplicate) {
+    logger.info("Duplicate webhook event detected in memory", {
+      module: "WebhookService",
+      requestId,
+      eventType,
+      payloadHash,
+    });
+    return {
+      status: "duplicate",
+      eventType,
+      disputeId: inMemoryDuplicate.disputeId || undefined,
+      message: "Webhook already processed (idempotent)",
+    };
+  }
+
+  try {
+    const dbDuplicate = await prisma.webhookEvent.findUnique({
+      where: { payloadHash },
+    });
+    if (dbDuplicate) {
+      logger.info("Duplicate webhook event detected in database", {
+        module: "WebhookService",
+        requestId,
+        eventType,
+        payloadHash,
+      });
+      return {
+        status: "duplicate",
+        eventType,
+        disputeId: dbDuplicate.disputeId || undefined,
+        message: "Webhook already processed (idempotent)",
+      };
+    }
+  } catch (err) {
+    logger.warn("Database duplicate check skipped, using in-memory idempotency", {
+      module: "WebhookService",
+      requestId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  if (!isSupportedDisputeEvent(eventType)) {
+    const ignoredEventId = `evt_${crypto.randomUUID()}`;
+    const now = new Date();
+
+    addInMemoryWebhookEvent({
+      id: ignoredEventId,
+      eventType,
+      signatureVerified,
+      payloadHash,
+      receivedAt: now,
+      processedAt: now,
+      rawHeaders,
+      status: "ignored",
+      payload: rawBody,
+      createdAt: now,
+    });
+
+    addInMemoryAuditEvent({
+      id: `aud_${crypto.randomUUID()}`,
+      action: "WEBHOOK_IGNORED",
+      details: JSON.stringify({ eventType, requestId }),
+      createdAt: now,
+    });
+
+    try {
+      await prisma.webhookEvent.create({
+        data: {
+          id: ignoredEventId,
+          eventType,
+          signatureVerified,
+          payloadHash,
+          receivedAt: now,
+          processedAt: now,
+          rawHeaders,
+          status: "ignored",
+          payload: rawBody,
+        },
+      });
+    } catch {
+      // Ignore DB write errors on fallback
+    }
+
+    logger.info(`Ignoring unsupported webhook event: ${eventType}`, {
+      module: "WebhookService",
+      requestId,
+      eventType,
+    });
+
+    return {
+      status: "ignored",
+      eventType,
+      message: `Ignored unsupported event type ${eventType}`,
+    };
+  }
+
+  const disputeEntity = payload.payload.dispute.entity;
+  const disputeId = disputeEntity.id;
+  const eventId = `evt_${crypto.randomUUID()}`;
+  const now = new Date();
+
+  addInMemoryWebhookEvent({
+    id: eventId,
+    disputeId,
+    eventType,
+    signatureVerified,
+    payloadHash,
+    receivedAt: now,
+    processedAt: now,
+    rawHeaders,
+    status: "processed",
+    payload: rawBody,
+    createdAt: now,
+  });
+
+  addInMemoryAuditEvent({
+    id: `aud_${crypto.randomUUID()}`,
+    disputeId,
+    action: "WEBHOOK_RECEIVED",
+    details: JSON.stringify({ eventType, requestId, disputeId }),
+    createdAt: now,
+  });
+
+  const auditAction = getAuditActionForEvent(eventType);
+  addInMemoryAuditEvent({
+    id: `aud_${crypto.randomUUID()}`,
+    disputeId,
+    action: auditAction,
+    details: JSON.stringify({
+      eventType,
+      amount: disputeEntity.amount,
+      reasonCode: disputeEntity.reason_code,
+      status: disputeEntity.status,
+    }),
+    createdAt: now,
+  });
+
+  await applyDisputeStateTransition(eventType, disputeEntity);
+
+  try {
+    await prisma.webhookEvent.create({
+      data: {
+        id: eventId,
+        disputeId,
+        eventType,
+        signatureVerified,
+        payloadHash,
+        receivedAt: now,
+        processedAt: now,
+        rawHeaders,
+        status: "processed",
+        payload: rawBody,
+      },
+    });
+
+    await prisma.auditEvent.createMany({
+      data: [
+        {
+          disputeId,
+          action: "WEBHOOK_RECEIVED",
+          details: JSON.stringify({ eventType, requestId, disputeId }),
+        },
+        {
+          disputeId,
+          action: auditAction,
+          details: JSON.stringify({
+            eventType,
+            amount: disputeEntity.amount,
+            reasonCode: disputeEntity.reason_code,
+            status: disputeEntity.status,
+          }),
+        },
+      ],
+    });
+  } catch (dbErr) {
+    logger.warn("Database webhook event persistence skipped, using in-memory store", {
+      module: "WebhookService",
+      requestId,
+      error: dbErr instanceof Error ? dbErr.message : String(dbErr),
+    });
+  }
+
+  logger.info(`Successfully ingested webhook event ${eventType} for dispute ${disputeId}`, {
+    module: "WebhookService",
+    requestId,
+    eventType,
+    disputeId,
+  });
+
+  return {
+    status: "processed",
+    disputeId,
+    eventType,
+    message: `Dispute ${disputeId} updated successfully from ${eventType}`,
+  };
+}
+
+function getAuditActionForEvent(eventType: SupportedDisputeEvent): string {
+  switch (eventType) {
+    case "dispute.created":
+      return "DISPUTE_CREATED";
+    case "dispute.under_review":
+      return "DISPUTE_UNDER_REVIEW";
+    case "dispute.won":
+      return "DISPUTE_WON";
+    case "dispute.lost":
+      return "DISPUTE_LOST";
+  }
+}
+
+async function applyDisputeStateTransition(
+  eventType: SupportedDisputeEvent,
+  entity: {
+    id: string;
+    payment_id: string;
+    amount: number;
+    currency?: string;
+    reason_code?: string;
+    status: string;
+    phase?: string;
+    respond_by?: number | null;
+    created_at?: number | null;
+  }
+): Promise<void> {
+  const statusMap: Record<SupportedDisputeEvent, string> = {
+    "dispute.created": "open",
+    "dispute.under_review": "under_review",
+    "dispute.won": "won",
+    "dispute.lost": "lost",
+  };
+
+  const newStatus = statusMap[eventType] || entity.status;
+  const existingInMemory = getInMemoryDisputeById(entity.id);
+
+  if (existingInMemory) {
+    updateInMemoryDisputeStatus(entity.id, newStatus);
+  } else {
+    const respondByDate = entity.respond_by
+      ? new Date(entity.respond_by * 1000)
+      : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+    const createdAtDate = entity.created_at
+      ? new Date(entity.created_at * 1000)
+      : new Date();
+
+    const newRecord: MockDisputeRecord = {
+      id: entity.id,
+      rzpDisputeId: entity.id,
+      orderId: `order_${entity.payment_id}`,
+      paymentId: entity.payment_id,
+      reasonCode: entity.reason_code || "1064",
+      network: "upi",
+      amount: entity.amount,
+      currency: entity.currency || "INR",
+      phase: entity.phase || "chargeback",
+      status: newStatus,
+      dataSource: "live",
+      data_source: "live",
+      respondBy: respondByDate,
+      createdAt: createdAtDate,
+      updatedAt: new Date(),
+      order: {
+        id: `order_${entity.payment_id}`,
+        rzpPaymentId: entity.payment_id,
+        item: `Webhook Ingested Payment (${entity.payment_id})`,
+        amount: entity.amount,
+        currency: entity.currency || "INR",
+        status: "captured",
+      },
+      evidenceItems: [],
+    };
+
+    addInMemoryDispute(newRecord);
+  }
+
+  try {
+    await prisma.dispute.upsert({
+      where: { rzpDisputeId: entity.id },
+      create: {
+        id: entity.id,
+        rzpDisputeId: entity.id,
+        orderId: `order_${entity.payment_id}`,
+        paymentId: entity.payment_id,
+        reasonCode: entity.reason_code || "1064",
+        network: "upi",
+        amount: entity.amount,
+        currency: entity.currency || "INR",
+        phase: entity.phase || "chargeback",
+        status: newStatus,
+        respondBy: entity.respond_by
+          ? new Date(entity.respond_by * 1000)
+          : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        createdAt: entity.created_at
+          ? new Date(entity.created_at * 1000)
+          : new Date(),
+        updatedAt: new Date(),
+      },
+      update: {
+        status: newStatus,
+        updatedAt: new Date(),
+      },
+    });
+  } catch {
+    // Graceful fallback to memory store
+  }
+}
