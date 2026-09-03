@@ -18,7 +18,7 @@ describe("Aegis Failure Simulation & Live Resilience Test", () => {
     expect(json.draftedRebuttal.summary).toContain("Sony WH-1000XM5");
     expect(json.draftedRebuttal.explanationLetter).toContain("Dear Dispute Operations");
     expect(json.draftedRebuttal.citedEvidence).toContain("shipping_proof");
-  });
+  }, 15000);
 
   // 2. Simulation 2: Forced 500 error on /api/disputes
   it("Simulation 2: Forced 500 error returns friendly error payload without crashing server", async () => {

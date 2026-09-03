@@ -93,7 +93,7 @@ export function ExposureRecoveryChart({
                 key={range}
                 onClick={() => setSelectedRange(range)}
                 className={cn(
-                  "px-2.5 py-0.5 rounded-full transition-all duration-150 cursor-pointer",
+                  "px-2.5 py-0.5 rounded-full transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-hidden",
                   isActive
                     ? "bg-slate-950 text-white font-bold shadow-xs"
                     : "hover:text-slate-950 hover:bg-slate-50"
@@ -235,7 +235,7 @@ export function ExposureRecoveryChart({
               key={month}
               onClick={() => setActiveMonth(month)}
               className={cn(
-                "transition-colors px-1.5 py-0.5 rounded-full cursor-pointer",
+                "transition-colors px-1.5 py-0.5 rounded-full cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden",
                 isSelected
                   ? "text-slate-950 font-bold bg-white px-2 py-0.5 shadow-xs border border-slate-200"
                   : "hover:text-slate-700"

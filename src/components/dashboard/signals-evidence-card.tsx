@@ -37,7 +37,7 @@ export function SignalsEvidenceCard({
         <Link
           href="/settings"
           aria-label="Open Insights"
-          className="w-7 h-7 rounded-full bg-white hover:bg-slate-100 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer"
+          className="w-7 h-7 rounded-full bg-white hover:bg-slate-100 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
         >
           <ArrowUpRight className="w-3.5 h-3.5 stroke-[2]" />
         </Link>

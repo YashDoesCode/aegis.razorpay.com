@@ -184,7 +184,8 @@ export default function OverviewPage() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200/90 px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 transition shadow-xs cursor-pointer outline-hidden"
+                    aria-label={`Filter disputes: ${filterState}`}
+                    className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200/90 px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
                     <span>{filterState}</span>
@@ -234,7 +235,7 @@ export default function OverviewPage() {
                 onClick={handleManualRefresh}
                 disabled={refreshing}
                 aria-label="Refresh Data"
-                className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer disabled:opacity-50"
+                className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
               >
                 <RotateCw
                   className={`w-3.5 h-3.5 stroke-[1.75] ${
@@ -248,7 +249,7 @@ export default function OverviewPage() {
                 type="button"
                 onClick={handleExport}
                 aria-label="Export Overview"
-                className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
               >
                 <ArrowUpRight className="w-3.5 h-3.5 stroke-[2]" />
               </button>
@@ -267,7 +268,7 @@ export default function OverviewPage() {
               </div>
               <button
                 onClick={handleManualRefresh}
-                className="px-3 py-1 rounded-full bg-rose-600 text-white font-semibold hover:bg-rose-700 transition cursor-pointer shrink-0"
+                className="px-3 py-1 rounded-full bg-rose-600 text-white font-semibold hover:bg-rose-700 transition cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
               >
                 Retry Sync
               </button>

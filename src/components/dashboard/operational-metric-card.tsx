@@ -26,7 +26,7 @@ export function OperationalMetricGrid({
       {/* 1. Open Queue */}
       <Link
         href="/disputes"
-        className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-slate-300 transition-all duration-150 group shadow-xs cursor-pointer"
+        className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-slate-300 transition-all duration-150 group shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
       >
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-medium text-slate-500 group-hover:text-slate-800 transition-colors">
@@ -47,7 +47,7 @@ export function OperationalMetricGrid({
       {/* 2. High-Risk */}
       <Link
         href="/disputes?filter=high_risk"
-        className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-rose-200 transition-all duration-150 group shadow-xs cursor-pointer"
+        className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-rose-200 transition-all duration-150 group shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
       >
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-medium text-slate-500 group-hover:text-slate-800 transition-colors">
@@ -68,7 +68,7 @@ export function OperationalMetricGrid({
       {/* 3. Won Ratio */}
       <Link
         href="/disputes?filter=won"
-        className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-emerald-200 transition-all duration-150 group shadow-xs cursor-pointer"
+        className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-emerald-200 transition-all duration-150 group shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden"
       >
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-medium text-slate-500 group-hover:text-slate-800 transition-colors">
@@ -89,7 +89,7 @@ export function OperationalMetricGrid({
       {/* 4. Evidence Gaps */}
       <Link
         href="/disputes?filter=needs_evidence"
-        className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-amber-200 transition-all duration-150 group shadow-xs cursor-pointer"
+        className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-amber-200 transition-all duration-150 group shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-hidden"
       >
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-medium text-slate-500 group-hover:text-slate-800 transition-colors">

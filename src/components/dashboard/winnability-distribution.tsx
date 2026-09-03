@@ -46,7 +46,8 @@ export function WinnabilityDistribution({
             onClick={() =>
               setViewMode((prev) => (prev === "volume" ? "value" : "volume"))
             }
-            className="flex items-center gap-1 text-[11px] text-slate-600 bg-white border border-slate-200/90 px-2.5 py-1 rounded-full shadow-xs hover:text-slate-950 transition cursor-pointer"
+            aria-label={`Toggle distribution view mode. Current: ${viewMode}`}
+            className="flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-white border border-slate-200/90 px-2.5 py-1 rounded-full shadow-xs hover:text-slate-950 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
           >
             <span>{viewMode === "volume" ? "By volume" : "By value"}</span>
             <ChevronDown className="w-3 h-3 text-slate-400 stroke-[2]" />

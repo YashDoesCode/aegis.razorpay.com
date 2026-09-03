@@ -58,7 +58,7 @@ export function ActionQueue({
         {/* Alert Chip 1: Due today */}
         <Link
           href="/disputes?filter=due_today"
-          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-rose-200 shrink-0 cursor-pointer transition shadow-xs group"
+          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-rose-200 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
         >
           <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 group-hover:bg-rose-100 transition-colors">
             <Clock className="w-3.5 h-3.5 stroke-[2]" />
@@ -76,7 +76,7 @@ export function ActionQueue({
         {/* Alert Chip 2: Evidence gaps */}
         <Link
           href="/disputes?filter=evidence_gaps"
-          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-amber-200 shrink-0 cursor-pointer transition shadow-xs group"
+          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-amber-200 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-hidden"
         >
           <div className="w-6 h-6 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors">
             <FileSearch className="w-3.5 h-3.5 stroke-[2]" />
@@ -94,7 +94,7 @@ export function ActionQueue({
         {/* Alert Chip 3: High-risk claims */}
         <Link
           href="/disputes?filter=high_risk"
-          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group"
+          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
         >
           <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-slate-200 transition-colors">
             <ShieldAlert className="w-3.5 h-3.5 stroke-[2]" />
@@ -112,7 +112,7 @@ export function ActionQueue({
         {/* Alert Chip 4: Courier events */}
         <Link
           href="/disputes?filter=courier_sync"
-          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group"
+          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden"
         >
           <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-colors">
             <PackageCheck className="w-3.5 h-3.5 stroke-[2]" />
@@ -133,7 +133,7 @@ export function ActionQueue({
         type="button"
         onClick={handleScrollRight}
         aria-label="Next Queue Items"
-        className="w-7 h-7 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 shrink-0 ml-auto transition shadow-xs cursor-pointer"
+        className="w-7 h-7 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 shrink-0 ml-auto transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
       >
         <ChevronRight className="w-3.5 h-3.5 stroke-[2]" />
       </button>

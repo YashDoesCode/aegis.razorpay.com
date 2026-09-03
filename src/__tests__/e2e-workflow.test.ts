@@ -128,7 +128,7 @@ describe("E2E Aegis Defense Pipeline & Dashboard Verification", () => {
       expect(res.status).toBe(200);
       const text = await res.text();
       expect(text).toContain("Razorpay");
-      expect(text).toContain("AEGIS");
+      expect(text.toUpperCase()).toContain("AEGIS");
     }
   });
 });

@@ -219,7 +219,7 @@ export function DashboardShell({
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        "px-4 py-1.5 rounded-full transition-all duration-150 cursor-pointer",
+                        "px-4 py-1.5 rounded-full transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-hidden",
                         item.hiddenClass,
                         isActive
                           ? "bg-slate-950 text-white font-semibold shadow-xs"
@@ -246,7 +246,8 @@ export function DashboardShell({
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Search dispute, RRN, order ID..."
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-full text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-slate-400 focus:bg-white transition"
+                  aria-label="Search dispute, RRN, order ID"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-full text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-slate-400 focus:bg-white focus-visible:ring-2 focus-visible:ring-slate-400 transition"
                 />
               </div>
 
@@ -256,7 +257,7 @@ export function DashboardShell({
                   <button
                     aria-label="Notifications"
                     data-testid="notification-bell"
-                    className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-600 hover:text-slate-950 relative transition shadow-xs cursor-pointer outline-hidden"
+                    className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-600 hover:text-slate-950 relative transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
                   >
                     <Bell className="w-4 h-4 stroke-[1.75]" />
                     {notifications.some((n) => n.unread) && (
@@ -315,7 +316,8 @@ export function DashboardShell({
                 <DropdownMenuTrigger asChild>
                   <button
                     data-testid="user-profile-menu"
-                    className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/90 pl-1.5 pr-3 py-1 rounded-full cursor-pointer transition shadow-xs outline-hidden"
+                    aria-label={`Merchant Account Menu: ${merchant.name || "Merchant Corp"}`}
+                    className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/90 pl-1.5 pr-3 py-1 rounded-full cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
                   >
                     <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold tracking-tight">
                       {merchantInitials}
