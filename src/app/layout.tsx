@@ -4,6 +4,7 @@ import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { MerchantModeProvider } from "@/context/merchant-mode-context";
+import { StartupProvider, StartupExperience } from "@/components/startup";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,12 +39,15 @@ export default function RootLayout({
         className="h-full bg-rp-bg text-rp-ink font-sans antialiased"
         suppressHydrationWarning
       >
-        <MerchantModeProvider>
-          <TooltipProvider delay={200}>
-            {children}
-            <Toaster richColors position="top-right" />
-          </TooltipProvider>
-        </MerchantModeProvider>
+        <StartupProvider>
+          <MerchantModeProvider>
+            <TooltipProvider delay={200}>
+              <StartupExperience />
+              {children}
+              <Toaster richColors position="top-right" />
+            </TooltipProvider>
+          </MerchantModeProvider>
+        </StartupProvider>
       </body>
     </html>
   );

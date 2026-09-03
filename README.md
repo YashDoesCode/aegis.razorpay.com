@@ -36,6 +36,7 @@
 6. [Deterministic Winnability Scoring Engine](#deterministic-winnability-scoring-engine)
 7. [First-Party Fraud Detection & Entity Relationship Graph](#first-party-fraud-detection--entity-relationship-graph)
 8. [Application DOM & Component Structure](#application-dom--component-structure)
+   - [Enterprise Startup Sequence & Playback Engine](#enterprise-startup-sequence--playback-engine)
 9. [Supported Network Reason Codes](#supported-network-reason-codes)
 10. [API Reference](#api-reference)
 11. [Platform-Wide Immutable Audit Ledger](#platform-wide-immutable-audit-ledger)
@@ -291,13 +292,18 @@ The following tree details the complete document object model and component hier
 ```
 RootLayout (src/app/layout.tsx)
 │
-├── MerchantModeProvider (src/context/merchant-mode-context.tsx)
-│   ├── TooltipProvider (src/components/ui/tooltip.tsx)
-│   ├── Toaster (src/components/ui/sonner.tsx)
+├── StartupProvider (src/components/startup/startup-context.tsx)
+│   ├── StartupExperience (src/components/startup/StartupExperience.tsx)
+│   │   ├── StartupOverlay (src/components/startup/StartupOverlay.tsx)
+│   │   └── StartupVideo (src/components/startup/StartupVideo.tsx)
 │   │
-│   └── DashboardShell (src/components/dashboard/dashboard-shell.tsx)
+│   └── MerchantModeProvider (src/context/merchant-mode-context.tsx)
+│       ├── TooltipProvider (src/components/ui/tooltip.tsx)
+│       ├── Toaster (src/components/ui/sonner.tsx)
 │       │
-│       ├── Desktop SideNav (<nav className="fixed left-0 top-0 h-screen w-[260px] ...">)
+│       └── DashboardShell (src/components/dashboard/dashboard-shell.tsx)
+│           │
+│           ├── Desktop SideNav (<nav className="fixed left-0 top-0 h-screen w-[260px] ...">)
 │       │   ├── Brand Header (Razorpay AEGIS Shield)
 │       │   ├── Navigation Links List (<ul>)
 │       │   │   ├── NavItem: Overview (/overview)
