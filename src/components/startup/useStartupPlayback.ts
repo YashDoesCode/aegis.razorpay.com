@@ -127,13 +127,12 @@ export function useStartupPlayback({
       transitionTo("LOADING_VIDEO");
     }
 
-    // Set watchdog timer to ensure user is NEVER locked out if media hangs indefinitely
-    watchdogTimerRef.current = setTimeout(() => {
-      if (!hasCompleted && startupState !== "PLAYING") {
-        console.warn("[Aegis Startup] Watchdog timer expired, unlocking dashboard.");
+    if (startupState === "LOADING_VIDEO" || startupState === "ATTEMPTING_AUTOPLAY") {
+      watchdogTimerRef.current = setTimeout(() => {
+        console.warn("[Aegis Startup] Watchdog timer expired while loading/attempting playback, unlocking dashboard.");
         markComplete();
-      }
-    }, watchdogTimeoutMs);
+      }, watchdogTimeoutMs);
+    }
 
     return () => {
       if (watchdogTimerRef.current) {

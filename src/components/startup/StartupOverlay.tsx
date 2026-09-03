@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { StartupState } from "./types";
-import { Shield, Terminal, Volume2 } from "lucide-react";
+import { Shield, Volume2 } from "lucide-react";
 
 interface StartupOverlayProps {
   startupState: StartupState;
@@ -50,66 +50,21 @@ export function StartupOverlay({
         {children}
       </div>
 
-      {/* Enterprise Terminal HUD Overlay when Waiting for User Gesture */}
+      {/* Minimalist Operational HUD Overlay when Waiting for User Gesture */}
       {isWaitingForGesture && (
-        <div className="relative z-10 w-full h-full flex flex-col justify-between p-6 md:p-10 pointer-events-auto bg-black/65 backdrop-blur-[2px] animate-in fade-in duration-300">
-          {/* Top Telemetry Bar */}
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
-                <Shield className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-mono font-bold tracking-wider text-slate-100 flex items-center gap-2">
-                  <span>RAZORPAY AEGIS</span>
-                  <span className="text-slate-500">{"//"}</span>
-                  <span className="text-blue-400">SECURE OPERATING CONSOLE</span>
-                </div>
-                <div className="text-[10px] font-mono text-slate-400 tracking-tight">
-                  SYSTEM INITIALIZATION SEQUENCE • V1.0.4
-                </div>
-              </div>
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pointer-events-auto bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="flex flex-col items-center text-center px-4">
+            <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-white mb-6 shadow-sm">
+              <Shield className="w-6 h-6" />
             </div>
 
-            <div className="hidden sm:flex items-center gap-4 text-[11px] font-mono">
-              <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-slate-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>RUNTIME: READY</span>
-              </div>
-              <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-slate-300">
-                <Volume2 className="w-3.5 h-3.5 text-blue-400" />
-                <span>AUDIO ENGINE: ARMED</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Central Bloomberg/Stripe Boot Prompt */}
-          <div className="flex flex-col items-center justify-center text-center my-auto px-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-mono mb-6 tracking-wide">
-              <Terminal className="w-3.5 h-3.5" />
-              <span>SECURE ACCESS GATEWAY</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-sans font-bold tracking-tight text-white mb-4">
+            <h1 className="text-xl sm:text-2xl font-sans font-semibold tracking-tight text-white mb-3">
               Click anywhere to start Aegis
             </h1>
 
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-mono text-slate-400 tracking-wider">
-              <span className="text-blue-400 font-bold">&gt;</span>
-              <span>PRESS ANY KEY OR CLICK TO COMMENCE INITIALIZATION</span>
-              <span className="inline-block w-2 h-4 bg-blue-400 animate-pulse ml-0.5" />
-            </div>
-          </div>
-
-          {/* Bottom Diagnostics Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-800/80 pt-4 gap-2 text-[11px] font-mono text-slate-400">
-            <div className="flex items-center gap-4">
-              <span>DISPUTE ORCHESTRATION: INITIALIZING</span>
-              <span className="hidden md:inline text-slate-600">•</span>
-              <span className="hidden md:inline">ENCRYPTION: AES-256-GCM</span>
-            </div>
-            <div className="text-slate-400">
-              [ STANDBY MODE ]
+            <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
+              <Volume2 className="w-4 h-4" />
+              <span>Audio playback requires interaction</span>
             </div>
           </div>
         </div>
