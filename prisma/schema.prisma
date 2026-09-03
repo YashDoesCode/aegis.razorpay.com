@@ -166,14 +166,29 @@ model WebhookEvent {
 }
 
 model AuditEvent {
-  id        String   @id @default(cuid())
-  disputeId String?
-  action    String
-  details   String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  eventType     String   @default("GENERAL")
+  action        String?
+  actorType     String   @default("system")
+  actorId       String?
+  source        String   @default("system")
+  disputeId     String?
+  merchantId    String?
+  correlationId String   @default("corr_legacy")
+  requestId     String?
+  beforeState   String?
+  afterState    String?
+  details       String?
+  metadata      String?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
 
   @@index([disputeId])
-  @@index([action])
+  @@index([merchantId])
+  @@index([eventType])
+  @@index([correlationId])
+  @@index([createdAt])
   @@map("audit_events")
 }
 

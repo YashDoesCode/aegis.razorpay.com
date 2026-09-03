@@ -547,6 +547,11 @@ export function addInMemoryDispute(dispute: MockDisputeRecord): void {
   }
 }
 
+export function resetInMemoryDisputes(): void {
+  inMemoryStore.length = 0;
+  inMemoryStore.push(...JSON.parse(JSON.stringify(fallbackDisputes)));
+}
+
 export interface MockWebhookEventRecord {
   id: string;
   disputeId?: string | null;
@@ -563,9 +568,21 @@ export interface MockWebhookEventRecord {
 
 export interface MockAuditEventRecord {
   id: string;
-  disputeId?: string | null;
+  eventType: string;
   action: string;
+  actorType: string;
+  actorId?: string | null;
+  source: string;
+  disputeId?: string | null;
+  merchantId?: string | null;
+  correlationId: string;
+  requestId?: string | null;
+  beforeState?: string | null;
+  afterState?: string | null;
   details?: string | null;
+  metadata?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
   createdAt: Date;
 }
 
@@ -596,12 +613,62 @@ export function getInMemoryAuditEvents(disputeId?: string): MockAuditEventRecord
   return inMemoryAuditEvents;
 }
 
+export function queryInMemoryAuditEvents(filters: {
+  disputeId?: string;
+  merchantId?: string;
+  eventType?: string;
+  actorType?: string;
+  actorId?: string;
+  correlationId?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  limit?: number;
+  offset?: number;
+}): MockAuditEventRecord[] {
+  let results = inMemoryAuditEvents;
+
+  if (filters.disputeId) {
+    results = results.filter((e) => e.disputeId === filters.disputeId);
+  }
+  if (filters.merchantId) {
+    results = results.filter((e) => e.merchantId === filters.merchantId);
+  }
+  if (filters.eventType) {
+    results = results.filter((e) => e.eventType === filters.eventType || e.action === filters.eventType);
+  }
+  if (filters.actorType) {
+    results = results.filter((e) => e.actorType === filters.actorType);
+  }
+  if (filters.actorId) {
+    results = results.filter((e) => e.actorId === filters.actorId);
+  }
+  if (filters.correlationId) {
+    results = results.filter((e) => e.correlationId === filters.correlationId);
+  }
+  if (filters.startDate) {
+    const start = new Date(filters.startDate).getTime();
+    results = results.filter((e) => e.createdAt.getTime() >= start);
+  }
+  if (filters.endDate) {
+    const end = new Date(filters.endDate).getTime();
+    results = results.filter((e) => e.createdAt.getTime() <= end);
+  }
+
+  const offset = filters.offset || 0;
+  const limit = filters.limit || 100;
+  return results.slice(offset, offset + limit);
+}
+
 export function addInMemoryAuditEvent(event: MockAuditEventRecord): void {
   inMemoryAuditEvents.unshift(event);
 }
 
 export function resetInMemoryWebhookStore(): void {
   inMemoryWebhookEvents.length = 0;
+  inMemoryAuditEvents.length = 0;
+}
+
+export function resetInMemoryAuditStore(): void {
   inMemoryAuditEvents.length = 0;
 }
 

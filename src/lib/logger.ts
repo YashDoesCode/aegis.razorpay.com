@@ -1,10 +1,15 @@
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
-interface LogContext {
+export interface LogContext {
   module?: string;
+  correlationId?: string;
   requestId?: string;
+  auditEventId?: string;
   merchantId?: string;
   disputeId?: string;
+  eventType?: string;
+  actorType?: string;
+  actorId?: string;
   durationMs?: number;
   [key: string]: unknown;
 }
@@ -24,7 +29,6 @@ const currentLogLevel: LogLevel =
     : "debug";
 
 function shouldLog(level: LogLevel): boolean {
-  // In automated test environments, suppress verbose debug/info logs unless DEBUG=true
   if (process.env.VITEST === "true" && process.env.DEBUG !== "true" && level !== "error") {
     return false;
   }
@@ -34,10 +38,12 @@ function shouldLog(level: LogLevel): boolean {
 function formatLogMessage(level: LogLevel, message: string, context?: LogContext): string {
   const timestamp = new Date().toISOString();
   const moduleTag = context?.module ? `[${context.module}] ` : "";
+  const corrTag = context?.correlationId ? `(corr:${context.correlationId.slice(-8)}) ` : "";
   const reqTag = context?.requestId ? `(req:${context.requestId}) ` : "";
+  const auditTag = context?.auditEventId ? `(aud:${context.auditEventId.slice(-8)}) ` : "";
   const durationTag = context?.durationMs !== undefined ? ` +${context.durationMs}ms` : "";
 
-  return `${timestamp} ${level.toUpperCase().padEnd(5)} ${moduleTag}${reqTag}${message}${durationTag}`;
+  return `${timestamp} ${level.toUpperCase().padEnd(5)} ${moduleTag}${corrTag}${reqTag}${auditTag}${message}${durationTag}`;
 }
 
 export const logger = {
@@ -68,9 +74,6 @@ export const logger = {
   },
 };
 
-/**
- * Strips or masks sensitive credentials (API keys, secrets) from log context.
- */
 function sanitizeContext(context: LogContext): Record<string, unknown> {
   const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(context)) {
@@ -79,7 +82,11 @@ function sanitizeContext(context: LogContext): Record<string, unknown> {
       lowerKey.includes("secret") ||
       lowerKey.includes("key") ||
       lowerKey.includes("password") ||
-      lowerKey.includes("authorization")
+      lowerKey.includes("authorization") ||
+      lowerKey.includes("token") ||
+      lowerKey.includes("bearer") ||
+      lowerKey.includes("signature") ||
+      lowerKey.includes("cookie")
     ) {
       sanitized[key] = typeof value === "string" && value.length > 8 ? `${value.slice(0, 4)}...${value.slice(-4)}` : "[REDACTED]";
     } else {
