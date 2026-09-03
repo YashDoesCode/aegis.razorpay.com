@@ -22,8 +22,6 @@ export function StartupOverlay({
     }
   }, [startupState]);
 
-  const isFadingOut = startupState === "FADING_OUT";
-
   return (
     <div
       ref={overlayRef}
@@ -38,9 +36,7 @@ export function StartupOverlay({
           onUserGesture(e);
         }
       }}
-      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-white text-slate-900 select-none outline-none transition-all duration-500 ease-out ${
-        isFadingOut ? "opacity-0 scale-[1.01] pointer-events-none" : "opacity-100 scale-100"
-      }`}
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-white text-slate-900 select-none outline-none"
     >
       <div className="absolute inset-0 z-0 flex items-center justify-center bg-white overflow-hidden">
         {children}

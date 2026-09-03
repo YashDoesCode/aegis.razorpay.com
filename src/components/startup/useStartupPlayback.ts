@@ -5,12 +5,10 @@ import { useStartupContext } from "./startup-context";
 import { StartupState } from "./types";
 
 interface UseStartupPlaybackOptions {
-  fadeDurationMs?: number;
   watchdogTimeoutMs?: number;
 }
 
 export function useStartupPlayback({
-  fadeDurationMs = 250,
   watchdogTimeoutMs = 12000,
 }: UseStartupPlaybackOptions = {}) {
   const {
@@ -23,7 +21,6 @@ export function useStartupPlayback({
   } = useStartupContext();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const fadeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const watchdogTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isPlayingRef = useRef<boolean>(false);
   const wasPlayingBeforeHiddenRef = useRef<boolean>(false);
@@ -119,24 +116,14 @@ export function useStartupPlayback({
 
   const handleVideoEnded = useCallback(() => {
     isPlayingRef.current = false;
-    transitionTo("FADING_OUT");
+    transitionTo("COMPLETE");
+    markComplete();
+  }, [transitionTo, markComplete]);
 
-    if (fadeTimerRef.current) {
-      clearTimeout(fadeTimerRef.current);
-    }
-
-    fadeTimerRef.current = setTimeout(() => {
-      markComplete();
-    }, fadeDurationMs);
-  }, [transitionTo, markComplete, fadeDurationMs]);
-
-  const handleVideoError = useCallback(
-    () => {
-      isPlayingRef.current = false;
-      markComplete();
-    },
-    [markComplete]
-  );
+  const handleVideoError = useCallback(() => {
+    isPlayingRef.current = false;
+    markComplete();
+  }, [markComplete]);
 
   useEffect(() => {
     if (hasCompleted) return;
@@ -154,9 +141,6 @@ export function useStartupPlayback({
     return () => {
       if (watchdogTimerRef.current) {
         clearTimeout(watchdogTimerRef.current);
-      }
-      if (fadeTimerRef.current) {
-        clearTimeout(fadeTimerRef.current);
       }
     };
   }, [hasCompleted, startupState, transitionTo, markComplete, watchdogTimeoutMs]);

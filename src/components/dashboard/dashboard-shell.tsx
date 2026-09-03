@@ -28,7 +28,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { ConnectRazorpayModal } from "./connect-razorpay-modal";
 import { useMerchantMode } from "@/context/merchant-mode-context";
-import { useStartupContext } from "@/components/startup/startup-context";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -82,9 +81,6 @@ export function DashboardShell({
     setIsConnectModalOpen,
     disconnectAccount,
   } = useMerchantMode();
-
-  const { hasCompleted, startupState } = useStartupContext();
-  const isIntroActive = !hasCompleted && startupState !== "COMPLETE";
 
   const [notifications, setNotifications] = useState<
     { id: string; title: string; time: string; unread: boolean; href: string }[]
@@ -164,17 +160,13 @@ export function DashboardShell({
         suppressHydrationWarning
       >
         <motion.div
-          initial={{ opacity: 0, filter: "blur(20px)", scale: 0.985 }}
-          animate={
-            isIntroActive
-              ? { opacity: 0, filter: "blur(20px)", scale: 0.985 }
-              : { opacity: 1, filter: "blur(0px)", scale: 1 }
-          }
+          initial={{ opacity: 0, filter: "blur(16px)", scale: 0.99 }}
+          animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
           transition={{
-            duration: 0.85,
+            duration: 0.75,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="w-full max-w-[1440px] bg-white rounded-[24px] md:rounded-[28px] p-4 sm:p-6 lg:p-7 shadow-xl shadow-slate-300/40 border border-slate-200/90 flex flex-col justify-between gap-5 relative overflow-hidden will-change-[opacity,filter,transform]"
+          className="w-full max-w-[1440px] bg-white rounded-[24px] md:rounded-[28px] p-4 sm:p-6 lg:p-7 shadow-xl shadow-slate-300/40 border border-slate-200/90 flex flex-col justify-between gap-5 relative overflow-hidden"
         >
           <header className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
             <div className="flex items-center gap-4 sm:gap-5 flex-wrap">
