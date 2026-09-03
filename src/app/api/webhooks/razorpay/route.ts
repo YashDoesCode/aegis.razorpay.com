@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { logger } from "@/lib/logger";
 import { apiError } from "@/lib/api/response";
 import { verifyWebhookSignature } from "@/lib/webhooks/verifySignature";
 import { RazorpayWebhookPayloadSchema } from "@/lib/webhooks/schemas";
 import { processWebhookPayload } from "@/lib/webhooks/service";
+import { extractTraceContext } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  const requestId =
-    request.headers.get("x-request-id") || `req_${crypto.randomUUID().slice(0, 8)}`;
+  const trace = extractTraceContext(request);
+  const { correlationId, requestId, ipAddress, userAgent } = trace;
 
   try {
     const signature = request.headers.get("x-razorpay-signature");
@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     if (!rawBody || rawBody.trim() === "") {
       logger.warn("Webhook rejected: empty body", {
         module: "RazorpayWebhook",
+        correlationId,
         requestId,
       });
       return apiError("Empty request body", 400, "EMPTY_BODY");
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
       const durationMs = Date.now() - startTime;
       logger.warn("Webhook rejected: invalid or missing HMAC signature", {
         module: "RazorpayWebhook",
+        correlationId,
         requestId,
         durationMs,
         signaturePresent: Boolean(signature),
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
       const durationMs = Date.now() - startTime;
       logger.warn("Webhook rejected: malformed JSON payload", {
         module: "RazorpayWebhook",
+        correlationId,
         requestId,
         durationMs,
       });
@@ -65,6 +68,7 @@ export async function POST(request: NextRequest) {
       const durationMs = Date.now() - startTime;
       logger.warn("Webhook rejected: payload schema validation failed", {
         module: "RazorpayWebhook",
+        correlationId,
         requestId,
         durationMs,
         issues: validationResult.error.issues.map((i) => i.message),
@@ -86,11 +90,15 @@ export async function POST(request: NextRequest) {
       rawHeaders,
       signatureVerified: true,
       requestId,
+      correlationId,
+      ipAddress,
+      userAgent,
     });
 
     const durationMs = Date.now() - startTime;
     logger.info("Webhook handled successfully", {
       module: "RazorpayWebhook",
+      correlationId,
       requestId,
       durationMs,
       status: result.status,

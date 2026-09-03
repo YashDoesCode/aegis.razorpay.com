@@ -8,6 +8,7 @@ import { getInMemoryDisputeById, updateInMemoryDisputeStatus } from "@/lib/mockS
 import { DisputeWithRelations } from "@/lib/types/domain";
 import { apiError } from "@/lib/api/response";
 import { logger } from "@/lib/logger";
+import { AuditService, extractTraceContext } from "@/lib/audit";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,9 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const trace = extractTraceContext(request);
+  const { correlationId, requestId, ipAddress, userAgent } = trace;
+
   try {
     const { searchParams } = new URL(request.url);
 
@@ -42,7 +46,7 @@ export async function POST(
         customInstructions = parsed.data.customInstructions;
       }
     } catch {
-      // Optional body - proceed without custom instructions
+      // Optional body
     }
 
     let dispute: DisputeWithRelations | null = null;
@@ -73,6 +77,8 @@ export async function POST(
     } catch (dbError: unknown) {
       logger.warn(`Database query timeout/error for ${id}, using mock store`, {
         module: "ApiDraft",
+        correlationId,
+        requestId,
         disputeId: id,
         error: dbError instanceof Error ? dbError.message : String(dbError),
       });
@@ -96,10 +102,26 @@ export async function POST(
     const customer = dispute.order?.customer;
     const evidenceItems = dispute.evidenceItems || [];
 
-    // 1. Compute deterministic winnability
     const winnability = computeWinnability(dispute, evidenceItems, customer);
 
-    // 2. Draft structured rebuttal (guaranteed never to throw in production)
+    await AuditService.record({
+      eventType: "SCORE_RECOMPUTED",
+      action: "SCORE_RECOMPUTED",
+      actorType: "system",
+      source: "api",
+      disputeId: dispute.id,
+      correlationId,
+      requestId,
+      ipAddress,
+      userAgent,
+      metadata: {
+        score: winnability.score,
+        band: winnability.band,
+        recommendation: winnability.recommendation,
+        reasonCode: dispute.reasonCode,
+      },
+    });
+
     const forceFallback = searchParams.get("forceFallback") === "true";
     const rebuttal = await draftRebuttal(
       {
@@ -112,7 +134,40 @@ export async function POST(
       { forceFallback }
     );
 
-    // 3. Prepare evidence map for Razorpay contest API
+    if (rebuttal.source === "fallback" || forceFallback) {
+      await AuditService.record({
+        eventType: "SAFE_MODE_USED",
+        action: "SAFE_MODE_USED",
+        actorType: "system",
+        source: "api",
+        disputeId: dispute.id,
+        correlationId,
+        requestId,
+        ipAddress,
+        userAgent,
+        metadata: {
+          reason: "Deterministic fallback template engine activated",
+        },
+      });
+    }
+
+    await AuditService.record({
+      eventType: "REBUTTAL_GENERATED",
+      action: "REBUTTAL_GENERATED",
+      actorType: "merchant",
+      source: "ui",
+      disputeId: dispute.id,
+      correlationId,
+      requestId,
+      ipAddress,
+      userAgent,
+      metadata: {
+        source: rebuttal.source || "fallback",
+        rebuttalLength: rebuttal.summary?.length || 0,
+        hasCustomInstructions: Boolean(customInstructions),
+      },
+    });
+
     const evidenceMap: Partial<Record<EvidenceType, string[]>> = {};
     for (const item of evidenceItems) {
       if (item.present) {
@@ -125,7 +180,6 @@ export async function POST(
       }
     }
 
-    // 4. Call Razorpay contest API in DRAFT mode with error tolerance
     const mode = (searchParams.get("mode") || "test").toLowerCase() as "test" | "live";
     let rzpContestResult: Record<string, unknown> = {
       success: true,
@@ -143,7 +197,7 @@ export async function POST(
         {
           amount: dispute.amount,
           summary: rebuttal.summary,
-          action: "draft", // Strictly draft mode
+          action: "draft",
           evidenceMap,
         },
         mode
@@ -154,12 +208,32 @@ export async function POST(
     } catch (rzpErr) {
       logger.warn("Razorpay contest API staging warning (proceeding with draft state)", {
         module: "ApiDraft",
+        correlationId,
+        requestId,
         disputeId: dispute.id,
         error: rzpErr instanceof Error ? rzpErr.message : String(rzpErr),
       });
     }
 
-    // 5. Update status to under_review
+    await AuditService.record({
+      eventType: "DRAFT_STAGED",
+      action: "DRAFT_STAGED",
+      actorType: "merchant",
+      source: "ui",
+      disputeId: dispute.id,
+      correlationId,
+      requestId,
+      ipAddress,
+      userAgent,
+      beforeState: { status: dispute.status },
+      afterState: { status: "under_review" },
+      metadata: {
+        mode,
+        stagedAction: "draft",
+        evidenceItemCount: Object.keys(evidenceMap).length,
+      },
+    });
+
     updateInMemoryDisputeStatus(dispute.id, "under_review");
 
     if (dispute.status === "open") {
@@ -175,6 +249,8 @@ export async function POST(
       } catch (updateErr) {
         logger.warn("Non-fatal: unable to update dispute status in remote DB", {
           module: "ApiDraft",
+          correlationId,
+          requestId,
           disputeId: dispute.id,
           error: updateErr instanceof Error ? updateErr.message : String(updateErr),
         });
@@ -191,7 +267,11 @@ export async function POST(
       source: rebuttal.source || "fallback",
     });
   } catch (error: unknown) {
-    logger.error("Error in POST /api/disputes/[id]/draft", error, { module: "ApiDraft" });
+    logger.error("Error in POST /api/disputes/[id]/draft", error, {
+      module: "ApiDraft",
+      correlationId,
+      requestId,
+    });
     return apiError("Failed to draft dispute rebuttal", 500, "INTERNAL_ERROR");
   }
 }

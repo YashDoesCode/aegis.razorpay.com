@@ -7,10 +7,10 @@ import {
   SupportedDisputeEvent,
 } from "./schemas";
 import { computePayloadHash } from "./verifySignature";
+import { AuditService } from "../audit";
 import {
   getInMemoryWebhookEventByHash,
   addInMemoryWebhookEvent,
-  addInMemoryAuditEvent,
   updateInMemoryDisputeStatus,
   addInMemoryDispute,
   getInMemoryDisputeById,
@@ -30,8 +30,20 @@ export async function processWebhookPayload(params: {
   rawHeaders?: string;
   signatureVerified: boolean;
   requestId: string;
+  correlationId?: string;
+  ipAddress?: string;
+  userAgent?: string;
 }): Promise<ProcessWebhookResult> {
-  const { payload, rawBody, rawHeaders, signatureVerified, requestId } = params;
+  const {
+    payload,
+    rawBody,
+    rawHeaders,
+    signatureVerified,
+    requestId,
+    correlationId,
+    ipAddress,
+    userAgent,
+  } = params;
   const eventType = payload.event;
   const payloadHash = computePayloadHash(rawBody);
 
@@ -39,6 +51,7 @@ export async function processWebhookPayload(params: {
   if (inMemoryDuplicate) {
     logger.info("Duplicate webhook event detected in memory", {
       module: "WebhookService",
+      correlationId,
       requestId,
       eventType,
       payloadHash,
@@ -61,6 +74,7 @@ export async function processWebhookPayload(params: {
       if (dbDuplicate) {
         logger.info("Duplicate webhook event detected in database", {
           module: "WebhookService",
+          correlationId,
           requestId,
           eventType,
           payloadHash,
@@ -75,6 +89,7 @@ export async function processWebhookPayload(params: {
     } catch (err) {
       logger.warn("Database duplicate check skipped, using in-memory idempotency", {
         module: "WebhookService",
+        correlationId,
         requestId,
         error: err instanceof Error ? err.message : String(err),
       });
@@ -98,11 +113,17 @@ export async function processWebhookPayload(params: {
       createdAt: now,
     });
 
-    addInMemoryAuditEvent({
-      id: `aud_${crypto.randomUUID()}`,
+    await AuditService.record({
+      eventType: "WEBHOOK_IGNORED",
       action: "WEBHOOK_IGNORED",
-      details: JSON.stringify({ eventType, requestId }),
-      createdAt: now,
+      actorType: "webhook",
+      actorId: "razorpay",
+      source: "webhook",
+      correlationId,
+      requestId,
+      ipAddress,
+      userAgent,
+      metadata: { eventType, requestId },
     });
 
     if (!isTest) {
@@ -127,6 +148,7 @@ export async function processWebhookPayload(params: {
 
     logger.info(`Ignoring unsupported webhook event: ${eventType}`, {
       module: "WebhookService",
+      correlationId,
       requestId,
       eventType,
     });
@@ -157,26 +179,43 @@ export async function processWebhookPayload(params: {
     createdAt: now,
   });
 
-  addInMemoryAuditEvent({
-    id: `aud_${crypto.randomUUID()}`,
-    disputeId,
+  await AuditService.record({
+    eventType: "WEBHOOK_RECEIVED",
     action: "WEBHOOK_RECEIVED",
-    details: JSON.stringify({ eventType, requestId, disputeId }),
-    createdAt: now,
+    actorType: "webhook",
+    actorId: "razorpay",
+    source: "webhook",
+    disputeId,
+    correlationId,
+    requestId,
+    ipAddress,
+    userAgent,
+    metadata: { eventType, requestId, disputeId },
   });
 
   const auditAction = getAuditActionForEvent(eventType);
-  addInMemoryAuditEvent({
-    id: `aud_${crypto.randomUUID()}`,
-    disputeId,
+  await AuditService.record({
+    eventType: auditAction,
     action: auditAction,
-    details: JSON.stringify({
+    actorType: "webhook",
+    actorId: "razorpay",
+    source: "webhook",
+    disputeId,
+    correlationId,
+    requestId,
+    ipAddress,
+    userAgent,
+    afterState: {
+      status: disputeEntity.status,
+      amount: disputeEntity.amount,
+      reasonCode: disputeEntity.reason_code,
+    },
+    metadata: {
       eventType,
       amount: disputeEntity.amount,
       reasonCode: disputeEntity.reason_code,
       status: disputeEntity.status,
-    }),
-    createdAt: now,
+    },
   });
 
   await applyDisputeStateTransition(eventType, disputeEntity);
@@ -197,29 +236,10 @@ export async function processWebhookPayload(params: {
           payload: rawBody,
         },
       });
-
-      await prisma.auditEvent.createMany({
-        data: [
-          {
-            disputeId,
-            action: "WEBHOOK_RECEIVED",
-            details: JSON.stringify({ eventType, requestId, disputeId }),
-          },
-          {
-            disputeId,
-            action: auditAction,
-            details: JSON.stringify({
-              eventType,
-              amount: disputeEntity.amount,
-              reasonCode: disputeEntity.reason_code,
-              status: disputeEntity.status,
-            }),
-          },
-        ],
-      });
     } catch (dbErr) {
       logger.warn("Database webhook event persistence skipped, using in-memory store", {
         module: "WebhookService",
+        correlationId,
         requestId,
         error: dbErr instanceof Error ? dbErr.message : String(dbErr),
       });
@@ -228,6 +248,7 @@ export async function processWebhookPayload(params: {
 
   logger.info(`Successfully ingested webhook event ${eventType} for dispute ${disputeId}`, {
     module: "WebhookService",
+    correlationId,
     requestId,
     eventType,
     disputeId,

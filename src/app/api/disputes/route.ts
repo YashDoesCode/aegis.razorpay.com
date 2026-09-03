@@ -8,6 +8,7 @@ import { computeFraudSignal } from "@/lib/fraudSignal";
 import { DisputeWithRelations, DisputeKpiStats } from "@/lib/types/domain";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { logger } from "@/lib/logger";
+import { extractTraceContext } from "@/lib/audit";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,9 @@ const QuerySchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  const trace = extractTraceContext(request);
+  const { correlationId, requestId } = trace;
+
   try {
     const { searchParams } = new URL(request.url);
     const parsedQuery = QuerySchema.safeParse({
@@ -31,21 +35,18 @@ export async function GET(request: NextRequest) {
 
     const { mode, forceError } = parsedQuery.data;
 
-    // Support simulated failure for resilience testing
     if (forceError === "500") {
       return apiError("Simulated database connection failure (500)", 500, "SIMULATED_FAILURE");
     }
 
     const merchantStatus = await getMerchantConnectionStatus();
 
-    // =========================================================================
-    // LIVE MODE: STRICT ZERO LEAKAGE
-    // Fetches ONLY from real connected Razorpay account. Never shows seed/mock data.
-    // =========================================================================
     if (mode === "live") {
       try {
         logger.info("Querying Razorpay API for live dispute records", {
           module: "ApiDisputes",
+          correlationId,
+          requestId,
           mode: "live",
           merchantId: merchantStatus.merchantId,
         });

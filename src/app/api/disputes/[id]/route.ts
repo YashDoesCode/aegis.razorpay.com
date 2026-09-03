@@ -7,6 +7,7 @@ import { computeFraudSignal } from "@/lib/fraudSignal";
 import { DisputeWithRelations } from "@/lib/types/domain";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { logger } from "@/lib/logger";
+import { extractTraceContext } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,9 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const trace = extractTraceContext(request);
+  const { correlationId, requestId } = trace;
+
   try {
     const { searchParams } = new URL(request.url);
     const mode = (searchParams.get("mode") || "test").toLowerCase() as "test" | "live";
@@ -89,13 +93,14 @@ export async function GET(
         } catch (liveFetchErr) {
           logger.warn(`Live dispute fetch error for ID ${id}`, {
             module: "ApiDisputeDetail",
+            correlationId,
+            requestId,
             disputeId: id,
             error: liveFetchErr instanceof Error ? liveFetchErr.message : String(liveFetchErr),
           });
         }
       }
     } else {
-      // Test Mode: Query database or mock store
       try {
         const dbPromise = prisma.dispute.findFirst({
           where: {
@@ -125,6 +130,8 @@ export async function GET(
       } catch (dbError: unknown) {
         logger.warn(`Database unreachable for dispute ${id}, using mock store`, {
           module: "ApiDisputeDetail",
+          correlationId,
+          requestId,
           disputeId: id,
           error: dbError instanceof Error ? dbError.message : String(dbError),
         });
@@ -171,7 +178,11 @@ export async function GET(
       200
     );
   } catch (error: unknown) {
-    logger.error("Error in GET /api/disputes/[id]", error, { module: "ApiDisputeDetail" });
+    logger.error("Error in GET /api/disputes/[id]", error, {
+      module: "ApiDisputeDetail",
+      correlationId,
+      requestId,
+    });
     return apiError("Internal server error fetching dispute detail", 500, "INTERNAL_ERROR");
   }
 }
