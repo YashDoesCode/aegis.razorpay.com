@@ -43,7 +43,6 @@ export function ExposureRecoveryChart({
         className
       )}
     >
-      {/* Header: Title & Timeframe Selector Pills */}
       <div className="flex flex-wrap items-start justify-between gap-3 pb-2">
         <div>
           <div className="flex items-center gap-2">
@@ -80,7 +79,6 @@ export function ExposureRecoveryChart({
           </div>
         </div>
 
-        {/* Time Switcher Pills */}
         <div
           className="flex items-center gap-0.5 bg-white p-1 rounded-full border border-slate-200/80 text-[11px] font-semibold text-slate-500 shadow-xs"
           role="tablist"
@@ -108,13 +106,11 @@ export function ExposureRecoveryChart({
         </div>
       </div>
 
-      {/* SVG Dual Curve Chart Area */}
       <div
         className="relative w-full h-48 sm:h-56 mt-2 select-none cursor-crosshair"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(true)}
       >
-        {/* Threshold reference dashed guides */}
         <div className="absolute inset-x-0 top-3 border-b border-dashed border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono pointer-events-none">
           <span>₹12.0L</span>
           <span className="text-[9px] uppercase tracking-wider text-slate-400 font-sans font-medium">
@@ -133,10 +129,8 @@ export function ExposureRecoveryChart({
           <span>₹4.0L</span>
         </div>
 
-        {/* Highlight Band for May Surge Window */}
         <div className="absolute left-[38%] right-[44%] top-2 bottom-6 bg-blue-50/70 rounded-sm border-x border-dashed border-blue-200 pointer-events-none" />
 
-        {/* Precision Vector Graph */}
         <svg
           className="w-full h-full overflow-visible"
           preserveAspectRatio="none"
@@ -154,7 +148,6 @@ export function ExposureRecoveryChart({
             </linearGradient>
           </defs>
 
-          {/* Area fills */}
           <path
             d="M 0,160 C 90,155 160,150 250,140 C 320,135 380,110 440,75 L 470,82 L 520,70 L 580,115 L 640,125 L 710,130 C 800,135 900,145 1000,140 L 1000,210 L 0,210 Z"
             fill="url(#exposureGrad)"
@@ -164,7 +157,6 @@ export function ExposureRecoveryChart({
             fill="url(#recoveryGrad)"
           />
 
-          {/* Line Strokes */}
           <path
             d="M 0,160 C 90,155 160,150 250,140 C 320,135 380,110 440,75 L 470,82 L 520,70 L 580,115 L 640,125 L 710,130 C 800,135 900,145 1000,140"
             fill="none"
@@ -182,7 +174,6 @@ export function ExposureRecoveryChart({
             strokeWidth="2"
           />
 
-          {/* Data point markers */}
           <circle
             cx="440"
             cy="75"
@@ -201,7 +192,6 @@ export function ExposureRecoveryChart({
           />
         </svg>
 
-        {/* Dark contrast inspection bubble */}
         {showTooltip && (
           <div className="absolute left-[38%] sm:left-[44%] -top-1 bg-slate-950 text-white text-xs p-3 rounded-xl shadow-xl min-w-[200px] sm:min-w-[210px] pointer-events-none border border-slate-800 z-10 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[11px] text-slate-400">
@@ -226,7 +216,6 @@ export function ExposureRecoveryChart({
         )}
       </div>
 
-      {/* Month Labels */}
       <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-200/80 font-medium overflow-x-auto">
         {months.map((month) => {
           const isSelected = activeMonth === month;

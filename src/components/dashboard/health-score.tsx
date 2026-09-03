@@ -9,7 +9,6 @@ interface HealthScoreProps {
 }
 
 export function HealthScore({ score = 76, className }: HealthScoreProps) {
-  // Normalize score between 0 and 100
   const normalizedScore = Math.min(100, Math.max(0, score));
   const activeSegments = Math.round((normalizedScore / 100) * 10);
 
@@ -23,7 +22,6 @@ export function HealthScore({ score = 76, className }: HealthScoreProps) {
       role="status"
       aria-label={`Aegis Health Score: ${normalizedScore} out of 100`}
     >
-      {/* Segmented Micro Meter (10 Bars) */}
       <div className="flex items-center gap-[2.5px]" aria-hidden="true">
         {Array.from({ length: 10 }).map((_, i) => {
           const isActive = i < activeSegments;

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
   RotateCw,
@@ -97,7 +96,6 @@ export default function OverviewPage() {
     };
   }, [mode]);
 
-  // Derived financial & KPI values
   const totalExposureINR = React.useMemo(() => {
     if (stats.totalPendingAmount && stats.totalPendingAmount > 0) {
       return `₹${((stats.totalPendingAmount) / 100).toLocaleString("en-IN", {
@@ -124,7 +122,6 @@ export default function OverviewPage() {
   }, [stats.totalCount, stats.high.count]);
 
   const healthScoreValue = React.useMemo(() => {
-    // Dynamic calculation: baseline 70 + weighted win rate factor
     if (stats.totalCount > 0) {
       const calculated = Math.round(50 + (winRateNumber * 0.35));
       return Math.min(96, Math.max(60, calculated));
@@ -157,13 +154,7 @@ export default function OverviewPage() {
   return (
     <DashboardShell>
       <LocalErrorBoundary fallbackTitle="Dispute Operations Console Unavailable">
-        <motion.div
-          initial={{ opacity: 0, y: 3 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
-          className="w-full space-y-5"
-        >
-          {/* ==================== PAGE HEADER ==================== */}
+        <div className="w-full space-y-5">
           <section className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-950">
@@ -176,10 +167,8 @@ export default function OverviewPage() {
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Segmented Health Score Pill */}
               <HealthScore score={healthScoreValue} />
 
-              {/* Filter Dropdown Pill */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -229,7 +218,6 @@ export default function OverviewPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Refresh Button */}
               <button
                 type="button"
                 onClick={handleManualRefresh}
@@ -244,7 +232,6 @@ export default function OverviewPage() {
                 />
               </button>
 
-              {/* Export Button */}
               <button
                 type="button"
                 onClick={handleExport}
@@ -256,7 +243,6 @@ export default function OverviewPage() {
             </div>
           </section>
 
-          {/* ==================== ERROR ALERT BANNER ==================== */}
           {error && !loading && (
             <div className="bg-rose-50/70 rounded-2xl border border-rose-200 p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2.5">
@@ -275,9 +261,7 @@ export default function OverviewPage() {
             </div>
           )}
 
-          {/* ==================== HERO METRICS & PRIMARY CHART ==================== */}
           <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-            {/* LEFT: Recovered Amount & 4 Metric Cards (4 Cols) */}
             <div className="lg:col-span-4 flex flex-col justify-between gap-3.5">
               {loading ? (
                 <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-3">
@@ -317,7 +301,6 @@ export default function OverviewPage() {
               )}
             </div>
 
-            {/* RIGHT: Primary Hero Exposure & Recovery Chart (8 Cols) */}
             <div className="lg:col-span-8 flex">
               <ExposureRecoveryChart
                 totalExposure={totalExposureINR}
@@ -327,7 +310,6 @@ export default function OverviewPage() {
             </div>
           </section>
 
-          {/* ==================== ACTION QUEUE HORIZONTAL STRIP ==================== */}
           <ActionQueue
             dueTodayCount={12}
             evidenceGapsCount={8}
@@ -335,9 +317,7 @@ export default function OverviewPage() {
             courierEventsCount={3}
           />
 
-          {/* ==================== BOTTOM ANALYTICS GRID ==================== */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
-            {/* Card 1: Winnability Distribution (5 Cols) */}
             <div className="lg:col-span-5 flex">
               <WinnabilityDistribution
                 strongPercent={64}
@@ -349,7 +329,6 @@ export default function OverviewPage() {
               />
             </div>
 
-            {/* Card 2: Risk Score Meter (3 Cols) */}
             <div className="lg:col-span-3 flex">
               <FraudRiskCard
                 score={72}
@@ -359,7 +338,6 @@ export default function OverviewPage() {
               />
             </div>
 
-            {/* Card 3: Signals & Evidence Pipelines (4 Cols) */}
             <div className="lg:col-span-4 flex">
               <SignalsEvidenceCard
                 matchedDeliveryRate={84}
@@ -368,7 +346,7 @@ export default function OverviewPage() {
               />
             </div>
           </section>
-        </motion.div>
+        </div>
       </LocalErrorBoundary>
     </DashboardShell>
   );

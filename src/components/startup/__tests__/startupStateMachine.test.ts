@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { StartupState } from "../types";
 
-// Simulates the exact state machine transitions and invariants of the Aegis startup system
 class StartupStateMachineHarness {
   public state: StartupState = "IDLE";
   public hasCompleted: boolean = false;
@@ -29,19 +28,31 @@ class StartupStateMachineHarness {
     }, this.watchdogTimeoutMs);
   }
 
-  public async attemptAutoplay(mockPlayPromise: () => Promise<void>) {
+  public async attemptAutoplay(
+    mockUnmutedPlay: () => Promise<void>,
+    mockMutedPlay?: () => Promise<void>
+  ) {
     if (this.hasCompleted) return;
     this.state = "ATTEMPTING_AUTOPLAY";
     this.isMuted = false;
     this.volume = 1.0;
 
     try {
-      await mockPlayPromise();
+      await mockUnmutedPlay();
       this.audioUnlocked = true;
       this.state = "PLAYING";
     } catch {
-      // Autoplay blocked by browser policy
-      this.state = "WAITING_FOR_USER_GESTURE";
+      try {
+        this.isMuted = true;
+        if (mockMutedPlay) {
+          await mockMutedPlay();
+        } else {
+          await mockUnmutedPlay();
+        }
+        this.state = "PLAYING";
+      } catch {
+        this.markComplete();
+      }
     }
   }
 
@@ -50,7 +61,8 @@ class StartupStateMachineHarness {
     if (
       this.state === "WAITING_FOR_USER_GESTURE" ||
       this.state === "ATTEMPTING_AUTOPLAY" ||
-      this.state === "LOADING_VIDEO"
+      this.state === "LOADING_VIDEO" ||
+      (this.state === "PLAYING" && this.isMuted)
     ) {
       try {
         this.isMuted = false;
@@ -79,7 +91,12 @@ class StartupStateMachineHarness {
     this.markComplete();
   }
 
-  public handleVisibilityChange(visibilityState: "visible" | "hidden", isVideoPaused: boolean, pauseFn: () => void, playFn: () => Promise<void>) {
+  public handleVisibilityChange(
+    visibilityState: "visible" | "hidden",
+    isVideoPaused: boolean,
+    pauseFn: () => void,
+    playFn: () => Promise<void>
+  ) {
     if (this.hasCompleted) return;
 
     if (visibilityState === "hidden") {
@@ -126,7 +143,7 @@ describe("Aegis Startup State Machine & Autoplay Recovery Engine", () => {
     expect(harness.state).toBe("LOADING_VIDEO");
   });
 
-  it("handles Case 1: Autoplay allowed with sound (immediate resolution)", async () => {
+  it("handles unmuted autoplay when allowed by browser", async () => {
     const harness = new StartupStateMachineHarness();
     harness.mount();
 
@@ -140,39 +157,21 @@ describe("Aegis Startup State Machine & Autoplay Recovery Engine", () => {
     expect(harness.volume).toBe(1.0);
   });
 
-  it("handles Case 2: Autoplay blocked with sound -> transitions to WAITING_FOR_USER_GESTURE without muting", async () => {
+  it("handles unmuted autoplay block by immediately falling back to direct muted playback without modal", async () => {
     const harness = new StartupStateMachineHarness();
     harness.mount();
 
     const notAllowedError = new Error("play() failed because the user didn't interact with the document first.");
     notAllowedError.name = "NotAllowedError";
 
-    const mockPlay = vi.fn().mockRejectedValue(notAllowedError);
-    await harness.attemptAutoplay(mockPlay);
+    const mockUnmutedPlay = vi.fn().mockRejectedValue(notAllowedError);
+    const mockMutedPlay = vi.fn().mockResolvedValue(undefined);
+    await harness.attemptAutoplay(mockUnmutedPlay, mockMutedPlay);
 
-    expect(mockPlay).toHaveBeenCalledTimes(1);
-    expect(harness.state).toBe("WAITING_FOR_USER_GESTURE");
-    expect(harness.hasCompleted).toBe(false);
-    expect(harness.isMuted).toBe(false); // CRITICAL: Never silently muted!
-  });
-
-  it("recovers from WAITING_FOR_USER_GESTURE on user click/tap/keypress and unlocks sound", async () => {
-    const harness = new StartupStateMachineHarness();
-    harness.mount();
-
-    // 1. Initial attempt fails
-    const mockPlayFail = vi.fn().mockRejectedValue(new Error("NotAllowedError"));
-    await harness.attemptAutoplay(mockPlayFail);
-    expect(harness.state).toBe("WAITING_FOR_USER_GESTURE");
-
-    // 2. User clicks / interacts
-    const mockPlaySuccess = vi.fn().mockResolvedValue(undefined);
-    await harness.handleUserGesture(mockPlaySuccess);
-
-    expect(mockPlaySuccess).toHaveBeenCalledTimes(1);
+    expect(mockUnmutedPlay).toHaveBeenCalledTimes(1);
+    expect(mockMutedPlay).toHaveBeenCalledTimes(1);
     expect(harness.state).toBe("PLAYING");
-    expect(harness.audioUnlocked).toBe(true);
-    expect(harness.isMuted).toBe(false);
+    expect(harness.isMuted).toBe(true);
   });
 
   it("transitions from PLAYING -> FADING_OUT -> COMPLETE upon video completion", () => {
@@ -184,7 +183,6 @@ describe("Aegis Startup State Machine & Autoplay Recovery Engine", () => {
     expect(harness.state).toBe("FADING_OUT");
     expect(harness.hasCompleted).toBe(false);
 
-    // Fast-forward fade duration (250ms)
     vi.advanceTimersByTime(250);
 
     expect(harness.state).toBe("COMPLETE");
@@ -207,14 +205,13 @@ describe("Aegis Startup State Machine & Autoplay Recovery Engine", () => {
     harness.mount();
     expect(harness.state).toBe("LOADING_VIDEO");
 
-    // Advance 10 seconds without video progress
     vi.advanceTimersByTime(10000);
 
     expect(harness.state).toBe("COMPLETE");
     expect(harness.hasCompleted).toBe(true);
   });
 
-  it("handles document visibility changes (pauses in background, resumes when active)", async () => {
+  it("handles document visibility changes", async () => {
     const harness = new StartupStateMachineHarness();
     harness.mount();
     harness.state = "PLAYING";
@@ -222,12 +219,10 @@ describe("Aegis Startup State Machine & Autoplay Recovery Engine", () => {
     const pauseFn = vi.fn();
     const playFn = vi.fn().mockResolvedValue(undefined);
 
-    // Tab hidden
     harness.handleVisibilityChange("hidden", false, pauseFn, playFn);
     expect(pauseFn).toHaveBeenCalledTimes(1);
     expect(harness.wasPlayingBeforeHidden).toBe(true);
 
-    // Tab restored
     harness.handleVisibilityChange("visible", true, pauseFn, playFn);
     expect(playFn).toHaveBeenCalledTimes(1);
     expect(harness.wasPlayingBeforeHidden).toBe(false);
@@ -240,7 +235,6 @@ describe("Aegis Startup State Machine & Autoplay Recovery Engine", () => {
     expect(harness.hasCompleted).toBe(true);
     expect(harness.state).toBe("COMPLETE");
 
-    // Re-mount / navigation attempt
     harness.mount();
     expect(harness.state).toBe("COMPLETE");
 

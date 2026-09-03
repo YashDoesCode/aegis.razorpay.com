@@ -5,8 +5,8 @@ import { ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RecoveryMetricProps {
-  amount?: number; // In paise (or raw rupees if formatted)
-  displayAmount?: string; // Optional override like '₹4.8L'
+  amount?: number;
+  displayAmount?: string;
   trendPercent?: number;
   className?: string;
 }
@@ -17,7 +17,6 @@ export function RecoveryMetric({
   trendPercent = 12.4,
   className,
 }: RecoveryMetricProps) {
-  // Format amount if provided in paise
   const formattedValue = React.useMemo(() => {
     if (displayAmount) return displayAmount;
     if (amount !== undefined && amount !== null) {

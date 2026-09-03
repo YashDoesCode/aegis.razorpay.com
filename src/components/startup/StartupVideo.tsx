@@ -28,20 +28,22 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
           startupState === "FADING_OUT" ? "opacity-0" : "opacity-100"
         }`}
       >
-        <video
-          ref={ref}
-          src={videoSrc}
-          playsInline
-          preload="auto"
-          muted={false}
-          controls={false}
-          disablePictureInPicture
-          aria-hidden="true"
-          onCanPlay={onCanPlay}
-          onEnded={onEnded}
-          onError={onError}
-          className="w-full h-full object-contain pointer-events-none select-none transform-gpu bg-white"
-        />
+        <div className="w-full max-w-[560px] sm:max-w-[640px] md:max-w-[720px] max-h-[55vh] flex items-center justify-center p-4">
+          <video
+            ref={ref}
+            src={videoSrc}
+            playsInline
+            autoPlay
+            preload="auto"
+            controls={false}
+            disablePictureInPicture
+            aria-hidden="true"
+            onCanPlay={onCanPlay}
+            onEnded={onEnded}
+            onError={onError}
+            className="w-full h-auto max-h-[50vh] object-contain rounded-2xl pointer-events-none select-none transform-gpu bg-white shadow-xs"
+          />
+        </div>
       </div>
     );
   }

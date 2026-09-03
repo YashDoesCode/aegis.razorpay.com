@@ -55,9 +55,7 @@ export function WinnabilityDistribution({
         </div>
       </div>
 
-      {/* 4 Column Bars with diagonal hatching for Unknown state */}
       <div className="grid grid-cols-4 gap-3 items-end h-40 px-1 pb-1 pt-2 select-none">
-        {/* Strong: 64% */}
         <div className="flex flex-col items-center h-full justify-end group">
           <div className="w-full bg-slate-200/60 rounded-xl p-1 flex flex-col justify-end h-full">
             <div
@@ -77,7 +75,6 @@ export function WinnabilityDistribution({
           </span>
         </div>
 
-        {/* Moderate: 21% */}
         <div className="flex flex-col items-center h-full justify-end group">
           <div className="w-full bg-slate-200/60 rounded-xl p-1 flex flex-col justify-end h-full">
             <div
@@ -97,7 +94,6 @@ export function WinnabilityDistribution({
           </span>
         </div>
 
-        {/* Weak: 10% */}
         <div className="flex flex-col items-center h-full justify-end group">
           <div className="w-full bg-slate-200/60 rounded-xl p-1 flex flex-col justify-end h-full">
             <div
@@ -115,7 +111,6 @@ export function WinnabilityDistribution({
           </span>
         </div>
 
-        {/* Unknown: 5% (with subtle diagonal hatching) */}
         <div className="flex flex-col items-center h-full justify-end group">
           <div className="w-full bg-slate-200/60 rounded-xl p-1 flex flex-col justify-end h-full pattern-subtle-hatch">
             <div

@@ -23,7 +23,6 @@ export function OperationalMetricGrid({
 }: OperationalMetricsProps) {
   return (
     <div className={cn("grid grid-cols-2 gap-3 flex-1", className)}>
-      {/* 1. Open Queue */}
       <Link
         href="/disputes"
         className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-slate-300 transition-all duration-150 group shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
@@ -44,7 +43,6 @@ export function OperationalMetricGrid({
         </div>
       </Link>
 
-      {/* 2. High-Risk */}
       <Link
         href="/disputes?filter=high_risk"
         className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-rose-200 transition-all duration-150 group shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
@@ -65,7 +63,6 @@ export function OperationalMetricGrid({
         </div>
       </Link>
 
-      {/* 3. Won Ratio */}
       <Link
         href="/disputes?filter=won"
         className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-emerald-200 transition-all duration-150 group shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden"
@@ -86,7 +83,6 @@ export function OperationalMetricGrid({
         </div>
       </Link>
 
-      {/* 4. Evidence Gaps */}
       <Link
         href="/disputes?filter=needs_evidence"
         className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-amber-200 transition-all duration-150 group shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-hidden"

@@ -50,12 +50,10 @@ export function ActionQueue({
         </span>
       </div>
 
-      {/* Scrollable Container */}
       <div
         ref={scrollContainerRef}
         className="flex items-center gap-3 overflow-x-auto py-0.5 custom-scrollbar flex-1"
       >
-        {/* Alert Chip 1: Due today */}
         <Link
           href="/disputes?filter=due_today"
           className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-rose-200 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
@@ -73,7 +71,6 @@ export function ActionQueue({
           </div>
         </Link>
 
-        {/* Alert Chip 2: Evidence gaps */}
         <Link
           href="/disputes?filter=evidence_gaps"
           className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-amber-200 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-hidden"
@@ -91,7 +88,6 @@ export function ActionQueue({
           </div>
         </Link>
 
-        {/* Alert Chip 3: High-risk claims */}
         <Link
           href="/disputes?filter=high_risk"
           className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
@@ -109,7 +105,6 @@ export function ActionQueue({
           </div>
         </Link>
 
-        {/* Alert Chip 4: Courier events */}
         <Link
           href="/disputes?filter=courier_sync"
           className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden"
@@ -128,7 +123,6 @@ export function ActionQueue({
         </Link>
       </div>
 
-      {/* Scroll Action Chevron */}
       <button
         type="button"
         onClick={handleScrollRight}

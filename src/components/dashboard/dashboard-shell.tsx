@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   Search,
   Bell,
@@ -27,6 +28,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { ConnectRazorpayModal } from "./connect-razorpay-modal";
 import { useMerchantMode } from "@/context/merchant-mode-context";
+import { useStartupContext } from "@/components/startup/startup-context";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -80,6 +82,9 @@ export function DashboardShell({
     setIsConnectModalOpen,
     disconnectAccount,
   } = useMerchantMode();
+
+  const { hasCompleted, startupState } = useStartupContext();
+  const isIntroActive = !hasCompleted && startupState !== "COMPLETE";
 
   const [notifications, setNotifications] = useState<
     { id: string; title: string; time: string; unread: boolean; href: string }[]
@@ -143,7 +148,6 @@ export function DashboardShell({
     }, 500);
   };
 
-  // Compute initials from merchant name
   const merchantName = merchant?.name || "Merchant Corp";
   const merchantInitials = React.useMemo(() => {
     const parts = merchantName.trim().split(" ");
@@ -159,16 +163,23 @@ export function DashboardShell({
         className="bg-[#ECEEF2] text-slate-900 min-h-screen p-3 md:p-6 lg:p-8 flex items-center justify-center font-sans antialiased selection:bg-slate-900 selection:text-white"
         suppressHydrationWarning
       >
-        {/* Outer 16:9 Balanced Frame Container inspired by FinPoint & Stitch Reference */}
-        <div className="w-full max-w-[1440px] bg-white rounded-[24px] md:rounded-[28px] p-4 sm:p-6 lg:p-7 shadow-xl shadow-slate-300/40 border border-slate-200/90 flex flex-col justify-between gap-5 relative overflow-hidden">
-          {/* ==================== TOP NAVIGATION HEADER ==================== */}
+        <motion.div
+          initial={{ opacity: 0, filter: "blur(20px)", scale: 0.985 }}
+          animate={
+            isIntroActive
+              ? { opacity: 0, filter: "blur(20px)", scale: 0.985 }
+              : { opacity: 1, filter: "blur(0px)", scale: 1 }
+          }
+          transition={{
+            duration: 0.85,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className="w-full max-w-[1440px] bg-white rounded-[24px] md:rounded-[28px] p-4 sm:p-6 lg:p-7 shadow-xl shadow-slate-300/40 border border-slate-200/90 flex flex-col justify-between gap-5 relative overflow-hidden will-change-[opacity,filter,transform]"
+        >
           <header className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
-            {/* Left: Minimalist Razorpay Aegis geometric brand emblem & Segmented Tabs */}
             <div className="flex items-center gap-4 sm:gap-5 flex-wrap">
-              {/* Minimalist Crisp Vector Logo */}
               <Link href="/overview" className="flex items-center gap-2.5 group">
                 <div className="w-9 h-9 rounded-xl bg-slate-950 flex items-center justify-center text-white shadow-xs group-hover:bg-primary transition-colors duration-200">
-                  {/* Sharp Razorpay Geometric Glyph */}
                   <svg
                     className="w-5 h-5 text-white"
                     fill="none"
@@ -200,7 +211,6 @@ export function DashboardShell({
                 </div>
               </Link>
 
-              {/* Pill Nav Tabs matching Reference Top Bar */}
               <nav
                 className="hidden lg:flex items-center bg-slate-100/80 p-1 rounded-full border border-slate-200/70 text-xs font-medium text-slate-600"
                 aria-label="Main Navigation"
@@ -233,9 +243,7 @@ export function DashboardShell({
               </nav>
             </div>
 
-            {/* Right Controls: Search, Alert Notification, Merchant Pill, Mobile Menu */}
             <div className="flex items-center gap-2 sm:gap-2.5">
-              {/* Search Input */}
               <div className="relative hidden sm:block w-48 md:w-56 lg:w-68">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Search className="w-3.5 h-3.5" />
@@ -251,7 +259,6 @@ export function DashboardShell({
                 />
               </div>
 
-              {/* Minimal Outline Bell with Count Badge & Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -311,7 +318,6 @@ export function DashboardShell({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Merchant Account Selector Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -408,7 +414,6 @@ export function DashboardShell({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Mobile Hamburger Menu Button */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
@@ -420,7 +425,6 @@ export function DashboardShell({
             </div>
           </header>
 
-          {/* ==================== MOBILE NAVIGATION DRAWER ==================== */}
           {mobileMenuOpen && (
             <div className="fixed inset-0 z-50 lg:hidden flex">
               <div
@@ -499,11 +503,10 @@ export function DashboardShell({
             </div>
           )}
 
-          {/* ==================== MAIN PAGE CONTENT ==================== */}
           <main className="flex flex-col gap-5 flex-1">{children}</main>
 
           <ConnectRazorpayModal />
-        </div>
+        </motion.div>
       </div>
     </TooltipProvider>
   );

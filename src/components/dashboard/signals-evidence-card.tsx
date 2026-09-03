@@ -25,7 +25,6 @@ export function SignalsEvidenceCard({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {/* Lightbulb icon */}
           <div className="w-6 h-6 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-xs">
             <Lightbulb className="w-3.5 h-3.5 stroke-[2]" />
           </div>
@@ -62,25 +61,21 @@ export function SignalsEvidenceCard({
           Connected Pipelines
         </span>
         <div className="flex items-center flex-wrap gap-1.5">
-          {/* Razorpay Core */}
           <div className="px-2.5 py-1 rounded-full bg-white border border-slate-200/90 text-[11px] font-semibold text-slate-800 shadow-xs flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
             Razorpay Core
           </div>
 
-          {/* Carrier PoD */}
           <div className="px-2.5 py-1 rounded-full bg-white border border-slate-200/90 text-[11px] font-semibold text-slate-800 shadow-xs flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             Carrier PoD
           </div>
 
-          {/* Shield Risk */}
           <div className="px-2.5 py-1 rounded-full bg-white border border-slate-200/90 text-[11px] font-semibold text-slate-800 shadow-xs flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
             Shield Risk
           </div>
 
-          {/* Card Schemes */}
           <div className="px-2.5 py-1 rounded-full bg-white border border-slate-200/90 text-[11px] font-semibold text-slate-500 shadow-xs">
             Card Schemes
           </div>

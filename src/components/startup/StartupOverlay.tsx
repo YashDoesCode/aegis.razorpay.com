@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef } from "react";
 import { StartupState } from "./types";
-import { Shield, Volume2 } from "lucide-react";
 
 interface StartupOverlayProps {
   startupState: StartupState;
@@ -23,7 +22,6 @@ export function StartupOverlay({
     }
   }, [startupState]);
 
-  const isWaitingForGesture = startupState === "WAITING_FOR_USER_GESTURE";
   const isFadingOut = startupState === "FADING_OUT";
 
   return (
@@ -40,32 +38,13 @@ export function StartupOverlay({
           onUserGesture(e);
         }
       }}
-      className={`fixed inset-0 z-[99999] flex flex-col justify-between bg-white text-slate-900 select-none outline-none transition-all duration-300 ease-out ${
+      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-white text-slate-900 select-none outline-none transition-all duration-500 ease-out ${
         isFadingOut ? "opacity-0 scale-[1.01] pointer-events-none" : "opacity-100 scale-100"
       }`}
     >
       <div className="absolute inset-0 z-0 flex items-center justify-center bg-white overflow-hidden">
         {children}
       </div>
-
-      {isWaitingForGesture && (
-        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pointer-events-auto bg-white/70 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="flex flex-col items-center text-center px-6 py-8 rounded-2xl bg-white/90 border border-slate-200/80 shadow-xl max-w-sm mx-4">
-            <div className="w-12 h-12 rounded-xl bg-[#0D1A48] text-white flex items-center justify-center mb-4 shadow-sm">
-              <Shield className="w-6 h-6 text-[#305EFF]" />
-            </div>
-
-            <h1 className="text-lg sm:text-xl font-sans font-semibold tracking-tight text-slate-900 mb-2">
-              Click anywhere to start Aegis
-            </h1>
-
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-              <Volume2 className="w-4 h-4 text-[#305EFF]" />
-              <span>Audio playback requires interaction</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

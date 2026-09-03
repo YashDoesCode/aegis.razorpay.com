@@ -52,14 +52,12 @@ export function FraudRiskCard({
         </p>
       </div>
 
-      {/* High precision FinPoint style arc meter */}
       <div className="relative flex flex-col items-center justify-end overflow-hidden pt-2 select-none">
         <svg
           className="w-44 h-22 overflow-visible"
           viewBox="0 0 200 100"
           aria-hidden="true"
         >
-          {/* Background Arc Track */}
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
             fill="none"
@@ -67,7 +65,6 @@ export function FraudRiskCard({
             strokeLinecap="round"
             strokeWidth="14"
           />
-          {/* Colored Active Indicator Arc Segment */}
           <path
             d="M 20 100 A 80 80 0 0 1 135 28"
             fill="none"
@@ -75,7 +72,6 @@ export function FraudRiskCard({
             strokeLinecap="round"
             strokeWidth="14"
           />
-          {/* Needle Knob Bead */}
           <circle
             className="shadow-sm"
             cx="135"
