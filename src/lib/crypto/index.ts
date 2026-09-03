@@ -1,1 +1,7 @@
-export { encryptSecret, decryptSecret, isEncrypted } from "./encryption";
+export {
+  encryptSecret,
+  decryptSecret,
+  isEncrypted,
+  getCiphertextVersion,
+  validateEncryptionConfig,
+} from "./encryption";

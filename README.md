@@ -653,17 +653,48 @@ flowchart TD
 
 ## Merchant Secret AES-256-GCM Envelope Encryption
 
-Aegis enforces fintech-grade cryptographic isolation for all merchant gateway credentials (API Key Secrets, OAuth tokens, and Webhook Signing Secrets) at rest.
+Aegis enforces fintech-grade cryptographic isolation for all merchant gateway credentials (API Key Secrets, OAuth tokens, and Webhook Signing Secrets).
 
-### Cryptographic Invariants
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as Merchant UI
+    participant API as POST /api/merchant/connect
+    participant Cred as Credential Service
+    participant Crypto as AES-256-GCM (v1)
+    participant SDK as Razorpay SDK Instance
+    participant Audit as Audit Ledger
+
+    UI->>API: Submit keyId + keySecret (TLS 1.3)
+    API->>Cred: validateRazorpayCredentials(keyId, keySecret)
+    Cred->>SDK: Verify against Razorpay API
+    SDK-->>Cred: Verification Success
+    API->>Crypto: encryptSecret(keySecret)
+    Crypto-->>API: v1:<iv_hex>:<tag_hex>:<ciphertext_hex>
+    API->>Cred: Store encryptedSecret (In-Memory / Safe Store)
+    API->>Audit: Record MERCHANT_CONNECTED (maskedKeyId only)
+    API-->>UI: 200 OK (maskedKeyId only, zero secret exposure)
+    
+    Note over Cred,SDK: Decryption occurs strictly in ephemeral memory when SDK calls are made
+    Cred->>Crypto: decryptSecret(encryptedSecret)
+    Crypto-->>Cred: plaintext secret (in-memory only)
+    Cred->>SDK: new Razorpay({ key_id, key_secret })
+```
+
+### Cryptographic Invariants & Architecture
 
 - **Algorithm**: Authenticated Encryption with Associated Data (AEAD) using `AES-256-GCM`.
-- **Initialization Vector (IV)**: 12-byte cryptographically secure random bytes (`crypto.randomBytes(12)`) per encryption operation.
-- **Authentication Tag**: 16-byte cryptographic integrity tag verifying ciphertext validity and detecting tampering.
-- **Envelope Wire Format**: `v1:<iv_hex>:<tag_hex>:<ciphertext_hex>`
-- **Key Derivation**: 32-byte master key derived using SHA-256 over `AEGIS_MASTER_KEY` / `ENCRYPTION_KEY`.
-- **Decryption Isolation**: Decryption occurs *strictly in ephemeral runtime memory* immediately before constructing the authorized `Razorpay` SDK client instance.
-- **Zero-Exposure Policy**: Connection status APIs (`GET /api/merchant/status`) return only masked public Key IDs (e.g. `rzp_live_8829...491a`) and never expose plaintext or encrypted secrets.
+- **Initialization Vector (IV)**: 12-byte (96-bit) cryptographically secure random bytes (`crypto.randomBytes(12)`) per encryption operation, ensuring identical plaintexts yield distinct ciphertexts.
+- **Authentication Tag**: 16-byte (128-bit) cryptographic integrity tag verifying ciphertext validity and detecting any payload or IV tampering.
+- **Envelope Wire Format**: `v1:<iv_hex>:<tag_hex>:<ciphertext_hex>` (versioned, unambiguous, deterministic, and future-proof for key rotation).
+- **Key Management**: Server-side only master key configured via `AEGIS_ENCRYPTION_KEY` (or `AEGIS_MASTER_KEY`).
+  - Keys can be 64-character hex strings (32 raw bytes) or high-entropy passphrases derived into 256-bit keys via SHA-256.
+  - In production (`NODE_ENV === "production"`), `validateEncryptionConfig()` fails closed if the key is missing or insecure (< 16 characters).
+- **Server-Side Decryption Boundary**: Decryption occurs *strictly in ephemeral runtime memory* immediately before constructing the authorized `Razorpay` SDK client instance.
+- **Zero-Exposure Policy**:
+  - Connection status API (`GET /api/merchant/status`) and connect API (`POST /api/merchant/connect`) return only masked public Key IDs (`maskKey()`, e.g. `rzp_live_88...491a`).
+  - Decrypted secrets are never passed to the browser, never written to database plaintext columns, never logged by structured loggers (`logger.ts` redacts sensitive fields), and never saved in audit events (`AuditService` automatically sanitizes secrets).
+
 
 ---
 
