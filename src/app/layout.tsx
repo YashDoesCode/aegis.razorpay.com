@@ -29,8 +29,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${interTight.variable} h-full`}>
-      <body className="h-full bg-rp-bg text-rp-ink font-sans antialiased">
+    <html
+      lang="en"
+      className={`${inter.variable} ${interTight.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <body
+        className="h-full bg-rp-bg text-rp-ink font-sans antialiased"
+        suppressHydrationWarning
+      >
         <MerchantModeProvider>
           <TooltipProvider delay={200}>
             {children}
