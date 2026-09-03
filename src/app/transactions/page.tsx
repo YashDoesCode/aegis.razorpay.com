@@ -135,8 +135,7 @@ export default function TransactionsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   useEffect(() => {
-    // Simulate brief smooth hydration
-    const timer = setTimeout(() => setLoading(false), 200);
+    const timer = setTimeout(() => setLoading(false), 150);
     return () => clearTimeout(timer);
   }, []);
 
@@ -176,7 +175,7 @@ export default function TransactionsPage() {
       URL.revokeObjectURL(url);
       toast.success(`Exported ${filtered.length} transaction records`);
     } catch (err) {
-      console.error("❌ Export error:", err);
+      console.error("Export error:", err);
       toast.error("Failed to export transactions");
     }
   };
@@ -187,18 +186,18 @@ export default function TransactionsPage() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
           className="w-full space-y-6"
         >
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="font-headline-lg text-[32px] text-ink font-semibold tracking-tight">
-                Transactions
+              <h1 className="text-2xl font-bold tracking-tight text-ink">
+                Transactions Ledger
               </h1>
               <p className="text-xs text-muted-slate mt-1 flex items-center gap-1.5">
                 <Receipt className="w-3.5 h-3.5 text-primary" />
-                <span>Payment records and dispute linkages across Razorpay gateway</span>
+                <span>Payment records and dispute defense linkages across Razorpay gateway</span>
               </p>
             </div>
 
@@ -206,10 +205,10 @@ export default function TransactionsPage() {
               <button
                 onClick={handleExport}
                 disabled={loading || filtered.length === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded-[4px] bg-primary text-white hover:bg-primary-container text-sm font-semibold transition-colors h-10 flat-shadow cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-1.5 rounded-[4px] bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors h-9 shadow-xs cursor-pointer disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
-                <span>Export CSV/JSON</span>
+                <span>Export Statement</span>
               </button>
             </div>
           </div>
@@ -222,7 +221,7 @@ export default function TransactionsPage() {
                 onClick={() => setFilterStatus(st)}
                 className={`px-3 py-1.5 rounded-[4px] text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
                   filterStatus === st
-                    ? "bg-rp-navy text-white"
+                    ? "bg-[#0D1A48] text-white"
                     : "bg-white border border-border-subtle text-muted-slate hover:text-ink"
                 }`}
               >
@@ -232,48 +231,48 @@ export default function TransactionsPage() {
           </div>
 
           {/* Transactions Table */}
-          <div className="bg-white rounded-[4px] border border-border-subtle flat-shadow overflow-hidden">
+          <div className="bg-white rounded-[4px] border border-border-subtle shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-border-subtle bg-surface/50">
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                  <tr className="border-b border-border-subtle bg-slate-50/70">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       PAYMENT ID
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       DATE
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       CUSTOMER & ITEM
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
                       AMOUNT
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       STATUS
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
-                      AEGIS DEFENSE
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
+                      DEFENSE STATUS
                     </th>
                   </tr>
                 </thead>
-                <tbody className="text-sm text-ink bg-white">
+                <tbody className="text-sm text-ink bg-white divide-y divide-border-subtle">
                   {loading ? (
                     Array.from({ length: 5 }).map((_, idx) => (
-                      <tr key={idx} className="border-b border-border-subtle">
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-32 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-24 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-40 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-20 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-5 w-20 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-24 ml-auto bg-rp-bg-2" /></td>
+                      <tr key={idx}>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-32 bg-slate-100" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-24 bg-slate-100" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-40 bg-slate-100" /></td>
+                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-5 w-20 bg-slate-100" /></td>
+                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-24 ml-auto bg-slate-100" /></td>
                       </tr>
                     ))
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-muted-slate">
                         <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
-                          <div className="p-3 bg-rp-bg-2 rounded-full text-muted-slate">
+                          <div className="p-3 bg-slate-100 rounded-full text-muted-slate">
                             <FileQuestion className="w-6 h-6" />
                           </div>
                           <div>
@@ -289,7 +288,7 @@ export default function TransactionsPage() {
                               setFilterStatus("all");
                               setSearch("");
                             }}
-                            className="px-3 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-[4px] bg-primary text-white text-xs font-semibold hover:bg-primary-container cursor-pointer"
                           >
                             Reset Filters
                           </button>
@@ -300,12 +299,12 @@ export default function TransactionsPage() {
                     filtered.map((tx) => (
                       <tr
                         key={tx.id}
-                        className="border-b border-border-subtle hover:bg-page-bg transition-colors"
+                        className="hover:bg-slate-50/80 transition-colors"
                       >
-                        <td className="py-3 px-4 font-mono font-medium text-ink">
+                        <td className="py-3 px-4 font-mono font-medium text-xs text-primary">
                           {tx.paymentId}
                         </td>
-                        <td className="py-3 px-4 text-muted-slate">{tx.date}</td>
+                        <td className="py-3 px-4 text-muted-slate text-xs font-mono">{tx.date}</td>
                         <td className="py-3 px-4">
                           <div className="font-semibold text-xs text-ink">
                             {tx.customerName}
@@ -314,16 +313,16 @@ export default function TransactionsPage() {
                             {tx.item}
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-medium text-ink">
-                          ₹{((tx.amount || 0) / 100).toLocaleString("en-IN")}
+                        <td className="py-3 px-4 font-mono font-bold text-xs text-right text-ink">
+                          ₹{((tx.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="py-3 px-4">
                           {tx.status === "captured" ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-success/10 text-success text-[11px] font-semibold">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
                               CAPTURED
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-danger/10 text-danger text-[11px] font-semibold">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-rose-50 text-rose-800 text-[11px] font-bold border border-rose-200">
                               DISPUTED
                             </span>
                           )}
@@ -334,12 +333,12 @@ export default function TransactionsPage() {
                               href="/disputes"
                               className="inline-flex items-center gap-1 text-primary hover:text-primary-container text-xs font-semibold"
                             >
-                              <span>Defense File</span>
+                              <span>Review Defense</span>
                               <ExternalLink className="w-3 h-3" />
                             </Link>
                           ) : (
                             <span className="text-xs text-muted-slate/60">
-                              No dispute
+                              No Dispute
                             </span>
                           )}
                         </td>
@@ -350,19 +349,19 @@ export default function TransactionsPage() {
               </table>
             </div>
 
-            <div className="px-6 py-4 border-t border-border-subtle flex justify-between items-center bg-white">
-              <span className="text-xs text-muted-slate">
+            <div className="px-5 py-3.5 border-t border-border-subtle flex justify-between items-center bg-white">
+              <span className="text-xs text-muted-slate font-mono">
                 Showing {filtered.length} of {transactions.length} payments
               </span>
               <div className="flex gap-1">
                 <button
-                  className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-50 cursor-pointer"
+                  className="p-1 rounded-[4px] text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   disabled
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
-                  className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-50 cursor-pointer"
+                  className="p-1 rounded-[4px] text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   disabled
                 >
                   <ChevronRight className="w-4 h-4" />

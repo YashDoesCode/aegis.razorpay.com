@@ -79,7 +79,7 @@ export default function SettlementsPage() {
   const [settlements] = useState<SettlementItem[]>(mockSettlements);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 200);
+    const timer = setTimeout(() => setLoading(false), 150);
     return () => clearTimeout(timer);
   }, []);
 
@@ -98,7 +98,7 @@ export default function SettlementsPage() {
       URL.revokeObjectURL(url);
       toast.success("Settlements summary statement downloaded");
     } catch (err) {
-      console.error("❌ Statement download error:", err);
+      console.error("Statement download error:", err);
       toast.error("Failed to download settlement statement");
     }
   };
@@ -109,18 +109,18 @@ export default function SettlementsPage() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
           className="w-full space-y-6"
         >
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="font-headline-lg text-[32px] text-ink font-semibold tracking-tight">
-                Settlements
+              <h1 className="text-2xl font-bold tracking-tight text-ink">
+                Settlements Ledger
               </h1>
               <p className="text-xs text-muted-slate mt-1 flex items-center gap-1.5">
                 <Wallet className="w-3.5 h-3.5 text-primary" />
-                <span>Bank payouts, net receipts, and dispute holdback adjustments</span>
+                <span>Bank payouts, net disbursements, and dispute reserve hold adjustments</span>
               </p>
             </div>
 
@@ -128,59 +128,59 @@ export default function SettlementsPage() {
               <button
                 onClick={handleDownload}
                 disabled={loading || settlements.length === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded-[4px] bg-primary text-white hover:bg-primary-container text-sm font-semibold transition-colors h-10 flat-shadow cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-1.5 rounded-[4px] bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-colors h-9 shadow-xs cursor-pointer disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
-                <span>Download Statement</span>
+                <span>Export Statement</span>
               </button>
             </div>
           </div>
 
           {/* Stats Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {loading ? (
               Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="bg-white p-5 rounded-[4px] border border-border-subtle flat-shadow space-y-3">
-                  <Skeleton className="h-4 w-28 bg-rp-bg-2" />
-                  <Skeleton className="h-7 w-24 bg-rp-bg-2" />
-                  <Skeleton className="h-3 w-36 bg-rp-bg-2" />
+                <div key={idx} className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs space-y-3">
+                  <Skeleton className="h-3 w-28 bg-slate-100" />
+                  <Skeleton className="h-7 w-24 bg-slate-100" />
+                  <Skeleton className="h-3 w-36 bg-slate-100" />
                 </div>
               ))
             ) : (
               <>
-                <div className="bg-white p-5 rounded-[4px] border border-border-subtle flat-shadow">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-slate">
+                <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-slate">
                     Total Settled (MTD)
                   </div>
-                  <div className="font-headline-lg text-2xl font-bold text-ink mt-2">
-                    ₹8,69,500
+                  <div className="font-mono text-2xl font-bold text-ink mt-2 tracking-tight">
+                    ₹8,69,500.00
                   </div>
                   <div className="text-xs text-muted-slate mt-1">
-                    Transferred directly to HDFC Bank
+                    Disbursed directly to HDFC Bank ··· 8891
                   </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-[4px] border border-border-subtle flat-shadow">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-slate">
+                <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-slate">
                     Dispute Reserve Hold
                   </div>
-                  <div className="font-headline-lg text-2xl font-bold text-amber-600 mt-2">
-                    ₹61,698
+                  <div className="font-mono text-2xl font-bold text-amber-600 mt-2 tracking-tight">
+                    ₹61,698.00
                   </div>
                   <div className="text-xs text-muted-slate mt-1">
-                    Held pending dispute representments
+                    Held in reserve pending staged contest review
                   </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-[4px] border border-border-subtle flat-shadow">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-slate">
-                    Settlement Cycle
+                <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-slate">
+                    Settlement Schedule
                   </div>
-                  <div className="font-headline-lg text-2xl font-bold text-primary mt-2">
-                    T+1 Schedule
+                  <div className="font-mono text-2xl font-bold text-primary mt-2 tracking-tight">
+                    T+1 Daily Payout
                   </div>
                   <div className="text-xs text-muted-slate mt-1">
-                    Daily automated NEFT/IMPS payout
+                    Automated NEFT / RTGS banking cycle
                   </div>
                 </div>
               </>
@@ -188,48 +188,48 @@ export default function SettlementsPage() {
           </div>
 
           {/* Settlements Table */}
-          <div className="bg-white rounded-[4px] border border-border-subtle flat-shadow overflow-hidden">
+          <div className="bg-white rounded-[4px] border border-border-subtle shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-border-subtle bg-surface/50">
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                  <tr className="border-b border-border-subtle bg-slate-50/70">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       SETTLEMENT ID
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       DATE & TIME
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       BANK ACCOUNT & UTR
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
                       GROSS AMOUNT
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
-                      NET SETTLED
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
+                      NET DISBURSED
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
+                    <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
                       STATUS
                     </th>
                   </tr>
                 </thead>
-                <tbody className="text-sm text-ink bg-white">
+                <tbody className="text-sm text-ink bg-white divide-y divide-border-subtle">
                   {loading ? (
                     Array.from({ length: 4 }).map((_, idx) => (
-                      <tr key={idx} className="border-b border-border-subtle">
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-32 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-28 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-40 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-20 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4"><Skeleton className="h-4 w-20 bg-rp-bg-2" /></td>
-                        <td className="py-3 px-4 text-right"><Skeleton className="h-5 w-20 ml-auto bg-rp-bg-2" /></td>
+                      <tr key={idx}>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-32 bg-slate-100" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-28 bg-slate-100" /></td>
+                        <td className="py-3 px-4"><Skeleton className="h-4 w-40 bg-slate-100" /></td>
+                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100" /></td>
+                        <td className="py-3 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100" /></td>
+                        <td className="py-3 px-4 text-right"><Skeleton className="h-5 w-20 ml-auto bg-slate-100" /></td>
                       </tr>
                     ))
                   ) : settlements.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-muted-slate">
                         <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
-                          <div className="p-3 bg-rp-bg-2 rounded-full text-muted-slate">
+                          <div className="p-3 bg-slate-100 rounded-full text-muted-slate">
                             <FileQuestion className="w-6 h-6" />
                           </div>
                           <div>
@@ -247,12 +247,12 @@ export default function SettlementsPage() {
                     settlements.map((st) => (
                       <tr
                         key={st.id}
-                        className="border-b border-border-subtle hover:bg-page-bg transition-colors"
+                        className="hover:bg-slate-50/80 transition-colors"
                       >
-                        <td className="py-3 px-4 font-mono font-medium text-ink">
+                        <td className="py-3 px-4 font-mono font-medium text-xs text-primary">
                           {st.id}
                         </td>
-                        <td className="py-3 px-4 text-xs text-muted-slate">
+                        <td className="py-3 px-4 text-xs text-muted-slate font-mono">
                           {st.settledAt}
                         </td>
                         <td className="py-3 px-4">
@@ -260,18 +260,18 @@ export default function SettlementsPage() {
                             <Building2 className="w-3.5 h-3.5 text-muted-slate" />
                             <span>{st.bankAccount}</span>
                           </div>
-                          <div className="text-[11px] font-mono text-muted-slate">
+                          <div className="text-[11px] font-mono text-muted-slate mt-0.5">
                             UTR: {st.utr}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-xs text-muted-slate">
-                          ₹{((st.amount || 0) / 100).toLocaleString("en-IN")}
+                        <td className="py-3 px-4 text-xs font-mono text-muted-slate text-right">
+                          ₹{((st.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="py-3 px-4 font-semibold text-xs text-ink">
-                          ₹{((st.net || 0) / 100).toLocaleString("en-IN")}
+                        <td className="py-3 px-4 font-mono font-bold text-xs text-ink text-right">
+                          ₹{((st.net || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="py-3 px-4 text-right">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-success/10 text-success text-[11px] font-semibold">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
                             PROCESSED
                           </span>
                         </td>
@@ -282,19 +282,19 @@ export default function SettlementsPage() {
               </table>
             </div>
 
-            <div className="px-6 py-4 border-t border-border-subtle flex justify-between items-center bg-white">
-              <span className="text-xs text-muted-slate">
+            <div className="px-5 py-3.5 border-t border-border-subtle flex justify-between items-center bg-white">
+              <span className="text-xs text-muted-slate font-mono">
                 Showing {settlements.length} recent settlements
               </span>
               <div className="flex gap-1">
                 <button
-                  className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-50 cursor-pointer"
+                  className="p-1 rounded-[4px] text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   disabled
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
-                  className="p-1 rounded-[4px] text-muted-slate hover:bg-surface-container-low disabled:opacity-50 cursor-pointer"
+                  className="p-1 rounded-[4px] text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   disabled
                 >
                   <ChevronRight className="w-4 h-4" />

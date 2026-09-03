@@ -6,15 +6,11 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import {
   Shield,
-  Key,
   Sliders,
   Save,
   Loader2,
   PlusCircle,
   Unlink,
-  ExternalLink,
-  CheckCircle2,
-  Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { LocalErrorBoundary } from "@/components/ui/error-boundary";
@@ -23,7 +19,6 @@ import { useMerchantMode } from "@/context/merchant-mode-context";
 export default function SettingsPage() {
   const {
     mode,
-    setMode,
     merchant,
     setIsConnectModalOpen,
     disconnectAccount,
@@ -37,10 +32,10 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      toast.success("Aegis Defense settings saved successfully!");
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      toast.success("Aegis Defense settings saved successfully");
     } catch (err) {
-      console.error("❌ Save settings error:", err);
+      console.error("Save settings error:", err);
       toast.error("Failed to save settings");
     } finally {
       setSaving(false);
@@ -53,33 +48,33 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="w-full max-w-4xl space-y-8"
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="w-full max-w-4xl space-y-6"
         >
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="font-headline-lg text-[32px] text-ink font-semibold tracking-tight">
-                Settings & Rules
+              <h1 className="text-2xl font-bold tracking-tight text-ink">
+                Settings & Defense Parameters
               </h1>
               <p className="text-xs text-muted-slate mt-1">
-                Configure Aegis autonomous defense parameters and Razorpay account connection
+                Configure autonomous dispute defense rules and Razorpay API authentication credentials
               </p>
             </div>
 
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-5 py-2 bg-primary text-white hover:bg-primary-container text-xs font-semibold rounded-[4px] flat-shadow cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white hover:bg-primary-container text-xs font-semibold rounded-[4px] shadow-xs cursor-pointer disabled:opacity-50 h-9"
             >
               {saving ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
                   <span>Saving...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" />
+                  <Save className="w-3.5 h-3.5" />
                   <span>Save Settings</span>
                 </>
               )}
@@ -87,18 +82,18 @@ export default function SettingsPage() {
           </div>
 
           {/* Razorpay Account Connection Card */}
-          <div className="bg-white p-6 rounded-[4px] border border-border-subtle flat-shadow space-y-5">
+          <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs space-y-5">
             <div className="flex items-center justify-between border-b border-border-subtle pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-[4px] bg-[#0D1A48] text-white flex items-center justify-center font-bold text-xs">
+                <div className="w-8 h-8 rounded-[4px] bg-[#0D1A48] text-white flex items-center justify-center font-bold text-xs">
                   RZP
                 </div>
                 <div>
-                  <h2 className="font-display font-semibold text-ink text-base">
+                  <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
                     Razorpay Merchant Integration
                   </h2>
-                  <p className="text-xs text-muted-slate">
-                    Manage active account credentials, live API authentication, and mode status
+                  <p className="text-xs text-muted-slate mt-0.5">
+                    Active gateway credentials, live API authentication, and mode status
                   </p>
                 </div>
               </div>
@@ -107,8 +102,8 @@ export default function SettingsPage() {
                 <span
                   className={`text-xs font-semibold px-2.5 py-1 rounded-[4px] flex items-center gap-1.5 ${
                     mode === "live"
-                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                      : "bg-amber-100 text-amber-800 border border-amber-300"
+                      ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
+                      : "bg-amber-50 text-amber-800 border border-amber-300"
                   }`}
                 >
                   <span
@@ -127,8 +122,8 @@ export default function SettingsPage() {
                   <span className="text-xs font-semibold text-ink">
                     Connected Merchant Account
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-success/10 text-success font-semibold">
-                    {merchant.isConnected ? "VERIFIED LIVE" : "TEST SANDBOX"}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-[3px] bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                    {merchant.isConnected ? "VERIFIED LIVE" : "SANDBOX MODE"}
                   </span>
                 </div>
                 <div className="font-mono text-xs text-ink bg-white p-2.5 rounded-[4px] border border-border-subtle flex justify-between items-center">
@@ -140,10 +135,10 @@ export default function SettingsPage() {
               <div className="p-4 rounded-[4px] border border-border-subtle bg-surface space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-ink">
-                    Razorpay API Key
+                    Razorpay API Key ID
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-primary/10 text-primary font-semibold">
-                    SERVER PROTECTED
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-[3px] bg-primary/10 text-primary font-bold border border-primary/20">
+                    SERVER SECURED
                   </span>
                 </div>
                 <div className="font-mono text-xs text-muted-slate truncate bg-white p-2.5 rounded-[4px] border border-border-subtle">
@@ -152,8 +147,8 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <p className="text-[11px] text-slate-500">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100">
+              <p className="text-[11px] text-muted-slate">
                 Credentials are encrypted and processed strictly server-side.
               </p>
 
@@ -175,7 +170,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setIsConnectModalOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-primary hover:bg-primary-container rounded-[4px] transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-primary hover:bg-primary-container rounded-[4px] transition-colors cursor-pointer"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
                   <span>Connect Razorpay Account</span>
@@ -185,14 +180,14 @@ export default function SettingsPage() {
           </div>
 
           {/* Defense Automation Rules Card */}
-          <div className="bg-white p-6 rounded-[4px] border border-border-subtle flat-shadow space-y-5">
+          <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs space-y-5">
             <div className="flex items-center gap-2 border-b border-border-subtle pb-4">
-              <Sliders className="w-5 h-5 text-primary" />
+              <Sliders className="w-4 h-4 text-primary" />
               <div>
-                <h2 className="font-display font-semibold text-ink text-base">
-                  Autonomous Defense Rules
+                <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
+                  Autonomous Defense Thresholds
                 </h2>
-                <p className="text-xs text-muted-slate">
+                <p className="text-xs text-muted-slate mt-0.5">
                   Control how the deterministic scoring engine and rebuttal drafting handle incoming disputes
                 </p>
               </div>
@@ -202,9 +197,9 @@ export default function SettingsPage() {
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="text-xs font-semibold text-ink">
-                    Minimum Winnability Score for Auto-Contest
+                    Minimum Winnability Score for Auto-Contest Staging
                   </label>
-                  <span className="font-bold text-primary text-xs">
+                  <span className="font-mono font-bold text-primary text-xs">
                     {minWinnabilityScore}% (High Winnability)
                   </span>
                 </div>
@@ -235,7 +230,7 @@ export default function SettingsPage() {
                       Auto-Draft Grounded Rebuttal Letters
                     </span>
                     <span className="text-[11px] text-muted-slate block">
-                      Automatically assemble POD, invoices, and communication threads upon new chargeback webhook.
+                      Automatically assemble PODs, GST invoices, and communication threads upon new chargeback webhook.
                     </span>
                   </div>
                 </label>
@@ -252,7 +247,7 @@ export default function SettingsPage() {
                       Auto-Accept Low Winnability Disputes (&lt;30%)
                     </span>
                     <span className="text-[11px] text-muted-slate block">
-                      Prevent penalty fees by immediately accepting disputes when essential proofs are missing.
+                      Mitigate merchant processing penalties by promptly accepting disputes where mandatory delivery proof is completely missing.
                     </span>
                   </div>
                 </label>
@@ -261,14 +256,14 @@ export default function SettingsPage() {
           </div>
 
           {/* Acquiring Infrastructure Profile Card */}
-          <div className="bg-white p-6 rounded-[4px] border border-border-subtle flat-shadow space-y-4">
-            <div className="flex items-center gap-2 border-b border-border-subtle pb-4">
-              <Shield className="w-5 h-5 text-muted-slate" />
+          <div className="bg-white p-5 rounded-[4px] border border-border-subtle shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-border-subtle pb-3">
+              <Shield className="w-4 h-4 text-slate-700" />
               <div>
-                <h2 className="font-display font-semibold text-ink text-base">
-                  Acquiring Infrastructure & Database
+                <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
+                  Acquiring Infrastructure & Gateway Spec
                 </h2>
-                <p className="text-xs text-muted-slate">
+                <p className="text-xs text-muted-slate mt-0.5">
                   Active database topology and payment gateway specs
                 </p>
               </div>

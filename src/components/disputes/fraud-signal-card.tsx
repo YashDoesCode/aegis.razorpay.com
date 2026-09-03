@@ -10,7 +10,6 @@ import {
   ChevronDown,
   ChevronUp,
   Scale,
-  Sparkles,
 } from "lucide-react";
 import { FraudSignalResult } from "@/lib/fraudSignal/types";
 import { RelationshipGraph } from "./relationship-graph";
@@ -39,14 +38,14 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
   const isInsufficient = band === "insufficient_signal";
 
   return (
-    <div className="bg-white rounded-[4px] border border-border-subtle p-5 flat-shadow space-y-4">
+    <div className="bg-white rounded-[4px] border border-border-subtle p-5 shadow-xs space-y-4">
       {/* Top Banner & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-subtle pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-subtle pb-3.5">
         <div className="flex items-center gap-2.5">
           <div
             className={`w-8 h-8 rounded-[4px] flex items-center justify-center font-bold text-xs ${
               isHigh
-                ? "bg-red-100 text-red-700"
+                ? "bg-rose-100 text-rose-700"
                 : isMedium
                 ? "bg-amber-100 text-amber-800"
                 : isInsufficient
@@ -66,13 +65,13 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-display font-semibold text-ink text-sm">
-                First-Party / Friendly-Fraud Signal
+              <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
+                First-Party & Friendly-Fraud Signal
               </h3>
               <span
                 className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[3px] ${
                   isHigh
-                    ? "bg-red-50 text-red-700 border border-red-200"
+                    ? "bg-rose-50 text-rose-700 border border-rose-200"
                     : isMedium
                     ? "bg-amber-50 text-amber-800 border border-amber-200"
                     : isInsufficient
@@ -89,8 +88,8 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
                   : "Clean Customer Profile"}
               </span>
             </div>
-            <p className="text-xs text-muted-slate mt-0.5">
-              Behavioral repeat-disputer telemetry computed strictly from genuine customer order records
+            <p className="text-[11px] text-muted-slate mt-0.5">
+              Behavioral repeat-disputer telemetry computed strictly from verified customer order records
             </p>
           </div>
         </div>
@@ -104,7 +103,7 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
             <span
               className={`text-sm font-bold font-mono ${
                 isHigh
-                  ? "text-red-600"
+                  ? "text-rose-600"
                   : isMedium
                   ? "text-amber-600"
                   : isInsufficient
@@ -120,14 +119,14 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
 
       {/* Repeat Disputer Warning Callout */}
       {isRepeatDisputer && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-[4px] flex items-start gap-2.5 text-xs text-red-900">
-          <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="p-3 bg-rose-50 border border-rose-200 rounded-[4px] flex items-start gap-2.5 text-xs text-rose-900">
+          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <span className="font-semibold block">
               Repeat Disputer Anomaly Detected
             </span>
-            <span className="text-[11px] text-red-800 leading-relaxed block">
-              This customer profile exhibits prior chargebacks on record. Historical dispute-to-order ratio is{" "}
+            <span className="text-[11px] text-rose-800 leading-relaxed block">
+              Customer profile exhibits historical chargebacks. Lifetime dispute-to-order ratio is{" "}
               <strong>{(disputeToOrderRatio * 100).toFixed(0)}%</strong>.
             </span>
           </div>
@@ -136,7 +135,7 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
 
       {/* Contributing Factors Breakdown */}
       <div className="space-y-2">
-        <div className="text-xs font-semibold text-slate-700 tracking-wide uppercase">
+        <div className="text-[11px] font-bold text-slate-700 tracking-wider uppercase">
           Contributing Evidence & Telemetry
         </div>
         <div className="space-y-1.5">
@@ -152,7 +151,7 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
               <span
                 className={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
                   factor.weight > 0
-                    ? "bg-red-100 text-red-800"
+                    ? "bg-rose-100 text-rose-800"
                     : factor.weight < 0
                     ? "bg-emerald-100 text-emerald-800"
                     : "bg-slate-200 text-slate-700"
@@ -166,8 +165,8 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
       </div>
 
       {/* Defense Strategy Impact */}
-      <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-[4px] text-xs text-blue-950 space-y-1.5">
-        <div className="flex items-center gap-1.5 font-semibold text-[#0D1A48]">
+      <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-[4px] text-xs text-blue-950 space-y-1">
+        <div className="flex items-center gap-1.5 font-bold text-[#0D1A48]">
           <Scale className="w-3.5 h-3.5 text-primary" />
           <span>Contest Strategy Adjustment</span>
         </div>
@@ -179,7 +178,7 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
       {/* Relationship Graph Toggle & Canvas */}
       <div className="pt-2 border-t border-slate-100 space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
             <Network className="w-3.5 h-3.5 text-primary" />
             <span>Entity Relationship Graph ({relationshipGraph?.nodes?.length || 0} nodes)</span>
           </div>
