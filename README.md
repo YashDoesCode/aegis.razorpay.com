@@ -38,10 +38,11 @@
 8. [Application DOM & Component Structure](#application-dom--component-structure)
 9. [Supported Network Reason Codes](#supported-network-reason-codes)
 10. [API Reference](#api-reference)
-11. [Design System & Interface Tokens](#design-system--interface-tokens)
-12. [Local Setup & Development Guide](#local-setup--development-guide)
-13. [Verification & Testing](#verification--testing)
-14. [References & Standards](#references--standards)
+11. [Platform-Wide Immutable Audit Ledger](#platform-wide-immutable-audit-ledger)
+12. [Design System & Interface Tokens](#design-system--interface-tokens)
+13. [Local Setup & Development Guide](#local-setup--development-guide)
+14. [Verification & Testing](#verification--testing)
+15. [References & Standards](#references--standards)
 
 ---
 
@@ -556,6 +557,88 @@ sequenceDiagram
         end
     end
 ```
+
+---
+
+## Platform-Wide Immutable Audit Ledger
+
+Aegis implements an append-only, cryptographic, and centralized financial audit ledger (`AuditService`) as the authoritative source of truth for all operational events across the dispute defense lifecycle.
+
+### Core Architecture & Guarantees
+
+1. **Append-Only Immutability**: No update or delete operations exist. Every operational mutation creates a new permanently timestamped ledger entry.
+2. **Correlation & Request Tracing**: Every inbound HTTP request, webhook, and automated job receives an end-to-end `correlationId` (`corr_...`) and `requestId` (`req_...`) propagated across API controllers, background services, audit events, and structured logs.
+3. **Sensitive Data Redaction**: API keys, webhook secrets, passwords, auth tokens, and session headers are automatically masked (e.g. `rzp_live_...1234`) before write persistence.
+4. **Resilient Dual Storage**: Asynchronously writes to Neon Serverless PostgreSQL with in-memory transaction store fallback.
+
+```mermaid
+flowchart TD
+    subgraph TracingContext ["Distributed Trace Context"]
+        INBOUND["Inbound Request\n(Headers: x-correlation-id, x-request-id)"]
+        EXTRACT["extractTraceContext()\n(Derives correlationId, requestId, ipAddress, userAgent)"]
+    end
+
+    subgraph PlatformEvents ["Platform Subsystems"]
+        WEBHOOK["Webhook Ingestion\n(WEBHOOK_RECEIVED, DISPUTE_CREATED)"]
+        SYNC["Dispute Synchronization\n(DISPUTE_SYNCED, DISPUTE_IMPORTED)"]
+        DRAFT["Rebuttal Generation Engine\n(SCORE_RECOMPUTED, REBUTTAL_GENERATED, SAFE_MODE_USED, DRAFT_STAGED)"]
+        ACCEPT["Dispute Acceptance\n(DISPUTE_ACCEPTED)"]
+        AUTH["Merchant Authentication\n(MERCHANT_CONNECTED, MERCHANT_DISCONNECTED, LIVE_MODE_ENABLED)"]
+    end
+
+    subgraph CentralizedService ["AuditService Core"]
+        RECORD["AuditService.record(...)"]
+        SANITIZE["Sensitive Credential Sanitization & Masking"]
+        DISPATCH["Structured Async Dispatch"]
+    end
+
+    subgraph StorageEngine ["Dual Persistence Layer"]
+        PRISMA_AUDIT[("Neon PostgreSQL\n(audit_events table)")]
+        MEM_AUDIT[("In-Memory Circular Ledger\n(Zero-Failure Fallback)")]
+    end
+
+    INBOUND --> EXTRACT
+    EXTRACT --> WEBHOOK
+    EXTRACT --> SYNC
+    EXTRACT --> DRAFT
+    EXTRACT --> ACCEPT
+    EXTRACT --> AUTH
+
+    WEBHOOK --> RECORD
+    SYNC --> RECORD
+    DRAFT --> RECORD
+    ACCEPT --> RECORD
+    AUTH --> RECORD
+
+    RECORD --> SANITIZE
+    SANITIZE --> DISPATCH
+    DISPATCH --> PRISMA_AUDIT
+    DISPATCH --> MEM_AUDIT
+```
+
+### Audit Event Taxonomy
+
+| Event Type | Actor Type | Trigger Source | Description |
+|:---|:---|:---|:---|
+| `WEBHOOK_RECEIVED` | `webhook` | Razorpay Gateway | Inbound webhook payload received and signature verified |
+| `WEBHOOK_IGNORED` | `webhook` | Razorpay Gateway | Non-dispute webhook event safely acknowledged |
+| `DISPUTE_CREATED` | `webhook` | Razorpay Gateway | New dispute opened and staged in defense pipeline |
+| `DISPUTE_UNDER_REVIEW` | `webhook` | Razorpay Gateway | Gateway confirms dispute rebuttal is under network review |
+| `DISPUTE_WON` | `webhook` | Acquiring Bank | Dispute resolved in favor of merchant; funds recovered |
+| `DISPUTE_LOST` | `webhook` | Acquiring Bank | Dispute closed as lost to cardholder |
+| `DISPUTE_IMPORTED` | `api` | Aegis Sync Engine | Live dispute pulled from Razorpay Disputes API |
+| `DISPUTE_SYNCED` | `api` | Aegis Sync Engine | Dispute catalog synchronization completed |
+| `SCORE_COMPUTED` | `system` | Scoring Engine | Initial winnability score calculated |
+| `SCORE_RECOMPUTED` | `system` | Scoring Engine | Score recalculated with freshly attached evidence items |
+| `FRAUD_ANALYZED` | `system` | Entity Graph | First-party fraud signal analysis generated |
+| `REBUTTAL_GENERATED` | `merchant` | Rebuttal Engine | Rebuttal dossier generated for dispute reason code |
+| `SAFE_MODE_USED` | `system` | Template Engine | Deterministic fallback activated |
+| `DRAFT_STAGED` | `merchant` | Rebuttal Console | Evidence dossier staged for submission |
+| `DISPUTE_ACCEPTED` | `merchant` | Action Bar | Dispute conceded to prevent compounding fee penalties |
+| `MERCHANT_CONNECTED` | `merchant` | Settings / Modal | Live Razorpay merchant account connected |
+| `MERCHANT_DISCONNECTED` | `merchant` | Mode Switcher | Merchant account unlinked; switched to Test Mode |
+| `LIVE_MODE_ENABLED` | `merchant` | Mode Switcher | Live operating mode activated |
+| `TEST_MODE_ENABLED` | `merchant` | Mode Switcher | Test sandbox mode activated |
 
 ---
 
