@@ -12,12 +12,15 @@ datasource db {
 }
 
 model Merchant {
-  id            String   @id @default(cuid())
-  name          String
-  rzpMerchantId String   @unique
-  mode          String   @default("test")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  name               String
+  rzpMerchantId      String   @unique
+  mode               String   @default("test")
+  keyId              String?
+  encryptedKeySecret String?
+  authType           String   @default("api_key")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@map("merchants")
 }

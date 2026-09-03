@@ -1,6 +1,7 @@
 import Razorpay from "razorpay";
 import { prisma } from "./prisma";
 import { encryptSecret, decryptSecret, isEncrypted } from "@/lib/crypto";
+import { logger } from "@/lib/logger";
 
 export interface ConnectedMerchantState {
   isConnected: boolean;
@@ -12,7 +13,17 @@ export interface ConnectedMerchantState {
   connectedAt?: string;
 }
 
-let activeLiveMerchant: {
+export interface DecryptedMerchantCredential {
+  merchantId: string;
+  name: string;
+  mode: "live" | "test";
+  keyId: string;
+  keySecret: string;
+  authType: string;
+}
+
+// In-memory request cache for single-instance performance optimization
+let activeLiveMerchantMemoryCache: {
   keyId: string;
   encryptedSecret: string;
   merchantId: string;
@@ -21,33 +32,132 @@ let activeLiveMerchant: {
   authType: "api_key" | "oauth";
 } | null = null;
 
-export function maskKey(keyId: string): string {
+export function maskKey(keyId: string | null | undefined): string {
   if (!keyId || keyId.length < 10) return "••••••••";
   return `${keyId.slice(0, 10)}...${keyId.slice(-4)}`;
 }
 
-export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantState> {
-  if (activeLiveMerchant) {
+/**
+ * Resolves active merchant credential from durable storage (Prisma DB).
+ * Survives Vercel cold-starts and server restarts.
+ * Decrypts AES-256-GCM envelope in server memory on demand.
+ */
+export async function resolveMerchantCredential(
+  merchantId?: string,
+  mode: "test" | "live" = "live"
+): Promise<DecryptedMerchantCredential | null> {
+  if (mode === "test") {
+    const envTestKeyId = process.env.RAZORPAY_KEY_ID?.startsWith("rzp_test_")
+      ? process.env.RAZORPAY_KEY_ID
+      : "rzp_test_demo_key_placeholder";
+    const envTestKeySecret = process.env.RAZORPAY_KEY_SECRET || "test_secret_placeholder";
+
     return {
-      isConnected: true,
-      merchantId: activeLiveMerchant.merchantId,
-      name: activeLiveMerchant.name,
-      mode: "live",
-      authType: activeLiveMerchant.authType,
-      maskedKeyId: maskKey(activeLiveMerchant.keyId),
-      connectedAt: activeLiveMerchant.connectedAt,
+      merchantId: merchantId || "acc_demo_test_01",
+      name: "Acme India Retail Ltd (Demo)",
+      mode: "test",
+      keyId: envTestKeyId,
+      keySecret: envTestKeySecret,
+      authType: "env",
     };
   }
 
+  // 1. Durable DB Resolution (Primary)
   try {
-    const dbPromise = prisma.merchant.findFirst({
+    const merchantDb = merchantId
+      ? await prisma.merchant.findFirst({
+          where: { rzpMerchantId: merchantId, mode: "live" },
+        })
+      : await prisma.merchant.findFirst({
+          where: { mode: "live" },
+          orderBy: { updatedAt: "desc" },
+        });
+
+    if (merchantDb && merchantDb.keyId && merchantDb.encryptedKeySecret) {
+      if (!isEncrypted(merchantDb.encryptedKeySecret)) {
+        logger.error(
+          "Unencrypted or corrupted secret found in database",
+          undefined,
+          { module: "MerchantAccount", merchantId: merchantDb.rzpMerchantId }
+        );
+        throw new Error("[Merchant Security] Corrupted ciphertext payload in database");
+      }
+
+      const decryptedSecret = decryptSecret(merchantDb.encryptedKeySecret);
+
+      // Refresh in-memory cache
+      activeLiveMerchantMemoryCache = {
+        keyId: merchantDb.keyId,
+        encryptedSecret: merchantDb.encryptedKeySecret,
+        merchantId: merchantDb.rzpMerchantId,
+        name: merchantDb.name,
+        connectedAt: merchantDb.createdAt.toISOString(),
+        authType: (merchantDb.authType as "api_key" | "oauth") || "api_key",
+      };
+
+      return {
+        merchantId: merchantDb.rzpMerchantId,
+        name: merchantDb.name,
+        mode: "live",
+        keyId: merchantDb.keyId,
+        keySecret: decryptedSecret,
+        authType: merchantDb.authType || "api_key",
+      };
+    }
+  } catch (dbErr: unknown) {
+    logger.warn("Database lookup warning during credential resolution", {
+      module: "MerchantAccount",
+      error: dbErr instanceof Error ? dbErr.message : String(dbErr),
+    });
+  }
+
+  // 2. In-Memory Cache Fallback (Secondary)
+  if (activeLiveMerchantMemoryCache) {
+    try {
+      const rawSecret = isEncrypted(activeLiveMerchantMemoryCache.encryptedSecret)
+        ? decryptSecret(activeLiveMerchantMemoryCache.encryptedSecret)
+        : activeLiveMerchantMemoryCache.encryptedSecret;
+
+      return {
+        merchantId: activeLiveMerchantMemoryCache.merchantId,
+        name: activeLiveMerchantMemoryCache.name,
+        mode: "live",
+        keyId: activeLiveMerchantMemoryCache.keyId,
+        keySecret: rawSecret,
+        authType: activeLiveMerchantMemoryCache.authType,
+      };
+    } catch (decryptErr) {
+      logger.error("Failed to decrypt cached merchant secret", decryptErr, {
+        module: "MerchantAccount",
+      });
+    }
+  }
+
+  // 3. Live Environment Variable Fallback (Tertiary)
+  const envKeyId = process.env.RAZORPAY_KEY_ID || "";
+  const envKeySecret = process.env.RAZORPAY_KEY_SECRET || "";
+
+  if (envKeyId.startsWith("rzp_live_") && envKeySecret) {
+    return {
+      merchantId: "acc_env_live_default",
+      name: "Razorpay Live Account (Env)",
+      mode: "live",
+      keyId: envKeyId,
+      keySecret: envKeySecret,
+      authType: "env",
+    };
+  }
+
+  return null;
+}
+
+export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantState> {
+  // Check Durable DB first
+  try {
+    const liveMerchantDb = await prisma.merchant.findFirst({
       where: { mode: "live" },
       orderBy: { updatedAt: "desc" },
     });
-    const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(() => reject(new Error("DB timeout")), 800)
-    );
-    const liveMerchantDb = await Promise.race([dbPromise, timeoutPromise]);
 
     if (liveMerchantDb) {
       return {
@@ -55,18 +165,32 @@ export async function getMerchantConnectionStatus(): Promise<ConnectedMerchantSt
         merchantId: liveMerchantDb.rzpMerchantId,
         name: liveMerchantDb.name,
         mode: "live",
-        authType: "api_key",
-        maskedKeyId: maskKey(liveMerchantDb.rzpMerchantId),
+        authType: (liveMerchantDb.authType as "api_key" | "oauth") || "api_key",
+        maskedKeyId: maskKey(liveMerchantDb.keyId || liveMerchantDb.rzpMerchantId),
         connectedAt: liveMerchantDb.createdAt.toISOString(),
       };
     }
-  } catch {
+  } catch (err) {
+    logger.warn("DB timeout or error in getMerchantConnectionStatus", {
+      module: "MerchantAccount",
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  if (activeLiveMerchantMemoryCache) {
+    return {
+      isConnected: true,
+      merchantId: activeLiveMerchantMemoryCache.merchantId,
+      name: activeLiveMerchantMemoryCache.name,
+      mode: "live",
+      authType: activeLiveMerchantMemoryCache.authType,
+      maskedKeyId: maskKey(activeLiveMerchantMemoryCache.keyId),
+      connectedAt: activeLiveMerchantMemoryCache.connectedAt,
+    };
   }
 
   const envKeyId = process.env.RAZORPAY_KEY_ID || "";
-  const isEnvLive = envKeyId.startsWith("rzp_live_");
-
-  if (isEnvLive && process.env.RAZORPAY_KEY_SECRET) {
+  if (envKeyId.startsWith("rzp_live_") && process.env.RAZORPAY_KEY_SECRET) {
     return {
       isConnected: true,
       merchantId: "acc_env_live_default",
@@ -116,11 +240,16 @@ export async function validateRazorpayCredentials(
       key_secret: cleanSecret,
     });
 
-    console.log(`📡 [MerchantAccount] Verifying credentials for Key ID: ${maskKey(cleanKey)}...`);
-    
+    logger.info(`Verifying credentials for Key ID: ${maskKey(cleanKey)}...`, {
+      module: "MerchantAccount",
+    });
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await (client.disputes as any).all({ count: 1 });
-    console.log("✅ [MerchantAccount] Credentials verified successfully. Response entity:", res?.entity);
+    logger.info("Credentials verified successfully with Razorpay API", {
+      module: "MerchantAccount",
+      entity: res?.entity,
+    });
 
     const merchantId = cleanKey.startsWith("rzp_live_")
       ? `acc_live_${cleanKey.slice(9, 17)}`
@@ -133,7 +262,7 @@ export async function validateRazorpayCredentials(
   } catch (error: unknown) {
     const err = error as { statusCode?: number; error?: { description?: string; code?: string }; message?: string };
     const errMsg = err.error?.description || err.message || "Failed to authenticate with Razorpay API";
-    console.warn(`❌ [MerchantAccount] Credential verification failed: ${errMsg}`);
+    logger.warn(`Credential verification failed: ${errMsg}`, { module: "MerchantAccount" });
     return {
       valid: false,
       error: errMsg,
@@ -141,6 +270,10 @@ export async function validateRazorpayCredentials(
   }
 }
 
+/**
+ * Connects a merchant account, encrypts credentials via AES-256-GCM,
+ * and persists the encrypted payload to durable PostgreSQL storage via Prisma.
+ */
 export async function connectMerchantAccount(params: {
   keyId: string;
   keySecret: string;
@@ -162,7 +295,7 @@ export async function connectMerchantAccount(params: {
   const now = new Date().toISOString();
   const encryptedSecret = encryptSecret(cleanSecret);
 
-  activeLiveMerchant = {
+  activeLiveMerchantMemoryCache = {
     keyId: cleanKey,
     encryptedSecret,
     merchantId,
@@ -171,6 +304,7 @@ export async function connectMerchantAccount(params: {
     authType: "api_key",
   };
 
+  // PERSIST TO DURABLE DATABASE STORAGE
   try {
     await prisma.merchant.upsert({
       where: { rzpMerchantId: merchantId },
@@ -178,15 +312,29 @@ export async function connectMerchantAccount(params: {
         name,
         rzpMerchantId: merchantId,
         mode: "live",
+        keyId: cleanKey,
+        encryptedKeySecret: encryptedSecret,
+        authType: "api_key",
       },
       update: {
         name,
         mode: "live",
+        keyId: cleanKey,
+        encryptedKeySecret: encryptedSecret,
+        authType: "api_key",
         updatedAt: new Date(),
       },
     });
+    logger.info("Merchant credentials encrypted and persisted to database successfully", {
+      module: "MerchantAccount",
+      merchantId,
+      maskedKeyId: maskKey(cleanKey),
+    });
   } catch (dbErr) {
-    console.warn("⚠️ [MerchantAccount] DB upsert warning:", dbErr instanceof Error ? dbErr.message : dbErr);
+    logger.error("DB upsert failed during merchant connection", dbErr, {
+      module: "MerchantAccount",
+      merchantId,
+    });
   }
 
   return {
@@ -203,28 +351,54 @@ export async function connectMerchantAccount(params: {
   };
 }
 
-export async function disconnectMerchantAccount(): Promise<{ ok: boolean }> {
-  activeLiveMerchant = null;
+export async function disconnectMerchantAccount(merchantId?: string): Promise<{ ok: boolean }> {
+  activeLiveMerchantMemoryCache = null;
 
   try {
-    await prisma.merchant.updateMany({
-      where: { mode: "live" },
-      data: { mode: "disconnected" },
+    if (merchantId) {
+      await prisma.merchant.updateMany({
+        where: { rzpMerchantId: merchantId },
+        data: {
+          mode: "disconnected",
+          keyId: null,
+          encryptedKeySecret: null,
+        },
+      });
+    } else {
+      await prisma.merchant.updateMany({
+        where: { mode: "live" },
+        data: {
+          mode: "disconnected",
+          keyId: null,
+          encryptedKeySecret: null,
+        },
+      });
+    }
+    logger.info("Merchant disconnected and credentials scrubbed from database", {
+      module: "MerchantAccount",
+      merchantId,
     });
   } catch (err) {
-    console.warn("⚠️ [MerchantAccount] Disconnect DB update warning:", err instanceof Error ? err.message : err);
+    logger.warn("Disconnect DB update warning", {
+      module: "MerchantAccount",
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   return { ok: true };
 }
 
+/**
+ * Returns a configured Razorpay Client instance.
+ * For live mode, resolves the decrypted merchant credential on demand.
+ */
 export function getActiveRazorpayClient(mode: "test" | "live" = "test"): Razorpay {
-  if (mode === "live" && activeLiveMerchant) {
-    const rawSecret = isEncrypted(activeLiveMerchant.encryptedSecret)
-      ? decryptSecret(activeLiveMerchant.encryptedSecret)
-      : activeLiveMerchant.encryptedSecret;
+  if (mode === "live" && activeLiveMerchantMemoryCache) {
+    const rawSecret = isEncrypted(activeLiveMerchantMemoryCache.encryptedSecret)
+      ? decryptSecret(activeLiveMerchantMemoryCache.encryptedSecret)
+      : activeLiveMerchantMemoryCache.encryptedSecret;
     return new Razorpay({
-      key_id: activeLiveMerchant.keyId,
+      key_id: activeLiveMerchantMemoryCache.keyId,
       key_secret: rawSecret,
     });
   }
@@ -237,15 +411,41 @@ export function getActiveRazorpayClient(mode: "test" | "live" = "test"): Razorpa
   });
 }
 
+/**
+ * Asynchronously resolves and constructs an authenticated Razorpay Client from durable storage.
+ * Recommended for all API routes requiring merchant authentication.
+ */
+export async function getActiveRazorpayClientAsync(
+  mode: "test" | "live" = "test",
+  merchantId?: string
+): Promise<Razorpay> {
+  const credential = await resolveMerchantCredential(merchantId, mode);
+  if (credential) {
+    return new Razorpay({
+      key_id: credential.keyId,
+      key_secret: credential.keySecret,
+    });
+  }
+
+  return getActiveRazorpayClient(mode);
+}
+
 export function getDecryptedActiveMerchantCredentials(): { keyId: string; keySecret: string } | null {
-  if (!activeLiveMerchant) {
+  if (!activeLiveMerchantMemoryCache) {
     return null;
   }
-  const rawSecret = isEncrypted(activeLiveMerchant.encryptedSecret)
-    ? decryptSecret(activeLiveMerchant.encryptedSecret)
-    : activeLiveMerchant.encryptedSecret;
+  const rawSecret = isEncrypted(activeLiveMerchantMemoryCache.encryptedSecret)
+    ? decryptSecret(activeLiveMerchantMemoryCache.encryptedSecret)
+    : activeLiveMerchantMemoryCache.encryptedSecret;
   return {
-    keyId: activeLiveMerchant.keyId,
+    keyId: activeLiveMerchantMemoryCache.keyId,
     keySecret: rawSecret,
   };
+}
+
+/**
+ * Resets the in-memory cache. Used in tests to simulate Vercel server instance cold start / process restart.
+ */
+export function __resetInMemoryMerchantCacheForTesting(): void {
+  activeLiveMerchantMemoryCache = null;
 }
