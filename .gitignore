@@ -168,3 +168,6 @@ chrome/
 .local-chromium/
 scratch/
 useful links.md
+
+# MCP Tooling
+.mcp.json
