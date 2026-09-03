@@ -15,7 +15,7 @@ export function HealthScore({ score = 76, className }: HealthScoreProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-full text-xs shadow-xs select-none",
+        "flex items-center gap-2.5 bg-slate-50 border border-slate-200/80 px-3 py-1 rounded-full text-xs shadow-xs select-none",
         className
       )}
       title={`Aegis Health Score: ${normalizedScore}/100 based on representment win rate & evidence readiness`}
@@ -42,7 +42,7 @@ export function HealthScore({ score = 76, className }: HealthScoreProps) {
         <span className="text-[10px] text-slate-400 font-normal">/100</span>
       </span>
 
-      <span className="text-slate-500 font-medium border-l border-slate-200 pl-2.5 text-[11px] whitespace-nowrap">
+      <span className="text-slate-500 font-medium border-l border-slate-200 pl-2 text-[11px] whitespace-nowrap">
         Health Score
       </span>
     </div>

@@ -26,11 +26,11 @@ export function WinnabilityDistribution({
   return (
     <div
       className={cn(
-        "bg-slate-50/70 rounded-2xl p-5 border border-slate-200/80 flex flex-col justify-between shadow-xs",
+        "bg-slate-50/70 rounded-2xl p-4 sm:p-5 border border-slate-200/80 flex flex-col justify-between shadow-xs",
         className
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center justify-between gap-2 mb-2">
         <div>
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             Winnability Distribution
@@ -55,7 +55,7 @@ export function WinnabilityDistribution({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 items-end h-40 px-1 pb-1 pt-2 select-none">
+      <div className="grid grid-cols-4 gap-2.5 sm:gap-3 items-end h-36 sm:h-40 px-1 pb-1 pt-1 select-none">
         <div className="flex flex-col items-center h-full justify-end group">
           <div className="w-full bg-slate-200/60 rounded-xl p-1 flex flex-col justify-end h-full">
             <div
@@ -70,7 +70,7 @@ export function WinnabilityDistribution({
               </span>
             </div>
           </div>
-          <span className="text-[11px] font-semibold text-slate-700 mt-2">
+          <span className="text-[11px] font-semibold text-slate-700 mt-1.5">
             Strong
           </span>
         </div>
@@ -89,7 +89,7 @@ export function WinnabilityDistribution({
               </span>
             </div>
           </div>
-          <span className="text-[11px] font-semibold text-slate-700 mt-2">
+          <span className="text-[11px] font-semibold text-slate-700 mt-1.5">
             Moderate
           </span>
         </div>
@@ -106,7 +106,7 @@ export function WinnabilityDistribution({
               </span>
             </div>
           </div>
-          <span className="text-[11px] font-semibold text-slate-700 mt-2">
+          <span className="text-[11px] font-semibold text-slate-700 mt-1.5">
             Weak
           </span>
         </div>
@@ -122,7 +122,7 @@ export function WinnabilityDistribution({
               </span>
             </div>
           </div>
-          <span className="text-[11px] font-semibold text-slate-700 mt-2">
+          <span className="text-[11px] font-semibold text-slate-700 mt-1.5">
             Unknown
           </span>
         </div>

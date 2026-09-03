@@ -19,7 +19,7 @@ export function SignalsEvidenceCard({
   return (
     <div
       className={cn(
-        "bg-slate-50/70 rounded-2xl p-5 border border-slate-200/80 flex flex-col justify-between shadow-xs",
+        "bg-slate-50/70 rounded-2xl p-4 sm:p-5 border border-slate-200/80 flex flex-col justify-between shadow-xs",
         className
       )}
     >
@@ -42,7 +42,7 @@ export function SignalsEvidenceCard({
         </Link>
       </div>
 
-      <div className="my-2.5">
+      <div className="my-2">
         <p className="text-slate-600 text-xs leading-relaxed">
           Delivery confirmation matched for{" "}
           <strong className="text-slate-900 font-semibold">
@@ -57,7 +57,7 @@ export function SignalsEvidenceCard({
       </div>
 
       <div>
-        <span className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider block mb-2">
+        <span className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider block mb-1.5">
           Connected Pipelines
         </span>
         <div className="flex items-center flex-wrap gap-1.5">

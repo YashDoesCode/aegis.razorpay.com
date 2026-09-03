@@ -46,13 +46,13 @@ const navItems: NavItem[] = [
     name: "Fraud Engine",
     href: "/disputes?filter=high_risk",
     matchPrefix: "/disputes?filter=high_risk",
-    hiddenClass: "hidden sm:inline-block",
+    hiddenClass: "hidden xl:inline-block",
   },
   {
     name: "Settings",
     href: "/settings",
     matchPrefix: "/settings",
-    hiddenClass: "hidden md:inline-block",
+    hiddenClass: "hidden 2xl:inline-block",
   },
 ];
 
@@ -156,7 +156,7 @@ export function DashboardShell({
   return (
     <TooltipProvider delay={100}>
       <div
-        className="bg-[#ECEEF2] text-slate-900 min-h-screen p-3 md:p-6 lg:p-8 flex items-center justify-center font-sans antialiased selection:bg-slate-900 selection:text-white"
+        className="bg-[#ECEEF2] text-slate-900 min-h-screen p-2.5 sm:p-4 md:p-6 lg:p-7 flex items-center justify-center font-sans antialiased selection:bg-slate-900 selection:text-white"
         suppressHydrationWarning
       >
         <motion.div
@@ -166,14 +166,14 @@ export function DashboardShell({
             duration: 0.75,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="w-full max-w-[1440px] bg-white rounded-[24px] md:rounded-[28px] p-4 sm:p-6 lg:p-7 shadow-xl shadow-slate-300/40 border border-slate-200/90 flex flex-col justify-between gap-5 relative overflow-hidden"
+          className="w-full max-w-[1440px] bg-white rounded-[24px] md:rounded-[28px] p-4 sm:p-5 lg:p-6 shadow-xl shadow-slate-300/40 border border-slate-200/90 flex flex-col justify-between gap-4 sm:gap-5 relative overflow-hidden"
         >
-          <header className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
-            <div className="flex items-center gap-4 sm:gap-5 flex-wrap">
-              <Link href="/overview" className="flex items-center gap-2.5 group">
-                <div className="w-9 h-9 rounded-xl bg-slate-950 flex items-center justify-center text-white shadow-xs group-hover:bg-primary transition-colors duration-200">
+          <header className="flex items-center justify-between gap-2.5 sm:gap-4 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3 lg:gap-4.5 shrink-0">
+              <Link href="/overview" className="flex items-center gap-2.5 group shrink-0">
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-slate-950 flex items-center justify-center text-white shadow-xs group-hover:bg-primary transition-colors duration-200">
                   <svg
-                    className="w-5 h-5 text-white"
+                    className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     strokeLinecap="round"
@@ -190,21 +190,21 @@ export function DashboardShell({
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[15px] font-extrabold tracking-tight text-slate-950 leading-none">
+                    <span className="text-[14px] sm:text-[15px] font-extrabold tracking-tight text-slate-950 leading-none">
                       Razorpay
                     </span>
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100/60">
+                    <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100/60">
                       Aegis
                     </span>
                   </div>
-                  <span className="text-[10px] font-medium tracking-wide text-slate-400 uppercase mt-1">
+                  <span className="text-[9px] sm:text-[10px] font-medium tracking-wide text-slate-400 uppercase mt-0.5 sm:mt-1">
                     Dispute Operations
                   </span>
                 </div>
               </Link>
 
               <nav
-                className="hidden lg:flex items-center bg-slate-100/80 p-1 rounded-full border border-slate-200/70 text-xs font-medium text-slate-600"
+                className="hidden lg:flex items-center bg-slate-100/80 p-0.5 sm:p-1 rounded-full border border-slate-200/70 text-xs font-medium text-slate-600 shrink-0"
                 aria-label="Main Navigation"
               >
                 {navItems.map((item) => {
@@ -221,7 +221,7 @@ export function DashboardShell({
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        "px-4 py-1.5 rounded-full transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-hidden",
+                        "px-3 xl:px-3.5 2xl:px-4 py-1 sm:py-1.5 rounded-full transition-all duration-150 cursor-pointer text-[11px] sm:text-xs focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-hidden",
                         item.hiddenClass,
                         isActive
                           ? "bg-slate-950 text-white font-semibold shadow-xs"
@@ -235,8 +235,8 @@ export function DashboardShell({
               </nav>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-2.5">
-              <div className="relative hidden sm:block w-48 md:w-56 lg:w-68">
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+              <div className="relative hidden md:block w-36 lg:w-44 xl:w-56 2xl:w-64">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Search className="w-3.5 h-3.5" />
                 </div>
@@ -245,9 +245,9 @@ export function DashboardShell({
                   value={effectiveSearch}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Search dispute, RRN, order ID..."
+                  placeholder="Search dispute, RRN..."
                   aria-label="Search dispute, RRN, order ID"
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-full text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-slate-400 focus:bg-white focus-visible:ring-2 focus-visible:ring-slate-400 transition"
+                  className="w-full pl-8 pr-3 py-1 sm:py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-full text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-slate-400 focus:bg-white focus-visible:ring-2 focus-visible:ring-slate-400 transition"
                 />
               </div>
 
@@ -256,9 +256,9 @@ export function DashboardShell({
                   <button
                     aria-label="Notifications"
                     data-testid="notification-bell"
-                    className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-600 hover:text-slate-950 relative transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                    className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-600 hover:text-slate-950 relative transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
                   >
-                    <Bell className="w-4 h-4 stroke-[1.75]" />
+                    <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.75]" />
                     {notifications.some((n) => n.unread) && (
                       <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
                     )}
@@ -315,13 +315,13 @@ export function DashboardShell({
                   <button
                     data-testid="user-profile-menu"
                     aria-label={`Merchant Account Menu: ${merchant.name || "Merchant Corp"}`}
-                    className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/90 pl-1.5 pr-3 py-1 rounded-full cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/90 pl-1.5 pr-2.5 sm:pr-3 py-1 rounded-full cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
                   >
-                    <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold tracking-tight">
+                    <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold tracking-tight">
                       {merchantInitials}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-slate-800 max-w-[110px] truncate">
+                      <span className="text-xs font-semibold text-slate-800 max-w-[85px] sm:max-w-[110px] truncate">
                         {merchant.name || "Merchant Corp"}
                       </span>
                       <span
@@ -409,7 +409,7 @@ export function DashboardShell({
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-700 transition shadow-xs cursor-pointer"
+                className="lg:hidden w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-700 transition shadow-xs cursor-pointer"
                 aria-label="Open Mobile Menu"
               >
                 <Menu className="w-4 h-4" />
@@ -495,7 +495,7 @@ export function DashboardShell({
             </div>
           )}
 
-          <main className="flex flex-col gap-5 flex-1">{children}</main>
+          <main className="flex flex-col gap-4 sm:gap-5 flex-1">{children}</main>
 
           <ConnectRazorpayModal />
         </motion.div>

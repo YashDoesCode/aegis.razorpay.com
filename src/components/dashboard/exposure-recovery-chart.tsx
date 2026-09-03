@@ -39,11 +39,11 @@ export function ExposureRecoveryChart({
   return (
     <div
       className={cn(
-        "bg-slate-50/70 rounded-2xl p-5 sm:p-6 border border-slate-200/80 relative flex flex-col justify-between shadow-xs",
+        "bg-slate-50/70 rounded-2xl p-4 sm:p-5 border border-slate-200/80 relative flex flex-col justify-between shadow-xs",
         className
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3 pb-2">
+      <div className="flex flex-wrap items-start justify-between gap-3 pb-1.5">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -54,10 +54,10 @@ export function ExposureRecoveryChart({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-baseline gap-4 mt-1.5">
+          <div className="flex flex-wrap items-baseline gap-3 sm:gap-4 mt-1">
             <div>
               <span className="text-[11px] text-slate-400">Total Exposure:</span>
-              <span className="text-xl sm:text-2xl font-bold font-mono text-slate-950 tabular-nums ml-1">
+              <span className="text-lg sm:text-xl md:text-2xl font-bold font-mono text-slate-950 tabular-nums ml-1">
                 {totalExposure}
               </span>
               <span className="text-[11px] font-mono font-medium text-emerald-600 ml-1">
@@ -69,7 +69,7 @@ export function ExposureRecoveryChart({
 
             <div>
               <span className="text-[11px] text-slate-400">Recovered:</span>
-              <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-600 tabular-nums ml-1">
+              <span className="text-lg sm:text-xl md:text-2xl font-bold font-mono text-emerald-600 tabular-nums ml-1">
                 {recoveredAmount}
               </span>
               <span className="text-[11px] font-mono font-medium text-emerald-600 ml-1">
@@ -80,7 +80,7 @@ export function ExposureRecoveryChart({
         </div>
 
         <div
-          className="flex items-center gap-0.5 bg-white p-1 rounded-full border border-slate-200/80 text-[11px] font-semibold text-slate-500 shadow-xs"
+          className="flex items-center gap-0.5 bg-white p-0.5 sm:p-1 rounded-full border border-slate-200/80 text-[10px] sm:text-[11px] font-semibold text-slate-500 shadow-xs shrink-0"
           role="tablist"
           aria-label="Chart time range"
         >
@@ -91,7 +91,7 @@ export function ExposureRecoveryChart({
                 key={range}
                 onClick={() => setSelectedRange(range)}
                 className={cn(
-                  "px-2.5 py-0.5 rounded-full transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-hidden",
+                  "px-2 sm:px-2.5 py-0.5 rounded-full transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-hidden",
                   isActive
                     ? "bg-slate-950 text-white font-bold shadow-xs"
                     : "hover:text-slate-950 hover:bg-slate-50"
@@ -107,7 +107,7 @@ export function ExposureRecoveryChart({
       </div>
 
       <div
-        className="relative w-full h-48 sm:h-56 mt-2 select-none cursor-crosshair"
+        className="relative w-full h-44 sm:h-52 mt-1 select-none cursor-crosshair"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(true)}
       >
@@ -118,18 +118,18 @@ export function ExposureRecoveryChart({
           </span>
         </div>
 
-        <div className="absolute inset-x-0 top-24 border-b border-dashed border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono pointer-events-none">
+        <div className="absolute inset-x-0 top-22 border-b border-dashed border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono pointer-events-none">
           <span>₹8.0L</span>
           <span className="text-[9px] uppercase tracking-wider text-slate-400 font-sans font-medium">
             Target Defense Base
           </span>
         </div>
 
-        <div className="absolute inset-x-0 bottom-6 border-b border-slate-200/70 text-[10px] text-slate-400 font-mono pointer-events-none">
+        <div className="absolute inset-x-0 bottom-5 border-b border-slate-200/70 text-[10px] text-slate-400 font-mono pointer-events-none">
           <span>₹4.0L</span>
         </div>
 
-        <div className="absolute left-[38%] right-[44%] top-2 bottom-6 bg-blue-50/70 rounded-sm border-x border-dashed border-blue-200 pointer-events-none" />
+        <div className="absolute left-[38%] right-[44%] top-2 bottom-5 bg-blue-50/70 rounded-sm border-x border-dashed border-blue-200 pointer-events-none" />
 
         <svg
           className="w-full h-full overflow-visible"
@@ -193,7 +193,7 @@ export function ExposureRecoveryChart({
         </svg>
 
         {showTooltip && (
-          <div className="absolute left-[38%] sm:left-[44%] -top-1 bg-slate-950 text-white text-xs p-3 rounded-xl shadow-xl min-w-[200px] sm:min-w-[210px] pointer-events-none border border-slate-800 z-10 animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute left-[34%] sm:left-[42%] -top-1 bg-slate-950 text-white text-xs p-2.5 sm:p-3 rounded-xl shadow-xl min-w-[190px] sm:min-w-[210px] max-w-[calc(100vw-48px)] pointer-events-none border border-slate-800 z-10 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[11px] text-slate-400">
               <span className="font-medium">May 1 - May 31</span>
               <span className="text-emerald-400 bg-emerald-950/70 px-1.5 py-0.5 rounded font-mono font-semibold text-[10px]">
@@ -216,7 +216,7 @@ export function ExposureRecoveryChart({
         )}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-200/80 font-medium overflow-x-auto">
+      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-200/80 font-medium overflow-x-auto">
         {months.map((month) => {
           const isSelected = activeMonth === month;
           return (
@@ -224,7 +224,7 @@ export function ExposureRecoveryChart({
               key={month}
               onClick={() => setActiveMonth(month)}
               className={cn(
-                "transition-colors px-1.5 py-0.5 rounded-full cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden",
+                "transition-colors px-1 sm:px-1.5 py-0.5 rounded-full cursor-pointer text-[10px] sm:text-[11px] focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden",
                 isSelected
                   ? "text-slate-950 font-bold bg-white px-2 py-0.5 shadow-xs border border-slate-200"
                   : "hover:text-slate-700"

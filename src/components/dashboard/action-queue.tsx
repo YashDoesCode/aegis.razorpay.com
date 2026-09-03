@@ -38,27 +38,27 @@ export function ActionQueue({
   return (
     <section
       className={cn(
-        "bg-slate-50/70 rounded-2xl p-2.5 sm:p-3 border border-slate-200/80 flex items-center justify-between gap-3 shadow-xs",
+        "bg-slate-50/70 rounded-2xl p-2 sm:p-2.5 border border-slate-200/80 flex items-center justify-between gap-2.5 shadow-xs",
         className
       )}
       aria-label="Action Queue"
     >
-      <div className="flex items-center gap-2 text-xs font-bold text-slate-950 px-2 shrink-0">
-        <Zap className="w-4 h-4 text-slate-700 stroke-[2.2]" />
-        <span className="uppercase tracking-wider text-[11px] whitespace-nowrap">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold text-slate-950 px-1.5 sm:px-2 shrink-0">
+        <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700 stroke-[2.2]" />
+        <span className="uppercase tracking-wider text-[10px] sm:text-[11px] whitespace-nowrap">
           Action Queue
         </span>
       </div>
 
       <div
         ref={scrollContainerRef}
-        className="flex items-center gap-3 overflow-x-auto py-0.5 custom-scrollbar flex-1"
+        className="flex items-center gap-2.5 overflow-x-auto py-0.5 custom-scrollbar flex-1"
       >
         <Link
           href="/disputes?filter=due_today"
-          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-rose-200 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
+          className="flex items-center gap-2 sm:gap-2.5 bg-white hover:bg-slate-50/80 px-2.5 sm:px-3 py-1.5 rounded-xl border border-rose-200 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
         >
-          <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 group-hover:bg-rose-100 transition-colors">
+          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 group-hover:bg-rose-100 transition-colors shrink-0">
             <Clock className="w-3.5 h-3.5 stroke-[2]" />
           </div>
           <div>
@@ -73,9 +73,9 @@ export function ActionQueue({
 
         <Link
           href="/disputes?filter=evidence_gaps"
-          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-amber-200 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-hidden"
+          className="flex items-center gap-2 sm:gap-2.5 bg-white hover:bg-slate-50/80 px-2.5 sm:px-3 py-1.5 rounded-xl border border-amber-200 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-hidden"
         >
-          <div className="w-6 h-6 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors">
+          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors shrink-0">
             <FileSearch className="w-3.5 h-3.5 stroke-[2]" />
           </div>
           <div>
@@ -90,9 +90,9 @@ export function ActionQueue({
 
         <Link
           href="/disputes?filter=high_risk"
-          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+          className="flex items-center gap-2 sm:gap-2.5 bg-white hover:bg-slate-50/80 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
         >
-          <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-slate-200 transition-colors">
+          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-slate-200 transition-colors shrink-0">
             <ShieldAlert className="w-3.5 h-3.5 stroke-[2]" />
           </div>
           <div>
@@ -107,9 +107,9 @@ export function ActionQueue({
 
         <Link
           href="/disputes?filter=courier_sync"
-          className="flex items-center gap-2.5 bg-white hover:bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden"
+          className="flex items-center gap-2 sm:gap-2.5 bg-white hover:bg-slate-50/80 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200/90 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden"
         >
-          <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-colors">
+          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-colors shrink-0">
             <PackageCheck className="w-3.5 h-3.5 stroke-[2]" />
           </div>
           <div>

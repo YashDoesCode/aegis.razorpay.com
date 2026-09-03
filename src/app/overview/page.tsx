@@ -154,10 +154,10 @@ export default function OverviewPage() {
   return (
     <DashboardShell>
       <LocalErrorBoundary fallbackTitle="Dispute Operations Console Unavailable">
-        <div className="w-full space-y-5">
-          <section className="flex flex-wrap items-center justify-between gap-4">
+        <div className="w-full space-y-4 sm:space-y-4.5">
+          <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-0.5">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-950">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-slate-950">
                 Dispute Operations Console
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -166,7 +166,7 @@ export default function OverviewPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
               <HealthScore score={healthScoreValue} />
 
               <DropdownMenu>
@@ -174,7 +174,7 @@ export default function OverviewPage() {
                   <button
                     type="button"
                     aria-label={`Filter disputes: ${filterState}`}
-                    className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200/90 px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-slate-50 border border-slate-200/90 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium text-slate-700 transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
                     <span>{filterState}</span>
@@ -223,7 +223,7 @@ export default function OverviewPage() {
                 onClick={handleManualRefresh}
                 disabled={refreshing}
                 aria-label="Refresh Data"
-                className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
               >
                 <RotateCw
                   className={`w-3.5 h-3.5 stroke-[1.75] ${
@@ -236,7 +236,7 @@ export default function OverviewPage() {
                 type="button"
                 onClick={handleExport}
                 aria-label="Export Overview"
-                className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
               >
                 <ArrowUpRight className="w-3.5 h-3.5 stroke-[2]" />
               </button>
@@ -244,7 +244,7 @@ export default function OverviewPage() {
           </section>
 
           {error && !loading && (
-            <div className="bg-rose-50/70 rounded-2xl border border-rose-200 p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="bg-rose-50/70 rounded-2xl border border-rose-200 p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2.5">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <div>
@@ -261,10 +261,10 @@ export default function OverviewPage() {
             </div>
           )}
 
-          <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-            <div className="lg:col-span-4 flex flex-col justify-between gap-3.5">
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+            <div className="lg:col-span-4 flex flex-col justify-between gap-3 sm:gap-3.5">
               {loading ? (
-                <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-3">
+                <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 sm:p-5 space-y-3">
                   <Skeleton className="h-3 w-28 bg-slate-200/70 rounded-md" />
                   <Skeleton className="h-10 w-36 bg-slate-200/70 rounded-lg" />
                   <Skeleton className="h-3 w-48 bg-slate-200/70 rounded-md" />
@@ -278,7 +278,7 @@ export default function OverviewPage() {
               )}
 
               {loading ? (
-                <div className="grid grid-cols-2 gap-3 flex-1">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 flex-1">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
@@ -317,7 +317,7 @@ export default function OverviewPage() {
             courierEventsCount={3}
           />
 
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
             <div className="lg:col-span-5 flex">
               <WinnabilityDistribution
                 strongPercent={64}

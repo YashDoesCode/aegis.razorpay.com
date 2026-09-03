@@ -21,7 +21,7 @@ export function FraudRiskCard({
   return (
     <div
       className={cn(
-        "bg-slate-50/70 rounded-2xl p-5 border border-slate-200/80 flex flex-col justify-between shadow-xs",
+        "bg-slate-50/70 rounded-2xl p-4 sm:p-5 border border-slate-200/80 flex flex-col justify-between shadow-xs",
         className
       )}
     >
@@ -38,7 +38,7 @@ export function FraudRiskCard({
         </Link>
       </div>
 
-      <div className="my-1">
+      <div className="my-0.5">
         <div className="flex items-baseline">
           <span className="text-3xl font-extrabold font-mono text-slate-950 tabular-nums">
             {score}
@@ -52,9 +52,9 @@ export function FraudRiskCard({
         </p>
       </div>
 
-      <div className="relative flex flex-col items-center justify-end overflow-hidden pt-2 select-none">
+      <div className="relative flex flex-col items-center justify-end overflow-hidden pt-1 select-none">
         <svg
-          className="w-44 h-22 overflow-visible"
+          className="w-40 sm:w-44 h-20 sm:h-22 overflow-visible"
           viewBox="0 0 200 100"
           aria-hidden="true"
         >
@@ -83,7 +83,7 @@ export function FraudRiskCard({
           />
         </svg>
 
-        <p className="text-[11px] text-slate-500 text-center mt-2 font-medium">
+        <p className="text-[11px] text-slate-500 text-center mt-1.5 font-medium">
           Stability improved by{" "}
           <span className="text-emerald-600 font-semibold font-mono">
             +{stabilityDelta}%
