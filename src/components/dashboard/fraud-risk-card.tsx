@@ -21,18 +21,18 @@ export function FraudRiskCard({
   return (
     <div
       className={cn(
-        "bg-slate-50/70 rounded-2xl p-4 sm:p-5 border border-slate-200/80 flex flex-col justify-between shadow-xs",
+        "bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between shadow-xs transition-colors duration-200",
         className
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
           Risk Score
         </span>
         <Link
           href="/disputes?filter=high_risk"
           aria-label="Risk Details"
-          className="w-7 h-7 rounded-full bg-white hover:bg-slate-100 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+          className="w-7 h-7 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
         >
           <ArrowUpRight className="w-3.5 h-3.5 stroke-[2]" />
         </Link>
@@ -40,14 +40,14 @@ export function FraudRiskCard({
 
       <div className="my-0.5">
         <div className="flex items-baseline">
-          <span className="text-3xl font-extrabold font-mono text-slate-950 tabular-nums">
+          <span className="text-3xl font-extrabold font-mono text-slate-950 dark:text-white tabular-nums">
             {score}
           </span>
-          <span className="text-slate-400 text-xs font-normal ml-1 font-mono">
+          <span className="text-slate-400 dark:text-slate-500 text-xs font-normal ml-1 font-mono">
             /100
           </span>
         </div>
-        <p className="text-[11px] text-amber-700 font-medium mt-0.5 leading-snug">
+        <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium mt-0.5 leading-snug">
           {statusText}
         </p>
       </div>
@@ -61,7 +61,7 @@ export function FraudRiskCard({
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
             fill="none"
-            stroke="#E2E8F0"
+            className="stroke-slate-200 dark:stroke-slate-800"
             strokeLinecap="round"
             strokeWidth="14"
           />
@@ -83,9 +83,9 @@ export function FraudRiskCard({
           />
         </svg>
 
-        <p className="text-[11px] text-slate-500 text-center mt-1.5 font-medium">
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center mt-1.5 font-medium">
           Stability improved by{" "}
-          <span className="text-emerald-600 font-semibold font-mono">
+          <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
             +{stabilityDelta}%
           </span>{" "}
           vs last run

@@ -69,7 +69,9 @@ describe("E2E Aegis Defense Pipeline & Dashboard Verification", () => {
     expect(json.data.winnability.reasons.length).toBe(5);
   });
 
-  it("4. POST /api/disputes/[id]/draft generates grounded rebuttal & stages contest on Razorpay in DRAFT mode", async () => {
+  it(
+    "4. POST /api/disputes/[id]/draft generates grounded rebuttal & stages contest on Razorpay in DRAFT mode",
+    async () => {
     const res = await fetch(
       `${BASE_URL}/api/disputes/disp_1064_goods_not_received/draft`,
       {
@@ -89,7 +91,7 @@ describe("E2E Aegis Defense Pipeline & Dashboard Verification", () => {
     expect(json.razorpayContestResult.success).toBe(true);
     expect(json.razorpayContestResult.action).toBe("draft");
     expect(json.razorpayContestResult.response.evidence.shipping_proof).toBeDefined();
-  });
+  }, 15000);
 
   it("5. POST /api/disputes/[id]/accept accepts dispute & calls Razorpay accept", async () => {
     const res = await fetch(

@@ -155,12 +155,15 @@ export default function OverviewPage() {
     <DashboardShell>
       <LocalErrorBoundary fallbackTitle="Dispute Operations Console Unavailable">
         <div className="w-full space-y-4 sm:space-y-4.5">
-          <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-0.5">
+          <section
+            id="tour-overview-header"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-0.5"
+          >
             <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-slate-950">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
                 Dispute Operations Console
               </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Real-time chargeback liability, winnability probability, and automated
                 evidence pipelines.
               </p>
@@ -174,44 +177,44 @@ export default function OverviewPage() {
                   <button
                     type="button"
                     aria-label={`Filter disputes: ${filterState}`}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-slate-50 border border-slate-200/90 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium text-slate-700 transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-slate-200 transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
                   >
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                     <span>{filterState}</span>
                     <ChevronDown className="w-3 h-3 text-slate-400 stroke-[2]" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-48 p-1.5 rounded-2xl shadow-xl border border-slate-200 bg-white text-xs"
+                  className="w-48 p-1.5 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs"
                 >
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("All Disputes")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer font-medium"
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer font-medium hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     All Disputes
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("Open Queue")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer"
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     Open Queue
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("High-Risk (<24h SLA)")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-rose-700"
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-rose-700 dark:text-rose-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     High-Risk (&lt;24h SLA)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("Evidence Gaps")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-amber-700"
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-amber-700 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     Evidence Gaps
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("Won Disputes")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-emerald-700"
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-emerald-700 dark:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     Won Disputes
                   </DropdownMenuItem>
@@ -223,7 +226,7 @@ export default function OverviewPage() {
                 onClick={handleManualRefresh}
                 disabled={refreshing}
                 aria-label="Refresh Data"
-                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
               >
                 <RotateCw
                   className={`w-3.5 h-3.5 stroke-[1.75] ${
@@ -236,7 +239,7 @@ export default function OverviewPage() {
                 type="button"
                 onClick={handleExport}
                 aria-label="Export Overview"
-                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-950 transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
               >
                 <ArrowUpRight className="w-3.5 h-3.5 stroke-[2]" />
               </button>
@@ -244,12 +247,12 @@ export default function OverviewPage() {
           </section>
 
           {error && !loading && (
-            <div className="bg-rose-50/70 rounded-2xl border border-rose-200 p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="bg-rose-50/70 dark:bg-rose-950/50 rounded-2xl border border-rose-200 dark:border-rose-800 p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
                 <div>
-                  <span className="font-bold text-rose-950">Sync Alert: </span>
-                  <span className="text-rose-800">{error}</span>
+                  <span className="font-bold text-rose-950 dark:text-rose-200">Sync Alert: </span>
+                  <span className="text-rose-800 dark:text-rose-300">{error}</span>
                 </div>
               </div>
               <button
@@ -262,12 +265,15 @@ export default function OverviewPage() {
           )}
 
           <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
-            <div className="lg:col-span-4 flex flex-col justify-between gap-3 sm:gap-3.5">
+            <div
+              id="tour-hero-metrics"
+              className="lg:col-span-4 flex flex-col justify-between gap-3 sm:gap-3.5"
+            >
               {loading ? (
-                <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 sm:p-5 space-y-3">
-                  <Skeleton className="h-3 w-28 bg-slate-200/70 rounded-md" />
-                  <Skeleton className="h-10 w-36 bg-slate-200/70 rounded-lg" />
-                  <Skeleton className="h-3 w-48 bg-slate-200/70 rounded-md" />
+                <div className="bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
+                  <Skeleton className="h-3 w-28 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
+                  <Skeleton className="h-10 w-36 bg-slate-200/70 dark:bg-slate-800 rounded-lg" />
+                  <Skeleton className="h-3 w-48 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
                 </div>
               ) : (
                 <RecoveryMetric
@@ -282,11 +288,11 @@ export default function OverviewPage() {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/80 space-y-2"
+                      className="bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl p-3.5 border border-slate-200/80 dark:border-slate-800 space-y-2"
                     >
-                      <Skeleton className="h-3 w-16 bg-slate-200/70 rounded-md" />
-                      <Skeleton className="h-7 w-12 bg-slate-200/70 rounded-md" />
-                      <Skeleton className="h-3 w-20 bg-slate-200/70 rounded-md" />
+                      <Skeleton className="h-3 w-16 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
+                      <Skeleton className="h-7 w-12 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
+                      <Skeleton className="h-3 w-20 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
                     </div>
                   ))}
                 </div>
@@ -317,7 +323,10 @@ export default function OverviewPage() {
             courierEventsCount={3}
           />
 
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+          <section
+            id="tour-winnability-risk"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch"
+          >
             <div className="lg:col-span-5 flex">
               <WinnabilityDistribution
                 strongPercent={64}
