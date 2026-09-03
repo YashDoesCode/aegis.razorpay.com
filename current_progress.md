@@ -38,11 +38,11 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
 | M6 | Live vs Test Mode Data Isolation Architecture       | September 2026  | COMPLETED (Verified)     |
 | M7 | Automated Verification, Vitest & Playwright QA      | September 2026  | COMPLETED (Verified)     |
 | M8 | Enterprise Hardening, Logging & Type Refactoring   | September 2026  | COMPLETED (Verified)     |
-| M9 | Razorpay Ecosystem UX Polish & Information Flow     | September 2026  | COMPLETED (Verified)     |
 | M10| Webhook Cryptographic Verification & Ingestion Engine| September 2026  | COMPLETED (Verified)     |
 | M11| Platform-Wide Immutable Audit Ledger & Tracing Context| September 2026  | COMPLETED (Verified)     |
-| M12| Merchant Secret Encryption (AES-256-GCM Envelope)   | Q4 2026         | PLANNED                  |
-| M13| 3PL Logistics Connectors & Background Orchestration | Q4 2026         | PLANNED                  |
+| M12| Merchant Secret Encryption (AES-256-GCM Envelope)   | September 2026  | COMPLETED (Verified)     |
+| M13| Dispute Contest Submission Engine & Lifecycle Hooks | September 2026  | COMPLETED (Verified)     |
+| M14| 3PL Logistics Connectors & Background Orchestration | Q4 2026         | PLANNED                  |
 +----+-----------------------------------------------------+-----------------+--------------------------+
 ```
 
@@ -145,16 +145,19 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
 +--------------------------------------------------------+-----------------+----------------------------+
 | Test Suite / File                                      | Execution Mode  | Outcome                    |
 +--------------------------------------------------------+-----------------+----------------------------+
-| src/lib/scoring/__tests__/score.test.ts                | Vitest (Unit)   | 9 / 9 PASSED (7ms)         |
-| src/lib/fraudSignal/__tests__/fraudSignal.test.ts      | Vitest (Unit)   | 6 / 6 PASSED (21ms)        |
-| src/lib/drafting/__tests__/draftRebuttal.test.ts       | Vitest (Unit)   | 4 / 4 PASSED (17ms)        |
-| src/lib/drafting/__tests__/promptSanitization.test.ts  | Vitest (Unit)   | 3 / 3 PASSED (3ms)         |
-| src/lib/webhooks/__tests__/verifySignature.test.ts     | Vitest (Unit)   | 9 / 9 PASSED (7ms)         |
+| src/lib/scoring/__tests__/score.test.ts                | Vitest (Unit)   | 9 / 9 PASSED (5ms)         |
+| src/lib/fraudSignal/__tests__/fraudSignal.test.ts      | Vitest (Unit)   | 6 / 6 PASSED (16ms)        |
+| src/lib/drafting/__tests__/draftRebuttal.test.ts       | Vitest (Unit)   | 4 / 4 PASSED (18ms)        |
+| src/lib/drafting/__tests__/promptSanitization.test.ts  | Vitest (Unit)   | 3 / 3 PASSED (2ms)         |
+| src/lib/webhooks/__tests__/verifySignature.test.ts     | Vitest (Unit)   | 9 / 9 PASSED (8ms)         |
 | src/lib/webhooks/__tests__/webhookIngestion.test.ts    | Vitest (Unit)   | 13 / 13 PASSED (10ms)      |
-| src/lib/audit/__tests__/auditService.test.ts           | Vitest (Unit)   | 8 / 8 PASSED (4ms)         |
-| src/lib/audit/__tests__/auditIntegration.test.ts       | Vitest (Unit)   | 4 / 4 PASSED (8.5s)        |
-| src/__tests__/resilience.test.ts                       | Vitest (Unit)   | 2 / 2 PASSED (12ms)        |
-| Total Unit & Integration Test Suite                    | Vitest (Unit)   | 58 / 58 PASSED (8.9s)      |
+| src/lib/crypto/__tests__/encryption.test.ts           | Vitest (Unit)   | 7 / 7 PASSED (10ms)        |
+| src/lib/__tests__/merchantEncryption.test.ts          | Vitest (Unit)   | 2 / 2 PASSED (5.6s)        |
+| src/lib/audit/__tests__/auditService.test.ts           | Vitest (Unit)   | 8 / 8 PASSED (3ms)         |
+| src/lib/audit/__tests__/auditIntegration.test.ts       | Vitest (Unit)   | 4 / 4 PASSED (7.9s)        |
+| src/lib/disputes/__tests__/disputeSubmission.test.ts   | Vitest (Unit)   | 5 / 5 PASSED (10.3s)       |
+| src/__tests__/resilience.test.ts                       | Vitest (Unit)   | 2 / 2 PASSED (16ms)        |
+| Total Unit & Integration Test Suite                    | Vitest (Unit)   | 72 / 72 PASSED (10.6s)     |
 | ESLint Code Quality Check                              | `eslint`        | 0 ERRORS, 0 WARNINGS       |
 | TypeScript Strict Compilation                          | `tsc --noEmit`  | COMPILED CLEANLY (0 ERROR) |
 | Next.js Turbopack Production Build                     | `next build`    | COMPILED CLEANLY (0 ERROR) |
@@ -176,7 +179,8 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
 - [x] Implement Razorpay webhook cryptographic verification & ingestion pipeline (`POST /api/webhooks/razorpay`).
 - [x] Implement Platform-Wide Immutable Financial Audit Ledger (`AuditService`) with dual storage (Neon DB + in-memory fallback).
 - [x] Instrument end-to-end trace context (`correlationId`, `requestId`) across API routes, loggers, and audit events.
+- [x] Implement AES-256-GCM Envelope Encryption for merchant secrets at rest (`src/lib/crypto/`).
+- [x] Implement Dispute Rebuttal Submission Engine (`POST /api/disputes/[id]/submit`) with status transition and audit recording.
 - [x] Verify zero build errors via `npm run build`.
-- [x] Execute and verify all 58 tests via Vitest with 100% pass rate.
-- [ ] Implement merchant secret encryption (AES-256-GCM envelope encryption).
+- [x] Execute and verify all 72 tests via Vitest with 100% pass rate.
 - [ ] Connect automated 3PL courier tracking webhooks (BlueDart, Shiprocket, Delhivery).
