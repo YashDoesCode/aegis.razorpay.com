@@ -8,6 +8,7 @@ import {
 
 /**
  * Deterministic Mock Logistics Adapter for automated test suites and isolated sandbox demos.
+ * All records are marked with source: "mock".
  */
 export class MockCourierAdapter implements CourierAdapter {
   readonly providerId = "mock";
@@ -67,6 +68,11 @@ export class MockCourierAdapter implements CourierAdapter {
     const timestamp = json.timestamp ? new Date(String(json.timestamp)) : new Date();
     const eventId = String(json.eventId || `mock_evt_${trackingId}_${timestamp.getTime()}`);
 
+    const rawPod = json.podDocumentRef || json.podUrl || json.pod;
+    const podDocumentRef = typeof rawPod === "string" && rawPod.trim().length > 0
+      ? rawPod.trim()
+      : undefined;
+
     return {
       eventId,
       provider: this.providerId,
@@ -78,12 +84,15 @@ export class MockCourierAdapter implements CourierAdapter {
       location: json.location ? String(json.location) : "Bengaluru Sorting Center",
       deliveredToAddress: json.deliveredToAddress ? String(json.deliveredToAddress) : undefined,
       signatureCaptured: Boolean(json.signatureCaptured ?? (status === "DELIVERED")),
-      podDocumentRef: json.podDocumentRef ? String(json.podDocumentRef) : status === "DELIVERED" ? `POD-MOCK-${trackingId}` : undefined,
+      podDocumentRef,
+      source: "mock",
       rawPayload: json,
     };
   }
 
-  async fetchTracking(trackingId: string): Promise<NormalizedShipment> {
+  async fetchTracking(
+    trackingId: string
+  ): Promise<NormalizedShipment> {
     const cleanId = (trackingId || "").trim();
     if (!cleanId) {
       throw new Error("Tracking ID is required");
@@ -98,7 +107,7 @@ export class MockCourierAdapter implements CourierAdapter {
       status,
       signatureCaptured: isDelivered,
       deliveredAt: isDelivered ? new Date() : undefined,
-      podDocumentRef: isDelivered ? `POD-MOCK-${cleanId}` : undefined,
+      podDocumentRef: undefined,
       events: [
         {
           eventId: `evt_${cleanId}_01`,
@@ -110,6 +119,7 @@ export class MockCourierAdapter implements CourierAdapter {
         },
       ],
       lastSyncedAt: new Date(),
+      source: "mock",
     };
   }
 }

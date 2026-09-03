@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
         message: result.message,
       });
 
-      if (result.message.includes("signature")) {
-        return apiError("Invalid webhook signature", 401, "UNAUTHORIZED_WEBHOOK");
+      if (result.message.includes("signature") || result.message.includes("Unauthorized")) {
+        return apiError("Invalid or missing webhook signature", 401, "UNAUTHORIZED_WEBHOOK");
       }
 
       return apiError(result.message, 400, "COURIER_PROCESSING_ERROR");

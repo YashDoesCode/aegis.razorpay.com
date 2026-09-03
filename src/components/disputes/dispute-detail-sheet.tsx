@@ -567,25 +567,36 @@ export function DisputeDetailSheet({
                               "Verified Customer Address"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 pt-0.5">
-                          <ShieldCheck
-                            className={`w-3.5 h-3.5 ${
-                              dispute.order.delivery.signatureCaptured
-                                ? "text-emerald-600"
-                                : "text-amber-500"
-                            }`}
-                          />
-                          <span
-                            className={
-                              dispute.order.delivery.signatureCaptured
-                                ? "text-emerald-800 font-semibold"
-                                : "text-muted-slate"
-                            }
-                          >
-                            {dispute.order.delivery.signatureCaptured
-                              ? "Recipient OTP / Digital Signature Verified"
-                              : "Carrier Proof of Delivery on file"}
-                          </span>
+                        <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-slate-200/60 mt-1">
+                          <div className="flex items-center gap-1">
+                            <ShieldCheck
+                              className={`w-3.5 h-3.5 ${
+                                dispute.order.delivery.signatureCaptured
+                                  ? "text-emerald-600"
+                                  : "text-amber-500"
+                              }`}
+                            />
+                            <span
+                              className={
+                                dispute.order.delivery.signatureCaptured
+                                  ? "text-emerald-800 font-semibold"
+                                  : "text-muted-slate"
+                              }
+                            >
+                              {dispute.order.delivery.signatureCaptured
+                                ? "Recipient OTP / Digital Signature Verified"
+                                : "Standard Delivery Confirmation"}
+                            </span>
+                          </div>
+                          {dispute.evidenceItems.find((e) => e.type === "shipping_proof" && e.documentRef) ? (
+                            <span className="font-mono text-[10px] text-primary bg-blue-50 px-1.5 py-0.5 rounded-[3px] border border-blue-200">
+                              POD Attached
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-slate">
+                              No POD Doc
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

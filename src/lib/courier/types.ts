@@ -19,6 +19,27 @@ export const CanonicalShipmentStatusSchema = z.enum([
 export type CanonicalShipmentStatus = z.infer<typeof CanonicalShipmentStatusSchema>;
 
 /**
+ * Numeric status precedence for preventing out-of-order state regression.
+ * Higher rank indicates later progression in positive fulfillment lifecycle.
+ */
+export const STATUS_PRECEDENCE: Record<CanonicalShipmentStatus, number> = {
+  CREATED: 1,
+  PICKED_UP: 2,
+  IN_TRANSIT: 3,
+  OUT_FOR_DELIVERY: 4,
+  DELIVERED: 5,
+  FAILED_DELIVERY: 0, // Terminal / exception branch
+  RETURNED: 0,        // Terminal / exception branch
+  CANCELLED: 0,       // Terminal / exception branch
+  LOST: 0,            // Terminal / exception branch
+  EXCEPTION: 0,       // Operational hold
+};
+
+export function getShipmentStatusRank(status: CanonicalShipmentStatus): number {
+  return STATUS_PRECEDENCE[status] ?? 0;
+}
+
+/**
  * Individual tracking checkpoint/event from a carrier.
  */
 export interface NormalizedShipmentEvent {
@@ -37,7 +58,7 @@ export interface NormalizedShipmentEvent {
  */
 export interface NormalizedShipment {
   trackingId: string;
-  provider: string; // e.g. "delhivery", "bluedart", "shadowfax", "mock"
+  provider: string; // e.g. "delhivery", "bluedart", "mock"
   orderId?: string;
   status: CanonicalShipmentStatus;
   recipientName?: string;
@@ -49,6 +70,7 @@ export interface NormalizedShipment {
   podDocumentRef?: string;
   events: NormalizedShipmentEvent[];
   lastSyncedAt: Date;
+  source: "delhivery_api" | "delhivery_webhook" | "mock" | "synthetic_test";
 }
 
 /**
@@ -66,6 +88,7 @@ export interface NormalizedShipmentWebhookEvent {
   deliveredToAddress?: string;
   signatureCaptured?: boolean;
   podDocumentRef?: string;
+  source: "delhivery_api" | "delhivery_webhook" | "mock" | "synthetic_test";
   rawPayload?: Record<string, unknown>;
 }
 
@@ -81,6 +104,7 @@ export const NormalizedShipmentWebhookEventSchema = z.object({
   deliveredToAddress: z.string().optional(),
   signatureCaptured: z.boolean().optional(),
   podDocumentRef: z.string().optional(),
+  source: z.enum(["delhivery_api", "delhivery_webhook", "mock", "synthetic_test"]),
   rawPayload: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -114,7 +138,7 @@ export interface CourierAdapter {
    */
   fetchTracking(
     trackingId: string,
-    credentials?: Record<string, string>
+    credentials?: { apiToken?: string; baseUrl?: string }
   ): Promise<NormalizedShipment>;
 }
 
@@ -130,4 +154,7 @@ export interface CourierWebhookProcessResult {
   shipmentStatus?: CanonicalShipmentStatus;
   message: string;
   evidenceAttached?: boolean;
+  podAvailable?: boolean;
+  scoreRecomputed?: boolean;
+  newScore?: number;
 }

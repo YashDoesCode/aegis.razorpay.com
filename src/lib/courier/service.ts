@@ -5,6 +5,7 @@ import { prisma } from "../prisma";
 import {
   CourierWebhookProcessResult,
   NormalizedShipmentWebhookEvent,
+  getShipmentStatusRank,
 } from "./types";
 import { getCourierAdapter } from "./registry";
 import {
@@ -13,6 +14,8 @@ import {
   fallbackDisputes,
   getInMemoryDisputeById,
 } from "../mockStore";
+import { computeWinnability } from "../scoring";
+import { computeFraudSignal } from "../fraudSignal";
 
 /**
  * Computes a deterministic SHA-256 hash of the raw webhook body for idempotency.
@@ -76,8 +79,10 @@ export async function processCourierWebhook(
     };
   }
 
-  // Idempotency Check: Database (non-test environments)
+  // Idempotency Check: Database
   const isTest = process.env.VITEST === "true" || process.env.NODE_ENV === "test";
+  const isProduction = process.env.NODE_ENV === "production";
+
   if (!isTest) {
     try {
       const dbDup = await prisma.webhookEvent.findUnique({
@@ -97,27 +102,52 @@ export async function processCourierWebhook(
         };
       }
     } catch {
-      // Fallback gracefully to in-memory idempotency
+      // Fallback gracefully to in-memory idempotency if DB is unavailable in dev
     }
   }
 
   // 2. Resolve Courier Adapter
   const adapter = getCourierAdapter(providerId);
 
-  // 3. Verify Signature
+  // 3. Webhook Security: Fail-Closed in Production
   const webhookSecret =
     secret ||
     process.env.DELHIVERY_WEBHOOK_SECRET ||
     process.env.COURIER_WEBHOOK_SECRET ||
     "";
 
-  if (webhookSecret) {
-    const isValid = adapter.verifyWebhookSignature(
-      rawBody,
-      signature || null,
-      webhookSecret
-    );
+  if (isProduction) {
+    if (!webhookSecret) {
+      logger.error("Courier webhook rejected: missing webhook secret in production", undefined, {
+        module: "CourierService",
+        provider: adapter.providerId,
+        correlationId,
+        requestId,
+      });
+      return {
+        status: "error",
+        provider: adapter.providerId,
+        message: "Unauthorized: Webhook secret not configured in production",
+      };
+    }
 
+    const isValid = adapter.verifyWebhookSignature(rawBody, signature || null, webhookSecret);
+    if (!isValid) {
+      logger.warn("Courier webhook rejected: invalid signature in production", {
+        module: "CourierService",
+        provider: adapter.providerId,
+        correlationId,
+        requestId,
+      });
+      return {
+        status: "error",
+        provider: adapter.providerId,
+        message: "Unauthorized: Invalid courier webhook signature",
+      };
+    }
+  } else if (webhookSecret) {
+    // In dev/staging with secret configured, enforce signature check
+    const isValid = adapter.verifyWebhookSignature(rawBody, signature || null, webhookSecret);
     if (!isValid) {
       logger.warn("Courier webhook signature verification failed", {
         module: "CourierService",
@@ -153,23 +183,68 @@ export async function processCourierWebhook(
     };
   }
 
-  // 5. Associate with Order & Dispute (In-Memory & Database)
-  let matchedDisputeId: string | undefined;
-  let matchedOrderId: string | undefined;
-  let evidenceAttached = false;
-
-  // Check In-Memory Mock Store
-  for (const dispute of fallbackDisputes) {
+  // 5. Association & Ambiguity Resolution
+  const matchingDisputes = fallbackDisputes.filter((dispute) => {
     const delivery = dispute.order?.delivery;
     const isOrderMatch = event.orderId && dispute.orderId === event.orderId;
     const isTrackingMatch =
       delivery?.trackingId &&
       delivery.trackingId.toLowerCase() === event.trackingId.toLowerCase();
+    return isOrderMatch || isTrackingMatch;
+  });
 
-    if (isOrderMatch || isTrackingMatch) {
-      matchedDisputeId = dispute.id;
-      matchedOrderId = dispute.orderId;
+  if (matchingDisputes.length > 1 && !event.orderId) {
+    logger.warn("Ambiguous tracking ID matches multiple disputes without order reference", {
+      module: "CourierService",
+      trackingId: event.trackingId,
+      matchedCount: matchingDisputes.length,
+      correlationId,
+      requestId,
+    });
+    return {
+      status: "error",
+      provider: adapter.providerId,
+      trackingId: event.trackingId,
+      message: "Ambiguous tracking ID matches multiple disputes; exact orderId required",
+    };
+  }
 
+  let matchedDisputeId: string | undefined;
+  let matchedOrderId: string | undefined;
+  let evidenceAttached = false;
+  let podAvailable = false;
+  let newScore: number | undefined;
+  let scoreRecomputed = false;
+
+  if (matchingDisputes.length === 1) {
+    const dispute = matchingDisputes[0];
+    matchedDisputeId = dispute.id;
+    matchedOrderId = dispute.orderId;
+
+    const existingDelivery = dispute.order?.delivery;
+    const existingDeliveredAt = existingDelivery?.deliveredAt;
+    const currentStatus = existingDeliveredAt ? "DELIVERED" : "IN_TRANSIT";
+
+    // 6. Anti-Regression & Event Ordering Check
+    const isCurrentlyDelivered = Boolean(existingDeliveredAt);
+    const incomingRank = getShipmentStatusRank(event.status);
+    const currentRank = getShipmentStatusRank(currentStatus);
+
+    const isStaleEvent =
+      isCurrentlyDelivered &&
+      incomingRank < currentRank &&
+      event.timestamp.getTime() <= (existingDeliveredAt ? new Date(existingDeliveredAt).getTime() : Date.now());
+
+    if (isStaleEvent) {
+      logger.info("Stale/out-of-order courier event ignored (package already confirmed delivered)", {
+        module: "CourierService",
+        trackingId: event.trackingId,
+        incomingStatus: event.status,
+        currentStatus: "DELIVERED",
+        correlationId,
+        requestId,
+      });
+    } else {
       // Update in-memory Delivery
       if (dispute.order) {
         dispute.order.delivery = {
@@ -180,10 +255,10 @@ export async function processCourierWebhook(
               ? event.timestamp
               : event.status === "RETURNED" || event.status === "FAILED_DELIVERY"
               ? null
-              : delivery?.deliveredAt || null,
+              : existingDelivery?.deliveredAt || null,
           deliveredToAddress:
             event.deliveredToAddress ||
-            delivery?.deliveredToAddress ||
+            existingDelivery?.deliveredToAddress ||
             dispute.order.customer?.address ||
             "Verified Destination Address",
           signatureCaptured:
@@ -198,18 +273,24 @@ export async function processCourierWebhook(
       );
 
       if (event.status === "DELIVERED") {
-        const podRef =
-          event.podDocumentRef || `POD-${adapter.providerId.toUpperCase()}-${event.trackingId}`;
+        // STRICT FORENSIC INTEGRITY: Only attach podDocumentRef if genuinely present
+        const hasRealPod = Boolean(event.podDocumentRef && event.podDocumentRef.trim().length > 0);
+        podAvailable = hasRealPod;
+
         const shippingProof = {
-          id: `evi_pod_${event.trackingId}`,
+          id: `evi_shipping_${event.trackingId}`,
           type: "shipping_proof",
           present: true,
-          documentRef: podRef,
-          note: `Delivered on ${event.timestamp.toLocaleDateString("en-IN")} via ${
-            adapter.displayName
-          } (AWB: ${event.trackingId})${
-            event.signatureCaptured ? " with OTP/Signature verification." : "."
-          }`,
+          documentRef: hasRealPod ? event.podDocumentRef : undefined,
+          note: hasRealPod
+            ? `Delivered on ${event.timestamp.toLocaleDateString("en-IN")} via ${
+                adapter.displayName
+              } (AWB: ${event.trackingId}). POD document verified.${
+                event.signatureCaptured ? " Recipient OTP/Signature verified." : ""
+              }`
+            : `Delivered on ${event.timestamp.toLocaleDateString("en-IN")} via ${
+                adapter.displayName
+              } (AWB: ${event.trackingId}). Carrier delivery confirmation on file (No POD document attached).`,
         };
 
         if (existingProofIndex >= 0) {
@@ -228,11 +309,48 @@ export async function processCourierWebhook(
         }
       }
 
-      break;
+      // 7. Automated Downstream Scoring & Fraud Recomputation
+      try {
+        const calculatedWinnability = computeWinnability(
+          dispute,
+          dispute.evidenceItems,
+          dispute.order?.customer
+        );
+        newScore = calculatedWinnability.score;
+        scoreRecomputed = true;
+
+        const calculatedFraud = computeFraudSignal(dispute, dispute.evidenceItems);
+
+        // Record scoring recalculation in immutable audit ledger
+        await AuditService.record({
+          eventType: "SCORE_RECOMPUTED",
+          action: "WINNABILITY_UPDATED_VIA_COURIER_EVIDENCE",
+          actorType: "system",
+          disputeId: dispute.id,
+          requestId,
+          correlationId,
+          metadata: {
+            previousStatus: currentStatus,
+            newStatus: event.status,
+            recomputedScore: calculatedWinnability.score,
+            band: calculatedWinnability.band,
+            recommendation: calculatedWinnability.recommendation,
+            fraudScore: calculatedFraud.score,
+            fraudBand: calculatedFraud.band,
+            podAvailable,
+          },
+        });
+      } catch (scoreErr) {
+        logger.warn("Automated scoring recomputation failed after courier update", {
+          module: "CourierService",
+          disputeId: dispute.id,
+          error: scoreErr instanceof Error ? scoreErr.message : String(scoreErr),
+        });
+      }
     }
   }
 
-  // 6. Record in Database if not running purely offline/test
+  // 8. Record in Database if not running purely in-memory test
   if (!isTest) {
     try {
       await prisma.webhookEvent.create({
@@ -243,7 +361,13 @@ export async function processCourierWebhook(
           payloadHash,
           rawHeaders: JSON.stringify({ provider: adapter.providerId }),
           status: "processed",
-          payload: rawBody.slice(0, 4000), // bounded safe length
+          payload: JSON.stringify({
+            provider: adapter.providerId,
+            trackingId: event.trackingId,
+            status: event.status,
+            timestamp: event.timestamp,
+            hasPod: Boolean(event.podDocumentRef),
+          }), // bounded sanitized payload
         },
       });
 
@@ -289,7 +413,7 @@ export async function processCourierWebhook(
     createdAt: new Date(),
   });
 
-  // 7. Record Immutable Financial Audit Event
+  // 9. Record Immutable Financial Audit Event
   await AuditService.record({
     eventType: "WEBHOOK_RECEIVED",
     action: "COURIER_SHIPMENT_UPDATED",
@@ -308,7 +432,10 @@ export async function processCourierWebhook(
       orderId: matchedOrderId || event.orderId,
       evidenceAttached,
       signatureCaptured: event.signatureCaptured,
-      podDocumentRef: event.podDocumentRef,
+      podAvailable,
+      source: event.source,
+      scoreRecomputed,
+      newScore,
     },
   });
 
@@ -319,6 +446,9 @@ export async function processCourierWebhook(
     canonicalStatus: event.status,
     disputeId: matchedDisputeId,
     evidenceAttached,
+    podAvailable,
+    scoreRecomputed,
+    newScore,
     correlationId,
     requestId,
   });
@@ -331,6 +461,9 @@ export async function processCourierWebhook(
     disputeId: matchedDisputeId,
     shipmentStatus: event.status,
     evidenceAttached,
+    podAvailable,
+    scoreRecomputed,
+    newScore,
     message: `Shipment update for AWB ${event.trackingId} processed successfully (${event.status})`,
   };
 }
