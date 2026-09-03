@@ -521,21 +521,78 @@ export function DisputeDetailSheet({
                       </span>
                     </div>
                   )}
-                  {dispute.order.delivery && (
-                    <div className="flex items-start gap-2 pt-1">
-                      <Truck className="w-3.5 h-3.5 text-muted-slate mt-0.5" />
-                      <div>
-                        <span>
-                          Courier: {dispute.order.delivery.courier} (AWB:{" "}
-                          <span className="font-mono">{dispute.order.delivery.trackingId}</span>)
+                  {dispute.order.delivery ? (
+                    <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Truck className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span className="font-semibold text-ink">
+                            {dispute.order.delivery.courier || "3PL Courier"}
+                          </span>
+                          <span className="font-mono text-[11px] text-muted-slate bg-slate-100 px-1.5 py-0.5 rounded-[3px]">
+                            AWB: {dispute.order.delivery.trackingId}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-[3px] border ${
+                            dispute.order.delivery.deliveredAt
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              : "bg-blue-50 text-blue-800 border-blue-200"
+                          }`}
+                        >
+                          {dispute.order.delivery.deliveredAt ? "DELIVERED" : "IN TRANSIT"}
                         </span>
-                        <p className="text-muted-slate text-[11px] mt-0.5">
-                          Delivery Verification:{" "}
-                          {dispute.order.delivery.signatureCaptured
-                            ? "Customer OTP / Signature Verified"
-                            : "Standard Courier Confirmation"}
-                        </p>
                       </div>
+                      <div className="bg-slate-50 p-2.5 rounded-[3px] border border-slate-200 space-y-1 text-[11px]">
+                        {dispute.order.delivery.deliveredAt && (
+                          <div className="flex items-center gap-1.5 text-ink">
+                            <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
+                            <span>
+                              Delivered on:{" "}
+                              <strong className="font-mono">
+                                {new Date(dispute.order.delivery.deliveredAt).toLocaleDateString("en-IN", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </strong>
+                            </span>
+                          </div>
+                        )}
+                        <div className="text-muted-slate">
+                          Destination:{" "}
+                          <span className="text-ink">
+                            {dispute.order.delivery.deliveredToAddress ||
+                              dispute.order.customer?.address ||
+                              "Verified Customer Address"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 pt-0.5">
+                          <ShieldCheck
+                            className={`w-3.5 h-3.5 ${
+                              dispute.order.delivery.signatureCaptured
+                                ? "text-emerald-600"
+                                : "text-amber-500"
+                            }`}
+                          />
+                          <span
+                            className={
+                              dispute.order.delivery.signatureCaptured
+                                ? "text-emerald-800 font-semibold"
+                                : "text-muted-slate"
+                            }
+                          >
+                            {dispute.order.delivery.signatureCaptured
+                              ? "Recipient OTP / Digital Signature Verified"
+                              : "Carrier Proof of Delivery on file"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100 text-muted-slate text-[11px]">
+                      <Truck className="w-3.5 h-3.5 shrink-0 opacity-60" />
+                      <span>No 3PL courier tracking on record (digital service or intangible order)</span>
                     </div>
                   )}
                 </div>

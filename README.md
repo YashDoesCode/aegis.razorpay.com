@@ -41,10 +41,11 @@
 10. [API Reference](#api-reference)
 11. [Platform-Wide Immutable Audit Ledger](#platform-wide-immutable-audit-ledger)
 12. [Merchant Secret AES-256-GCM Envelope Encryption](#merchant-secret-aes-256-gcm-envelope-encryption)
-13. [Design System & Interface Tokens](#design-system--interface-tokens)
-14. [Local Setup & Development Guide](#local-setup--development-guide)
-15. [Verification & Testing](#verification--testing)
-16. [References & Standards](#references--standards)
+13. [3PL Logistics & Courier Evidence Integration](#3pl-logistics--courier-evidence-integration)
+14. [Design System & Interface Tokens](#design-system--interface-tokens)
+15. [Local Setup & Development Guide](#local-setup--development-guide)
+16. [Verification & Testing](#verification--testing)
+17. [References & Standards](#references--standards)
 
 ---
 
@@ -695,6 +696,45 @@ sequenceDiagram
   - Connection status API (`GET /api/merchant/status`) and connect API (`POST /api/merchant/connect`) return only masked public Key IDs (`maskKey()`, e.g. `rzp_live_88...491a`).
   - Decrypted secrets are never passed to the browser, never written to database plaintext columns, never logged by structured loggers (`logger.ts` redacts sensitive fields), and never saved in audit events (`AuditService` automatically sanitizes secrets).
 
+---
+
+## 3PL Logistics & Courier Evidence Integration
+
+Aegis provides a provider-agnostic 3PL / courier evidence ingestion layer engineered for Indian logistics networks (Delhivery, BlueDart, Shadowfax, Shiprocket). Carrier webhook scans and Proof of Delivery (POD) documents are automatically normalized into canonical fulfillment events and attached to physical-order disputes.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Carrier as 3PL Carrier (e.g. Delhivery)
+    participant Webhook as POST /api/webhooks/courier
+    participant Service as CourierService
+    participant Adapter as DelhiveryAdapter
+    participant Model as Delivery & Dispute Store
+    participant Score as Winnability Engine
+    participant Audit as Immutable Audit Ledger
+
+    Carrier->>Webhook: Webhook Event (Raw Body + Signature)
+    Webhook->>Service: processCourierWebhook(...)
+    Service->>Service: Payload Hash Deduplication (Idempotency)
+    Service->>Adapter: verifyWebhookSignature(rawBody, signature)
+    Adapter-->>Service: Signature Verified (Constant-Time HMAC)
+    Service->>Adapter: parseWebhookEvent(rawBody)
+    Adapter-->>Service: NormalizedShipmentWebhookEvent
+    Service->>Model: Upsert Delivery (deliveredAt, signatureCaptured)
+    Service->>Model: Upsert EvidenceItem (type: "shipping_proof", POD ref)
+    Service->>Score: Trigger computeWinnability & computeFraudSignal
+    Service->>Audit: Record COURIER_SHIPMENT_UPDATED
+    Service-->>Webhook: 200 OK
+    Webhook-->>Carrier: 200 OK (Processed / Idempotent Duplicate)
+```
+
+### Core Capabilities & Invariants
+
+- **Provider Abstraction (`CourierAdapter`)**: Extensible adapter interface supporting provider identification, constant-time HMAC signature verification, webhook parsing, and tracking synchronization.
+- **Canonical Lifecycle**: Normalizes vendor status codes (`DL`, `PU`, `OFD`, `UD`, `RT`) into strict canonical statuses (`DELIVERED`, `PICKED_UP`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `FAILED_DELIVERY`, `RETURNED`, `LOST`, `CANCELLED`).
+- **Automated Evidence Synthesis**: Confirmed deliveries automatically create/update verified `shipping_proof` evidence items with POD links and digital OTP/signature markers.
+- **Winnability Score Uplift**: Verified delivery proof automatically satisfies `shipping_proof_present` (+34 pts) and `tracking_matches_customer` (+25 pts) in UPI 1064 / Card 4837 reason codes.
+- **Payload Idempotency**: SHA-256 payload hashing ensures replayed or duplicate carrier webhooks are acknowledged without side-effects.
 
 ---
 
