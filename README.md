@@ -39,10 +39,11 @@
 9. [Supported Network Reason Codes](#supported-network-reason-codes)
 10. [API Reference](#api-reference)
 11. [Platform-Wide Immutable Audit Ledger](#platform-wide-immutable-audit-ledger)
-12. [Design System & Interface Tokens](#design-system--interface-tokens)
-13. [Local Setup & Development Guide](#local-setup--development-guide)
-14. [Verification & Testing](#verification--testing)
-15. [References & Standards](#references--standards)
+12. [Merchant Secret AES-256-GCM Envelope Encryption](#merchant-secret-aes-256-gcm-envelope-encryption)
+13. [Design System & Interface Tokens](#design-system--interface-tokens)
+14. [Local Setup & Development Guide](#local-setup--development-guide)
+15. [Verification & Testing](#verification--testing)
+16. [References & Standards](#references--standards)
 
 ---
 
@@ -634,11 +635,29 @@ flowchart TD
 | `REBUTTAL_GENERATED` | `merchant` | Rebuttal Engine | Rebuttal dossier generated for dispute reason code |
 | `SAFE_MODE_USED` | `system` | Template Engine | Deterministic fallback activated |
 | `DRAFT_STAGED` | `merchant` | Rebuttal Console | Evidence dossier staged for submission |
+| `DRAFT_SUBMITTED` | `merchant` | Rebuttal Console | Evidence dossier submitted to Razorpay Disputes API |
+| `DISPUTE_CONTESTED` | `merchant` | Rebuttal Console | Dispute formally contested with status transitioned to under_review |
 | `DISPUTE_ACCEPTED` | `merchant` | Action Bar | Dispute conceded to prevent compounding fee penalties |
 | `MERCHANT_CONNECTED` | `merchant` | Settings / Modal | Live Razorpay merchant account connected |
 | `MERCHANT_DISCONNECTED` | `merchant` | Mode Switcher | Merchant account unlinked; switched to Test Mode |
 | `LIVE_MODE_ENABLED` | `merchant` | Mode Switcher | Live operating mode activated |
 | `TEST_MODE_ENABLED` | `merchant` | Mode Switcher | Test sandbox mode activated |
+
+---
+
+## Merchant Secret AES-256-GCM Envelope Encryption
+
+Aegis enforces fintech-grade cryptographic isolation for all merchant gateway credentials (API Key Secrets, OAuth tokens, and Webhook Signing Secrets) at rest.
+
+### Cryptographic Invariants
+
+- **Algorithm**: Authenticated Encryption with Associated Data (AEAD) using `AES-256-GCM`.
+- **Initialization Vector (IV)**: 12-byte cryptographically secure random bytes (`crypto.randomBytes(12)`) per encryption operation.
+- **Authentication Tag**: 16-byte cryptographic integrity tag verifying ciphertext validity and detecting tampering.
+- **Envelope Wire Format**: `v1:<iv_hex>:<tag_hex>:<ciphertext_hex>`
+- **Key Derivation**: 32-byte master key derived using SHA-256 over `AEGIS_MASTER_KEY` / `ENCRYPTION_KEY`.
+- **Decryption Isolation**: Decryption occurs *strictly in ephemeral runtime memory* immediately before constructing the authorized `Razorpay` SDK client instance.
+- **Zero-Exposure Policy**: Connection status APIs (`GET /api/merchant/status`) return only masked public Key IDs (e.g. `rzp_live_8829...491a`) and never expose plaintext or encrypted secrets.
 
 ---
 
