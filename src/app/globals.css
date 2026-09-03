@@ -128,7 +128,6 @@
   --radius: 4px;
 }
 
-/* Custom UI Utilities */
 .rzp-navy-bg {
   background-color: #0D1A48;
 }
@@ -141,15 +140,65 @@
   background: linear-gradient(135deg, rgb(110, 230, 196) 0%, rgb(90, 165, 144) 29.66%, rgb(179, 216, 205) 63.86%, rgb(201, 255, 220) 100%);
 }
 
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+
+.custom-scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 @layer base {
   * {
     @apply border-border-subtle;
     border-radius: 4px;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     background-color: #F8FAFC;
     color: #0D1C2D;
     font-family: var(--font-sans);
+    overflow-x: hidden;
   }
   h1, .font-headline-lg {
     font-family: var(--font-display);

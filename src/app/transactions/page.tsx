@@ -232,7 +232,7 @@ export default function TransactionsPage() {
 
           {/* Transactions Table */}
           <div className="bg-white rounded-[4px] border border-border-subtle shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-border-subtle bg-slate-50/70">

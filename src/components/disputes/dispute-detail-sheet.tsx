@@ -251,9 +251,8 @@ export function DisputeDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0 bg-slate-50 border-l border-border-subtle z-50">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto custom-scrollbar p-0 bg-slate-50 border-l border-border-subtle z-50">
         <LocalErrorBoundary fallbackTitle="Dispute Details Drawer Encountered an Issue">
-          {/* 1. DISPUTE SUMMARY: Sticky Header */}
           <div className="sticky top-0 bg-white border-b border-border-subtle p-5 z-10 shadow-xs">
             <SheetHeader className="space-y-1 text-left">
               <div className="flex items-center justify-between">
