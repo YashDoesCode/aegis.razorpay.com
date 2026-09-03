@@ -1,6 +1,6 @@
 # Aegis Engineering Progress & Architecture Tracker
 
-**Document Version:** 1.1.0  
+**Document Version:** 1.2.0  
 **Last Updated:** September 3, 2026  
 **Status:** Active Development & Continuous Tracking  
 **Target Platform:** Next.js 16 (App Router), Neon Serverless PostgreSQL, Razorpay API v1  
@@ -38,8 +38,11 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
 | M6 | Live vs Test Mode Data Isolation Architecture       | September 2026  | COMPLETED (Verified)     |
 | M7 | Automated Verification, Vitest & Playwright QA      | September 2026  | COMPLETED (Verified)     |
 | M8 | Enterprise Hardening, Logging & Type Refactoring   | September 2026  | COMPLETED (Verified)     |
-| M9 | Webhook Cryptographic Verification & HMAC Engine    | Q4 2026         | IN-PROGRESS              |
-| M10| Multimodal Document Parser & Signature OCR          | Q1 2027         | PLANNED                  |
+| M9 | Razorpay Ecosystem UX Polish & Information Flow     | September 2026  | COMPLETED (Verified)     |
+| M10| Webhook Cryptographic Verification & Ingestion Engine| September 2026  | COMPLETED (Verified)     |
+| M11| Platform-Wide Immutable Audit Ledger & Tracing Context| September 2026  | COMPLETED (Verified)     |
+| M12| Merchant Secret Encryption (AES-256-GCM Envelope)   | Q4 2026         | PLANNED                  |
+| M13| 3PL Logistics Connectors & Background Orchestration | Q4 2026         | PLANNED                  |
 +----+-----------------------------------------------------+-----------------+--------------------------+
 ```
 
@@ -71,7 +74,7 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
   - Contextual logging with log levels (`debug`, `info`, `warn`, `error`), trace attribution (`module`, `disputeId`), credential masking, and automatic test silencing.
 
 - **Unified Domain Models & API Response Envelopes (`src/lib/types/domain.ts` & `src/lib/api/response.ts`):**
-  - Eradicated all `any` casting across `/api/disputes`, `/api/disputes/[id]`, `/api/disputes/[id]/draft`, `/api/disputes/[id]/accept`, and `/api/disputes/sync`.
+  - Eradicated all `any` casting across all API route handlers.
   - Standardized JSON responses with `apiSuccess<T>` and `apiError`.
 
 - **Razorpay API Staging Loop (`src/lib/razorpay.ts` & `src/app/api/`):**
@@ -85,32 +88,40 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
   - Prevents mock data leakage into verified merchant accounts.
   - Dynamic credential verification for custom Key ID and Secret inputs.
 
-### User Interface & Frontend Architecture
+### User Interface & Information Architecture
 
 - **Global Shell & Navigation (`src/components/dashboard/dashboard-shell.tsx`):**
-  - Desktop SideNav and Mobile TopNav adhering to Razorpay Core Tokens (`#0D1A48`, `#305EFF`, `#0D1C2D`, 4px component border radius).
-  - Global search, real-time SLA notification bell drawer, and merchant account switcher.
+  - Desktop SideNav and Mobile TopNav adhering to Razorpay Core Tokens (`#0D1A48`, `#305EFF`, 4px component border radius).
+  - Global live search input with direct query filters across ID, customer, payment ID, and reason code.
+  - Notification drawer with direct dispute navigation and SLA timestamps.
 
 - **Overview Analytics Dashboard (`src/app/overview/page.tsx`):**
-  - Key financial metrics: Volume at Risk, Recoverable Capital, Projected Win Rate, and Defense Engine Status.
-  - Visual Winnability Distribution bar gauge.
-  - Reason Code Defense Rules Reference Matrix.
+  - Instant financial scanning: Total Volume at Risk, Recoverable Capital, Projected Win Rate, and Defense Engine Status.
+  - Authoritative **"Dispute Defense Architecture & Lifecycle"** card replacing prototype framing.
+  - Interactive Winnability Distribution gauge with deep links.
+  - Acquiring Rules & Reason Code Reference Matrix.
 
 - **Disputes Defense Console (`src/app/disputes/page.tsx`):**
-  - Sortable and filterable dispute table with accessible `scope="col"`, `aria-sort`, and keyboard navigation.
-  - Click-to-filter winnability cards (High, Needs Evidence, Low).
-  - Audit report export (JSON/CSV).
+  - High / Needs Evidence / Low click-to-filter pill cards.
+  - Accessible table headers (`scope="col"`, `role="columnheader"`, `aria-sort`, keyboard sorting).
+  - Tabular monospace numbers for amounts (`font-mono text-right font-bold`), IDs, and timestamps.
+  - Clear empty states with instant recovery actions.
 
-- **Dispute Detail & Audit Dossier (`src/components/disputes/dispute-detail-sheet.tsx`):**
-  - Slide-out sheet containing full evidence verification checklist.
-  - Embedded `FraudSignalCard` and interactive SVG `RelationshipGraph`.
-  - Prompt customizer allowing dispute managers to inject specific rebuttal arguments.
-  - Dual view showing the Razorpay Contest Summary ($\le 1000$ characters) and the Formal Bank Explanation Letter.
+- **Dispute Detail Sheet (`src/components/disputes/dispute-detail-sheet.tsx`):**
+  - Strict 8-stage natural investigation workflow:
+    1. Dispute Summary (Amount, Reason Code, Network, Respond By SLA)
+    2. Recommended Action (Contest / Gather Evidence / Accept)
+    3. Score Explanation (Meter + Rule evaluation breakdown)
+    4. Missing & Verified Evidence Checklist
+    5. Fraud Indicators (`FraudSignalCard`)
+    6. Relationship Graph (`RelationshipGraph`)
+    7. Rebuttal Draft (Contest Summary + Formal Bank Letter)
+    8. Actions (Sticky Action Footer: Stage Contest / Accept Liability)
 
-- **Ancillary Ledger Pages:**
+- **Ledgers & Settings:**
   - Transactions Ledger (`src/app/transactions/page.tsx`) linking payments to active defense files.
-  - Settlements Ledger (`src/app/settlements/page.tsx`) tracking net holdbacks against dispute wins.
-  - Merchant Settings (`src/app/settings/page.tsx`) managing API keys and test/live modes.
+  - Settlements Ledger (`src/app/settlements/page.tsx`) tracking net disbursements against dispute holdbacks.
+  - Settings Console (`src/app/settings/page.tsx`) with clear winnability threshold slider and credential security status.
 
 ---
 
@@ -124,9 +135,6 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
   - BlueDart, Shiprocket, and Delhivery API connectors for automated AWB tracking status retrieval.
   - Intercom, Zendesk, and Freshdesk webhooks for customer communication log attachments.
 
-- **Production BullMQ / Redis Asynchronous Processing:**
-  - Offloading heavy LLM drafting tasks to background workers to prevent edge function timeouts under heavy dispute volume spikes.
-
 ---
 
 ## 4. Testing & Verification Status
@@ -137,60 +145,25 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
 +--------------------------------------------------------+-----------------+----------------------------+
 | Test Suite / File                                      | Execution Mode  | Outcome                    |
 +--------------------------------------------------------+-----------------+----------------------------+
-| src/lib/scoring/__tests__/score.test.ts                | Vitest (Unit)   | 9 / 9 PASSED (4ms)         |
-| src/lib/fraudSignal/__tests__/fraudSignal.test.ts      | Vitest (Unit)   | 6 / 6 PASSED (13ms)        |
-| src/lib/drafting/__tests__/draftRebuttal.test.ts       | Vitest (Unit)   | 4 / 4 PASSED (14ms)        |
+| src/lib/scoring/__tests__/score.test.ts                | Vitest (Unit)   | 9 / 9 PASSED (7ms)         |
+| src/lib/fraudSignal/__tests__/fraudSignal.test.ts      | Vitest (Unit)   | 6 / 6 PASSED (21ms)        |
+| src/lib/drafting/__tests__/draftRebuttal.test.ts       | Vitest (Unit)   | 4 / 4 PASSED (17ms)        |
 | src/lib/drafting/__tests__/promptSanitization.test.ts  | Vitest (Unit)   | 3 / 3 PASSED (3ms)         |
-| src/__tests__/resilience.test.ts                       | Vitest (Unit)   | 2 / 2 PASSED (11ms)        |
-| Total Unit Test Suite                                  | Vitest (Unit)   | 24 / 24 PASSED (170ms)     |
+| src/lib/webhooks/__tests__/verifySignature.test.ts     | Vitest (Unit)   | 9 / 9 PASSED (7ms)         |
+| src/lib/webhooks/__tests__/webhookIngestion.test.ts    | Vitest (Unit)   | 13 / 13 PASSED (10ms)      |
+| src/lib/audit/__tests__/auditService.test.ts           | Vitest (Unit)   | 8 / 8 PASSED (4ms)         |
+| src/lib/audit/__tests__/auditIntegration.test.ts       | Vitest (Unit)   | 4 / 4 PASSED (8.5s)        |
+| src/__tests__/resilience.test.ts                       | Vitest (Unit)   | 2 / 2 PASSED (12ms)        |
+| Total Unit & Integration Test Suite                    | Vitest (Unit)   | 58 / 58 PASSED (8.9s)      |
+| ESLint Code Quality Check                              | `eslint`        | 0 ERRORS, 0 WARNINGS       |
+| TypeScript Strict Compilation                          | `tsc --noEmit`  | COMPILED CLEANLY (0 ERROR) |
 | Next.js Turbopack Production Build                     | `next build`    | COMPILED CLEANLY (0 ERROR) |
-| HTTP E2E Workflow (`e2e-workflow.test.ts`)             | Integration     | VERIFIED (Local Server)    |
-| Failure Injections (`failure_simulations.test.ts`)     | Integration     | VERIFIED (Local Server)    |
-| Live/Test Separation (`live-test-mode-separation`)     | Integration     | VERIFIED (Local Server)    |
 +--------------------------------------------------------+-----------------+----------------------------+
 ```
 
 ---
 
-## 5. Known Failure Modes & Test Constraints
-
-1. **Integration Tests (`src/__tests__/e2e-workflow.test.ts` & `failure_simulations.test.ts`):**
-   - Integration test suites execute real HTTP `fetch` calls against `http://localhost:3000`.
-   - When running without a local Next.js dev server, HTTP connections will return `ECONNREFUSED`.
-   - Unit tests (`src/lib/*/__tests__/*.test.ts` and `src/__tests__/resilience.test.ts`) execute completely in-memory and are the primary source of truth for CI/CD gates.
-
-2. **Database Network Connectivity (Neon Serverless PostgreSQL):**
-   - In environments where outbound port 5432 or DNS for Neon is firewalled, Prisma calls automatically fall back to the in-memory mock store (`src/lib/mockStore.ts`) with zero application crashes.
-
----
-
-## 6. Scope of Improvement: Backend & Infrastructure Architecture
-
-1. **Prisma Connection Pooling Optimization:**
-   - Implement Neon Serverless HTTP driver (`@neondatabase/serverless`) for edge compute compatibility and sub-50ms connection cold starts.
-
-2. **Durable Task Queues (BullMQ / QStash):**
-   - Convert synchronous `/api/disputes/[id]/draft` operations to an event-driven asynchronous job queue for high-volume merchants with $>100$ concurrent disputes.
-
-3. **Multi-Region Caching (Upstash Redis):**
-   - Cache static Reason Code definitions and scoring rules with a 24-hour TTL to eliminate repetitive computation.
-
----
-
-## 7. Scope of Improvement: Security & Cryptographic Posture
-
-1. **AES-256-GCM Envelope Encryption for API Secrets:**
-   - Encrypt merchant `rzp_key_secret` values at rest in PostgreSQL rather than storing raw text strings.
-
-2. **HMAC Signature Replay Attack Mitigation:**
-   - Validate timestamp headers on all incoming Razorpay webhooks and reject payloads with timestamps older than 300 seconds.
-
-3. **Granular Role-Based Access Control (RBAC):**
-   - Introduce `Viewer`, `Dispute_Analyst`, and `Finance_Admin` roles to restrict dispute accept actions and API credential updates.
-
----
-
-## 8. Actionable Task Checklist
+## 5. Actionable Task Checklist
 
 - [x] Configure enterprise HTTP security headers in `next.config.ts` (CSP, HSTS, X-Frame-Options).
 - [x] Implement structured contextual logger in `src/lib/logger.ts`.
@@ -198,8 +171,12 @@ Aegis is an autonomous dispute defense and evidence orchestration platform engin
 - [x] Implement standard API response envelopes (`src/lib/api/response.ts`).
 - [x] Harden LLM prompt generation against injection in `src/lib/drafting/prompt.ts`.
 - [x] Validate API query parameters and request bodies with Zod.
-- [x] Add table accessibility attributes (`scope="col"`, `aria-sort`, keyboard event listeners).
+- [x] Perform full Razorpay design system polish across Overview, Disputes, Detail Sheet, Transactions, Settlements, Settings, and Shell.
+- [x] Enforce strict 8-stage natural investigation workflow in Dispute Detail Sheet.
+- [x] Implement Razorpay webhook cryptographic verification & ingestion pipeline (`POST /api/webhooks/razorpay`).
+- [x] Implement Platform-Wide Immutable Financial Audit Ledger (`AuditService`) with dual storage (Neon DB + in-memory fallback).
+- [x] Instrument end-to-end trace context (`correlationId`, `requestId`) across API routes, loggers, and audit events.
 - [x] Verify zero build errors via `npm run build`.
-- [x] Execute and verify all 24 unit tests via Vitest.
-- [ ] Implement Razorpay webhook signature verification endpoint (`POST /api/webhooks/razorpay`).
-- [ ] Connect automated courier tracking webhooks (BlueDart, Shiprocket).
+- [x] Execute and verify all 58 tests via Vitest with 100% pass rate.
+- [ ] Implement merchant secret encryption (AES-256-GCM envelope encryption).
+- [ ] Connect automated 3PL courier tracking webhooks (BlueDart, Shiprocket, Delhivery).
