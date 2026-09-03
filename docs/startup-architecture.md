@@ -36,7 +36,7 @@ Modern browsers enforce strict restrictions on autoplaying media with sound:
 
 | Browser / Platform | Audible Autoplay Behavior | Aegis Handling & Recovery Strategy |
 | :--- | :--- | :--- |
-| **Google Chrome / Chromium** | Blocked unless user's Media Engagement Index (MEI) is high or prior domain interaction exists. | Attempts immediate playback with audio. If rejected with `NotAllowedError`, immediately displays the Enterprise Startup HUD (`"Click anywhere to start Aegis"`). First click/keypress unlocks audio and plays from start. |
+| **Google Chrome / Chromium** | Blocked unless user's Media Engagement Index (MEI) is high or prior domain interaction exists. | Attempts immediate playback with audio. If rejected with `NotAllowedError`, immediately displays the Minimalist Operational HUD (`"Click anywhere to start Aegis"`). First click/keypress unlocks audio and plays from start. |
 | **Apple Safari (macOS & iOS)** | Strictly blocked without user gesture. iOS requires `playsinline` attribute. | `<video>` includes `playsInline`, `preload="auto"`, and `muted={false}`. Rejection switches to interactive prompt. User tap/touch unlocks media playback with audio. |
 | **Mozilla Firefox** | Blocks audible autoplay by default. | Rejection cleanly transitions state machine to `WAITING_FOR_USER_GESTURE`. Spacebar, Enter, or Click resumes full audio playback. |
 | **Microsoft Edge** | Follows Chromium MEI rules. | Full recovery parity with Chrome / Chromium. |
@@ -48,13 +48,9 @@ Modern browsers enforce strict restrictions on autoplaying media with sound:
 
 ---
 
-## Media Asset Streaming (/api/startup/video)
+## Media Asset Streaming (/public/Intro.mp4)
 
-To load `src/assets/Intro.mp4` directly from the project repository without compression or modification, Aegis exposes an RFC 7233 compliant HTTP byte-range route handler at `/api/startup/video`:
-
-- **HTTP 200 OK**: Emitted when full file is requested, with `Content-Type: video/mp4`, `Accept-Ranges: bytes`, `Content-Length`, and immutable caching headers.
-- **HTTP 206 Partial Content**: Emitted when `Range: bytes=start-end` is supplied by Safari, iOS, or Chromium, enabling fast chunked buffering and non-blocking streaming.
-- **HTTP HEAD**: Supports preflight range and content-length inspection without payload transmission.
+To load the video asset efficiently, it is served directly from the public directory as a static asset (`/Intro.mp4`). This provides the simplest production architecture and allows the CDN (e.g. Vercel Edge Network) to automatically handle RFC 7233 byte-range requests, caching, and compression, avoiding unnecessary Node.js route handler overhead.
 
 ---
 
@@ -63,10 +59,6 @@ To load `src/assets/Intro.mp4` directly from the project repository without comp
 ```
 src/
 ├── app/
-│   ├── api/
-│   │   └── startup/
-│   │       └── video/
-│   │           └── route.ts          # RFC 7233 byte-range video streaming endpoint
 │   └── layout.tsx                    # Root application shell with StartupProvider & StartupExperience
 └── components/
     └── startup/
@@ -74,10 +66,9 @@ src/
         ├── startup-context.tsx       # Session-persistent startup context & provider
         ├── useStartupPlayback.ts     # Playback lifecycle, autoplay attempt & recovery hook
         ├── StartupVideo.tsx          # Hardware-accelerated HTML5 video renderer
-        ├── StartupOverlay.tsx        # Terminal HUD / boot console UI & interaction surface
+        ├── StartupOverlay.tsx        # Minimalist operational HUD & interaction surface
         ├── StartupExperience.tsx     # Main orchestrator component
         ├── index.ts                  # Barrel export
         └── __tests__/
-            ├── videoRoute.test.ts
             └── startupStateMachine.test.ts
 ```

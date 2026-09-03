@@ -18,7 +18,7 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
       onCanPlay,
       onEnded,
       onError,
-      videoSrc = "/api/startup/video",
+      videoSrc = "/Intro.mp4",
     },
     ref
   ) => {
@@ -33,7 +33,6 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
           src={videoSrc}
           playsInline
           preload="auto"
-          autoPlay
           muted={false}
           controls={false}
           disablePictureInPicture
