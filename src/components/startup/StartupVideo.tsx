@@ -24,26 +24,24 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
   ) => {
     return (
       <div
-        className={`relative w-full h-full flex items-center justify-center bg-white overflow-hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 z-50 w-screen h-screen flex items-center justify-center bg-white dark:bg-slate-950 overflow-hidden transition-opacity duration-500 ${
           startupState === "FADING_OUT" ? "opacity-0" : "opacity-100"
         }`}
       >
-        <div className="w-full max-w-[560px] sm:max-w-[640px] md:max-w-[720px] max-h-[55vh] flex items-center justify-center p-4">
-          <video
-            ref={ref}
-            src={videoSrc}
-            playsInline
-            autoPlay
-            preload="auto"
-            controls={false}
-            disablePictureInPicture
-            aria-hidden="true"
-            onCanPlay={onCanPlay}
-            onEnded={onEnded}
-            onError={onError}
-            className="w-full h-auto max-h-[50vh] object-contain rounded-2xl pointer-events-none select-none transform-gpu bg-white shadow-xs"
-          />
-        </div>
+        <video
+          ref={ref}
+          src={videoSrc}
+          playsInline
+          autoPlay
+          preload="auto"
+          controls={false}
+          disablePictureInPicture
+          aria-hidden="true"
+          onCanPlay={onCanPlay}
+          onEnded={onEnded}
+          onError={onError}
+          className="w-full h-full object-cover sm:object-contain pointer-events-none select-none transform-gpu bg-white dark:bg-slate-950"
+        />
       </div>
     );
   }

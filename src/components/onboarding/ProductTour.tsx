@@ -59,38 +59,65 @@ export function ProductTour() {
     };
   }, [updateBounds]);
 
-  if (!isTourActive) return null;
+  if (!isTourActive || !currentStep) return null;
 
   const isLastStep = currentStepIndex === totalSteps - 1;
   const progressPercent = ((currentStepIndex + 1) / totalSteps) * 100;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99997] pointer-events-none select-none">
+      <div className="fixed inset-0 z-[99995] pointer-events-auto">
+        {targetBounds ? (
+          <svg className="fixed inset-0 w-full h-full pointer-events-auto">
+            <defs>
+              <mask id="tour-spotlight-cutout">
+                <rect width="100%" height="100%" fill="white" />
+                <rect
+                  x={targetBounds.left - 8}
+                  y={targetBounds.top - 8}
+                  width={targetBounds.width + 16}
+                  height={targetBounds.height + 16}
+                  rx="16"
+                  fill="black"
+                />
+              </mask>
+            </defs>
+            <rect
+              width="100%"
+              height="100%"
+              fill="rgba(15, 23, 42, 0.65)"
+              mask="url(#tour-spotlight-cutout)"
+              className="backdrop-blur-md"
+            />
+          </svg>
+        ) : (
+          <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-md pointer-events-auto" />
+        )}
+
         {targetBounds && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="absolute rounded-2xl ring-4 ring-blue-500/50 shadow-2xl transition-all duration-300 pointer-events-none"
+            className="absolute rounded-2xl ring-4 ring-blue-500/80 shadow-[0_0_40px_rgba(59,130,246,0.6)] pointer-events-none transition-all duration-300"
             style={{
-              top: `${targetBounds.top - 6}px`,
-              left: `${targetBounds.left - 6}px`,
-              width: `${targetBounds.width + 12}px`,
-              height: `${targetBounds.height + 12}px`,
+              top: `${targetBounds.top - 8}px`,
+              left: `${targetBounds.left - 8}px`,
+              width: `${targetBounds.width + 16}px`,
+              height: `${targetBounds.height + 16}px`,
             }}
           />
         )}
 
-        <div className="fixed inset-x-4 bottom-6 sm:bottom-8 z-20 flex justify-center pointer-events-auto">
+        <div className="fixed inset-x-4 bottom-6 sm:bottom-8 z-[99998] flex justify-center pointer-events-auto">
           <motion.div
             ref={popoverRef}
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col gap-3"
+            className="w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col gap-3"
             role="region"
             aria-label="Product tour step guidance"
           >

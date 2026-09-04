@@ -15,6 +15,7 @@ import { RecoveryMetric } from "@/components/dashboard/recovery-metric";
 import { OperationalMetricGrid } from "@/components/dashboard/operational-metric-card";
 import { ExposureRecoveryChart } from "@/components/dashboard/exposure-recovery-chart";
 import { ActionQueue } from "@/components/dashboard/action-queue";
+import { OperationalDeepDive } from "@/components/dashboard/operational-deep-dive";
 import { WinnabilityDistribution } from "@/components/dashboard/winnability-distribution";
 import { FraudRiskCard } from "@/components/dashboard/fraud-risk-card";
 import { SignalsEvidenceCard } from "@/components/dashboard/signals-evidence-card";
@@ -322,6 +323,8 @@ export default function OverviewPage() {
             highRiskCount={4}
             courierEventsCount={3}
           />
+
+          <OperationalDeepDive />
 
           <section
             id="tour-winnability-risk"

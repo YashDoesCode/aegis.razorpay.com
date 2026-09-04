@@ -225,18 +225,10 @@ export function DashboardShell({
   return (
     <TooltipProvider delay={100}>
       <div
-        className="bg-[#ECEEF2] dark:bg-[#070A11] text-slate-900 dark:text-slate-100 min-h-screen p-2.5 sm:p-4 md:p-6 lg:p-7 flex items-center justify-center font-sans antialiased selection:bg-slate-900 selection:text-white transition-colors duration-200"
+        className="w-full min-h-screen bg-white dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-slate-900 selection:text-white transition-colors duration-200"
         suppressHydrationWarning
       >
-        <motion.div
-          initial={{ opacity: 0, filter: "blur(16px)", scale: 0.99 }}
-          animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
-          transition={{
-            duration: 0.75,
-            ease: [0.16, 1, 0.3, 1],
-          }}
-          className="w-full max-w-[1440px] bg-white dark:bg-[#0F172A] rounded-[24px] md:rounded-[28px] p-4 sm:p-5 lg:p-6 shadow-xl shadow-slate-300/40 dark:shadow-none border border-slate-200/90 dark:border-slate-800 flex flex-col justify-between gap-4 sm:gap-5 relative overflow-hidden transition-colors duration-200"
-        >
+        <div className="w-full min-h-screen p-4 sm:p-6 lg:p-8 flex flex-col justify-between gap-4 sm:gap-6 relative">
           <header className="flex items-center justify-between gap-2.5 sm:gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3 lg:gap-4.5 shrink-0">
               <Link href="/overview" className="flex items-center gap-2.5 group shrink-0">
@@ -652,10 +644,24 @@ export function DashboardShell({
             </div>
           )}
 
-          <main className="flex flex-col gap-4 sm:gap-5 flex-1">{children}</main>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.main
+              key={pathname}
+              initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
+              transition={{
+                duration: 0.28,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="flex flex-col gap-4 sm:gap-6 flex-1 w-full"
+            >
+              {children}
+            </motion.main>
+          </AnimatePresence>
 
           <ConnectRazorpayModal />
-        </motion.div>
+        </div>
       </div>
     </TooltipProvider>
   );
