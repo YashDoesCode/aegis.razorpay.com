@@ -8,6 +8,7 @@ interface StartupVideoProps {
   onCanPlay: () => void;
   onEnded: () => void;
   onError: (e: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
+  onTimeUpdate?: () => void;
   videoSrc?: string;
   isDark?: boolean;
 }
@@ -19,7 +20,8 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
       onCanPlay,
       onEnded,
       onError,
-      videoSrc = "/Intro (B&W).mp4",
+      onTimeUpdate,
+      videoSrc = "/intro-bw.mp4",
       isDark = true,
     },
     ref
@@ -42,6 +44,7 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
           onCanPlay={onCanPlay}
           onEnded={onEnded}
           onError={onError}
+          onTimeUpdate={onTimeUpdate}
           className={`w-full h-full object-contain pointer-events-none select-none transform-gpu ${
             isDark ? "bg-[#000000]" : "bg-white"
           }`}

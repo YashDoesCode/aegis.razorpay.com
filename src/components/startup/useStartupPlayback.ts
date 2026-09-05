@@ -9,7 +9,7 @@ interface UseStartupPlaybackOptions {
 }
 
 export function useStartupPlayback({
-  watchdogTimeoutMs = 12000,
+  watchdogTimeoutMs = 3500,
 }: UseStartupPlaybackOptions = {}) {
   const {
     startupState,
@@ -31,6 +31,25 @@ export function useStartupPlayback({
     },
     [setStartupState]
   );
+
+  const handleVideoEnded = useCallback(() => {
+    isPlayingRef.current = false;
+    transitionTo("COMPLETE");
+    markComplete();
+  }, [transitionTo, markComplete]);
+
+  const handleVideoError = useCallback(() => {
+    isPlayingRef.current = false;
+    markComplete();
+  }, [markComplete]);
+
+  const handleTimeUpdate = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || hasCompleted) return;
+    if (video.duration && video.currentTime >= video.duration - 0.2) {
+      handleVideoEnded();
+    }
+  }, [hasCompleted, handleVideoEnded]);
 
   const attemptAutoplay = useCallback(async () => {
     const video = videoRef.current;
@@ -70,60 +89,10 @@ export function useStartupPlayback({
       if (e && typeof e.stopPropagation === "function") {
         e.stopPropagation();
       }
-
-      const video = videoRef.current;
-      if (!video || hasCompleted) return;
-
-      if (startupState === "PLAYING" && video.muted) {
-        try {
-          video.muted = false;
-          video.volume = 1.0;
-          triggerUserStart();
-        } catch {}
-      } else if (
-        startupState === "WAITING_FOR_USER_GESTURE" ||
-        startupState === "ATTEMPTING_AUTOPLAY" ||
-        startupState === "LOADING_VIDEO"
-      ) {
-        try {
-          video.muted = false;
-          video.volume = 1.0;
-          const playPromise = video.play();
-
-          if (playPromise !== undefined) {
-            await playPromise;
-            isPlayingRef.current = true;
-            triggerUserStart();
-            transitionTo("PLAYING");
-          }
-        } catch {
-          try {
-            video.muted = true;
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-              await playPromise;
-              isPlayingRef.current = true;
-              transitionTo("PLAYING");
-            }
-          } catch {
-            markComplete();
-          }
-        }
-      }
+      markComplete();
     },
-    [startupState, hasCompleted, triggerUserStart, transitionTo, markComplete]
+    [markComplete]
   );
-
-  const handleVideoEnded = useCallback(() => {
-    isPlayingRef.current = false;
-    transitionTo("COMPLETE");
-    markComplete();
-  }, [transitionTo, markComplete]);
-
-  const handleVideoError = useCallback(() => {
-    isPlayingRef.current = false;
-    markComplete();
-  }, [markComplete]);
 
   useEffect(() => {
     if (hasCompleted) return;
@@ -132,11 +101,9 @@ export function useStartupPlayback({
       transitionTo("LOADING_VIDEO");
     }
 
-    if (startupState === "LOADING_VIDEO" || startupState === "ATTEMPTING_AUTOPLAY") {
-      watchdogTimerRef.current = setTimeout(() => {
-        markComplete();
-      }, watchdogTimeoutMs);
-    }
+    watchdogTimerRef.current = setTimeout(() => {
+      markComplete();
+    }, watchdogTimeoutMs);
 
     return () => {
       if (watchdogTimerRef.current) {
@@ -175,14 +142,16 @@ export function useStartupPlayback({
     if (hasCompleted) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      handleUserGesture(e);
+      if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+        markComplete();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown, { capture: true });
     return () => {
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
     };
-  }, [hasCompleted, handleUserGesture]);
+  }, [hasCompleted, markComplete]);
 
   return {
     videoRef,
@@ -193,6 +162,7 @@ export function useStartupPlayback({
     handleUserGesture,
     handleVideoEnded,
     handleVideoError,
+    handleTimeUpdate,
     markComplete,
   };
 }

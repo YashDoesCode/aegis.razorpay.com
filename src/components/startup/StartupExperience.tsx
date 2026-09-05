@@ -16,11 +16,13 @@ export function StartupExperience() {
     handleUserGesture,
     handleVideoEnded,
     handleVideoError,
+    handleTimeUpdate,
+    markComplete,
   } = useStartupPlayback();
 
   const { theme } = useTheme();
   const isDark = theme === "dark" || theme === "amoled";
-  const videoSrc = isDark ? "/Intro (B&W).mp4" : "/Intro.mp4";
+  const videoSrc = isDark ? "/intro-bw.mp4" : "/Intro.mp4";
 
   return (
     <AnimatePresence mode="wait">
@@ -30,13 +32,14 @@ export function StartupExperience() {
           initial={{ opacity: 1 }}
           exit={{
             opacity: 0,
-            transition: { duration: 0.45, ease: "easeInOut" },
+            transition: { duration: 0.35, ease: "easeInOut" },
           }}
           className="fixed inset-0 z-[99999] pointer-events-auto"
         >
           <StartupOverlay
             startupState={startupState}
             onUserGesture={handleUserGesture}
+            onSkip={markComplete}
             isDark={isDark}
           >
             <StartupVideo
@@ -45,6 +48,7 @@ export function StartupExperience() {
               onCanPlay={attemptAutoplay}
               onEnded={handleVideoEnded}
               onError={handleVideoError}
+              onTimeUpdate={handleTimeUpdate}
               videoSrc={videoSrc}
               isDark={isDark}
             />
