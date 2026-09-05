@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import {
-  Shield,
   Sliders,
   Save,
   Loader2,
@@ -17,7 +16,6 @@ import {
   Sparkles,
   Check,
   Trash2,
-  Download,
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,7 +23,7 @@ import { LocalErrorBoundary } from "@/components/ui/error-boundary";
 import { useMerchantMode } from "@/context/merchant-mode-context";
 import { useTheme } from "@/context/theme-context";
 import { useOnboarding } from "@/components/onboarding";
-import { safeStorage, ThemeMode, AccentMode } from "@/lib/storage/safeStorage";
+import { safeStorage, ThemeMode } from "@/lib/storage/safeStorage";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {

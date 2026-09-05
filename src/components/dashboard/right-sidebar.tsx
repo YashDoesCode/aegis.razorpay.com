@@ -6,18 +6,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Activity,
-  ShieldAlert,
-  FileCheck2,
-  TrendingUp,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  Layers,
-  Database,
-  RefreshCw,
-  X,
 } from "lucide-react";
-import { safeStorage, STORAGE_KEYS } from "@/lib/storage/safeStorage";
 import { useMerchantMode } from "@/context/merchant-mode-context";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +27,8 @@ export function RightSidebar({ isOpen, onToggle }: RightSidebarProps) {
     recoveredAmount: "₹4.83L",
     exposureAmount: "₹9.42L",
     winRate: "82.9%",
+    highRiskCount: 5,
+    velocityAlerts: 2,
   });
 
   const [recentActivities, setRecentActivities] = useState<
@@ -83,6 +74,8 @@ export function RightSidebar({ isOpen, onToggle }: RightSidebarProps) {
             recoveredAmount: d.recoveredAmountFormatted ?? "₹4.83L",
             exposureAmount: d.totalExposureFormatted ?? "₹9.42L",
             winRate: `${d.winRatePercent ?? 82.9}%`,
+            highRiskCount: d.highRiskCount ?? 5,
+            velocityAlerts: 2,
           });
           if (Array.isArray(d.recentAuditFeed) && d.recentAuditFeed.length > 0) {
             setRecentActivities(
@@ -101,24 +94,22 @@ export function RightSidebar({ isOpen, onToggle }: RightSidebarProps) {
 
   return (
     <aside
-      aria-label="Operational Context Sidebar"
+      aria-label="Operational Context Rail"
       className={cn(
         "transition-all duration-200 shrink-0 flex flex-col",
-        isOpen
-          ? "w-full lg:w-72 xl:w-80"
-          : "w-0 lg:w-11 overflow-hidden"
+        isOpen ? "w-full lg:w-72 xl:w-80" : "w-0 lg:w-9 overflow-hidden"
       )}
     >
       <div
         className={cn(
           "h-full rounded-xl border border-border flex flex-col transition-colors duration-200 overflow-hidden",
-          "bg-slate-50 dark:bg-[#141414] [data-theme=amoled]:bg-[#050505]"
+          "bg-card lg:bg-muted/20"
         )}
       >
         <div className="flex items-center justify-between px-3.5 py-3 border-b border-border">
           <div className={cn("flex items-center gap-2", !isOpen && "lg:hidden")}>
-            <Activity className="w-4 h-4 text-muted-foreground stroke-[1.75]" />
-            <span className="text-xs font-semibold text-foreground tracking-tight">
+            <Activity className="w-3.5 h-3.5 text-muted-foreground stroke-[1.75]" />
+            <span className="text-xs font-medium text-foreground tracking-tight">
               {pathname.includes("/disputes")
                 ? "Dispute Intelligence"
                 : pathname.includes("/fraud")
@@ -134,7 +125,7 @@ export function RightSidebar({ isOpen, onToggle }: RightSidebarProps) {
           <button
             type="button"
             onClick={onToggle}
-            aria-label={isOpen ? "Collapse information panel" : "Expand information panel"}
+            aria-label={isOpen ? "Collapse contextual panel" : "Expand contextual panel"}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border transition cursor-pointer"
           >
             {isOpen ? (
@@ -146,111 +137,68 @@ export function RightSidebar({ isOpen, onToggle }: RightSidebarProps) {
         </div>
 
         {isOpen ? (
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
-            <div className="p-3 rounded-lg border border-border bg-card shadow-xs space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-muted-foreground" /> Operations Status
+          <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-4 custom-scrollbar text-xs">
+            <section className="space-y-1.5 pb-3 border-b border-border/70">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Attention
                 </span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-foreground">
+                <span className="font-mono text-[11px] text-foreground font-medium">
                   {mode.toUpperCase()}
                 </span>
               </div>
-              <div className="space-y-1.5 text-xs text-foreground">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-[11px]">Active queue</span>
-                  <span className="font-mono font-medium">{disputeSummary.total} disputes</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-[11px]">Due within 24h</span>
-                  <span className="font-mono text-amber-600 dark:text-amber-400 font-medium">
-                    {disputeSummary.urgent24h} urgent
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-[11px]">Evidence ready</span>
-                  <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
-                    {disputeSummary.completeEvidence} files
-                  </span>
-                </div>
+              <div className="text-foreground font-medium text-xs">
+                {disputeSummary.total} disputes need attention
               </div>
-            </div>
+              <div className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                {disputeSummary.urgent24h} due within 24h
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {disputeSummary.completeEvidence} evidence packets assembled
+              </div>
+            </section>
 
-            <div className="p-3 rounded-lg border border-border bg-card shadow-xs space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
-                <span className="flex items-center gap-1.5">
-                  <TrendingUp className="w-3 h-3 text-muted-foreground" /> Recovery Cycle
+            <section className="space-y-1.5 pb-3 border-b border-border/70">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Recovery
                 </span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
-                  {disputeSummary.winRate} win rate
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
+                  {disputeSummary.winRate} rate
                 </span>
               </div>
-              <div className="space-y-1 text-xs">
-                <div className="text-base font-semibold font-mono text-foreground">
-                  {disputeSummary.recoveredAmount}
-                </div>
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>Exposure target:</span>
-                  <span className="font-mono text-foreground font-medium">
-                    {disputeSummary.exposureAmount}
-                  </span>
-                </div>
+              <div className="text-base font-semibold font-mono text-foreground">
+                {disputeSummary.recoveredAmount}
               </div>
-            </div>
+              <div className="text-[11px] text-muted-foreground">
+                Target exposure: <span className="font-mono text-foreground font-medium">{disputeSummary.exposureAmount}</span>
+              </div>
+            </section>
 
-            <div className="p-3 rounded-lg border border-border bg-card shadow-xs space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
-                <span className="flex items-center gap-1.5">
-                  <ShieldAlert className="w-3 h-3 text-muted-foreground" /> Risk Signals
+            <section className="space-y-1.5 pb-3 border-b border-border/70">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Risk
                 </span>
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  3DS Shift Active
+                  3DS Shift
                 </span>
               </div>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-[11px]">High risk concentration</span>
-                  <span className="text-rose-600 dark:text-rose-400 font-mono font-medium">
-                    2 cases
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-[11px]">Velocity spikes</span>
-                  <span className="text-foreground font-mono font-medium">Normal</span>
-                </div>
+              <div className="text-foreground font-medium text-xs">
+                {disputeSummary.highRiskCount} high-risk disputes
               </div>
-            </div>
+              <div className="text-[11px] text-muted-foreground">
+                {disputeSummary.velocityAlerts} velocity alerts active
+              </div>
+            </section>
 
-            <div className="p-3 rounded-lg border border-border bg-card shadow-xs space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
-                <span className="flex items-center gap-1.5">
-                  <FileCheck2 className="w-3 h-3 text-muted-foreground" /> Evidence Pipeline
-                </span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
-                  92% match
-                </span>
-              </div>
-              <div className="space-y-1.5 text-xs text-muted-foreground">
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px]">Courier POD tracking</span>
-                  <span className="font-mono text-foreground font-medium">BlueDart / Del</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px]">Tax invoices mapped</span>
-                  <span className="font-mono text-foreground font-medium">100% matched</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-lg border border-border bg-card shadow-xs space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
-                <span className="flex items-center gap-1.5">
-                  <Activity className="w-3 h-3 text-muted-foreground" /> Recent Activity
-                </span>
-              </div>
+            <section className="space-y-2">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider block">
+                Recent Activity
+              </span>
               <div className="space-y-2">
                 {recentActivities.map((act) => (
-                  <div key={act.id} className="text-xs space-y-0.5 border-b border-border/50 pb-1.5 last:border-0 last:pb-0">
+                  <div key={act.id} className="space-y-0.5 pb-1.5 border-b border-border/40 last:border-0 last:pb-0">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="font-medium text-foreground">{act.action}</span>
                       <span className="text-[10px] text-muted-foreground font-mono">{act.time}</span>
@@ -259,34 +207,17 @@ export function RightSidebar({ isOpen, onToggle }: RightSidebarProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           </div>
         ) : (
-          <div className="hidden lg:flex flex-col items-center py-4 gap-4 text-muted-foreground">
+          <div className="hidden lg:flex flex-col items-center py-3">
             <button
               type="button"
               onClick={onToggle}
-              aria-label="Expand information panel"
-              className="p-1.5 hover:text-foreground transition cursor-pointer"
+              aria-label="Expand operational context rail"
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-md transition cursor-pointer"
             >
-              <Activity className="w-4 h-4 stroke-[1.75]" />
-            </button>
-            <div className="w-px h-6 bg-border" />
-            <button
-              type="button"
-              onClick={onToggle}
-              aria-label="Expand information panel"
-              className="p-1.5 hover:text-foreground transition cursor-pointer"
-            >
-              <TrendingUp className="w-4 h-4 stroke-[1.75]" />
-            </button>
-            <button
-              type="button"
-              onClick={onToggle}
-              aria-label="Expand information panel"
-              className="p-1.5 hover:text-foreground transition cursor-pointer"
-            >
-              <FileCheck2 className="w-4 h-4 stroke-[1.75]" />
+              <ChevronLeft className="w-3.5 h-3.5 stroke-[2]" />
             </button>
           </div>
         )}

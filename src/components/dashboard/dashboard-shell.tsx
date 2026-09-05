@@ -206,13 +206,13 @@ export function DashboardShell({
         className="w-full min-h-screen bg-background text-foreground font-sans antialiased transition-colors duration-200"
         suppressHydrationWarning
       >
-        <div className="w-full min-h-screen p-3 sm:p-5 lg:p-6 flex flex-col justify-between gap-4 relative">
-          <header className="flex items-center justify-between gap-2.5 sm:gap-4 pb-3 border-b border-border">
+        <div className="w-full min-h-screen p-3.5 sm:p-5 lg:p-6 flex flex-col justify-between gap-4 relative">
+          <header className="flex items-center justify-between gap-3 sm:gap-4 pb-3 border-b border-border">
             <div className="flex items-center gap-3 lg:gap-5 shrink-0">
               <Link href="/overview" className="flex items-center gap-2 group shrink-0">
-                <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-xs transition-colors duration-200">
+                <div className="w-7.5 h-7.5 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-xs transition-colors duration-200">
                   <svg
-                    className="w-4 h-4"
+                    className="w-3.5 h-3.5"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                     xmlns="http://www.w3.org/2000/svg"
@@ -240,7 +240,7 @@ export function DashboardShell({
 
               <div className="hidden lg:flex items-center">
                 <nav
-                  className="flex items-center bg-muted/60 p-1 rounded-lg border border-border text-xs font-normal text-muted-foreground transition-all duration-200 gap-1"
+                  className="flex items-center bg-muted/50 p-1 rounded-lg border border-border text-xs font-normal text-muted-foreground transition-all duration-200 gap-1"
                   aria-label="Main Navigation"
                 >
                   {navItems.map((item) => {
@@ -259,7 +259,7 @@ export function DashboardShell({
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "px-3 py-1 rounded-md transition-all duration-150 cursor-pointer text-xs flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-foreground focus-visible:outline-hidden whitespace-nowrap",
+                          "px-3 py-1 rounded-md transition-all duration-150 cursor-pointer text-xs flex items-center gap-1.5 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden whitespace-nowrap",
                           isActive
                             ? "bg-card text-foreground font-medium shadow-xs border border-border"
                             : "hover:text-foreground hover:bg-card/50"
@@ -288,7 +288,7 @@ export function DashboardShell({
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Search dispute, RRN..."
                   aria-label="Search dispute, RRN, order ID"
-                  className="w-full pl-8 pr-3 py-1 text-xs bg-muted/50 border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-foreground focus:bg-card transition"
+                  className="w-full pl-8 pr-3 py-1 text-xs bg-muted/40 border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-foreground focus:bg-card transition"
                 />
               </div>
 
@@ -297,7 +297,7 @@ export function DashboardShell({
                   <button
                     aria-label="Notifications"
                     data-testid="notification-bell"
-                    className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg bg-card hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground relative transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-foreground"
+                    className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg bg-card hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground relative transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-1 focus-visible:ring-foreground"
                   >
                     <Bell className="w-3.5 h-3.5 stroke-[1.75]" />
                     {notifications.some((n) => n.unread) && (
@@ -369,7 +369,7 @@ export function DashboardShell({
                     id="tour-merchant-menu"
                     data-testid="user-profile-menu"
                     aria-label={`Merchant Account Menu: ${merchant.name || "Acme India Retail Ltd"}`}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-card hover:bg-muted border border-border pl-1.5 pr-2.5 py-1 rounded-lg cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-2 focus-visible:ring-foreground"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-card hover:bg-muted border border-border pl-1.5 pr-2.5 py-1 rounded-lg cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-1 focus-visible:ring-foreground"
                   >
                     <div className="w-5.5 h-5.5 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-medium tracking-tight">
                       {merchantInitials}
@@ -387,13 +387,6 @@ export function DashboardShell({
                             ? "bg-blue-500"
                             : "bg-amber-500"
                         )}
-                        title={
-                          mode === "live"
-                            ? merchant.isConnected
-                            ? "Live Connected"
-                            : "Live Mode"
-                            : "Test Sandbox Mode"
-                        }
                       />
                     </div>
                     <ChevronDown className="w-3 h-3 text-muted-foreground stroke-[2]" />
@@ -559,7 +552,7 @@ export function DashboardShell({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{
-                  duration: 0.2,
+                  duration: 0.15,
                   ease: [0.16, 1, 0.3, 1],
                 }}
                 className="flex flex-col gap-4 sm:gap-5 flex-1 w-full min-w-0"

@@ -39,14 +39,14 @@ export function ActionQueue({
     <section
       id="tour-action-queue"
       className={cn(
-        "bg-card rounded-xl p-2 sm:p-2.5 border border-border flex items-center justify-between gap-2.5 shadow-xs transition-colors duration-200",
+        "bg-card rounded-xl p-2.5 sm:p-3 border border-border flex items-center justify-between gap-3 shadow-xs transition-colors duration-200",
         className
       )}
       aria-label="Action Queue"
     >
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground px-1.5 shrink-0">
-        <ListTodo className="w-3.5 h-3.5 stroke-[2]" />
-        <span className="uppercase tracking-wide text-[11px] whitespace-nowrap">
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground px-1 shrink-0">
+        <ListTodo className="w-3.5 h-3.5 stroke-[2] text-muted-foreground" />
+        <span className="uppercase tracking-wider text-[11px] whitespace-nowrap">
           Action Queue
         </span>
       </div>
@@ -57,9 +57,9 @@ export function ActionQueue({
       >
         <Link
           href="/disputes?filter=due_today"
-          className="flex items-center gap-2 bg-muted/40 hover:bg-muted px-2.5 py-1.5 rounded-lg border border-border shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
+          className="flex items-center gap-2.5 bg-muted/30 hover:bg-muted/60 px-3 py-1.5 rounded-lg border border-border/70 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
-          <div className="w-5 h-5 rounded-md bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+          <div className="w-5 h-5 rounded-md bg-muted flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
             <Clock className="w-3 h-3 stroke-[2]" />
           </div>
           <div>
@@ -74,9 +74,9 @@ export function ActionQueue({
 
         <Link
           href="/disputes?filter=evidence_gaps"
-          className="flex items-center gap-2 bg-muted/40 hover:bg-muted px-2.5 py-1.5 rounded-lg border border-border shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
+          className="flex items-center gap-2.5 bg-muted/30 hover:bg-muted/60 px-3 py-1.5 rounded-lg border border-border/70 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
-          <div className="w-5 h-5 rounded-md bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+          <div className="w-5 h-5 rounded-md bg-muted flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
             <FileSearch className="w-3 h-3 stroke-[2]" />
           </div>
           <div>
@@ -91,7 +91,7 @@ export function ActionQueue({
 
         <Link
           href="/disputes?filter=high_risk"
-          className="flex items-center gap-2 bg-muted/40 hover:bg-muted px-2.5 py-1.5 rounded-lg border border-border shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
+          className="flex items-center gap-2.5 bg-muted/30 hover:bg-muted/60 px-3 py-1.5 rounded-lg border border-border/70 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
           <div className="w-5 h-5 rounded-md bg-muted flex items-center justify-center text-muted-foreground shrink-0">
             <ShieldAlert className="w-3 h-3 stroke-[2]" />
@@ -108,7 +108,7 @@ export function ActionQueue({
 
         <Link
           href="/disputes?filter=courier_sync"
-          className="flex items-center gap-2 bg-muted/40 hover:bg-muted px-2.5 py-1.5 rounded-lg border border-border shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
+          className="flex items-center gap-2.5 bg-muted/30 hover:bg-muted/60 px-3 py-1.5 rounded-lg border border-border/70 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
           <div className="w-5 h-5 rounded-md bg-muted flex items-center justify-center text-muted-foreground shrink-0">
             <PackageCheck className="w-3 h-3 stroke-[2]" />

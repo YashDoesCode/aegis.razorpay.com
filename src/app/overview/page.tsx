@@ -136,10 +136,10 @@ export default function OverviewPage() {
   return (
     <DashboardShell>
       <LocalErrorBoundary fallbackTitle="Dispute Operations Console Unavailable">
-        <div className="w-full space-y-4 sm:space-y-4.5">
+        <div className="w-full space-y-4 sm:space-y-5">
           <section
             id="tour-overview-header"
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-0.5"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-border/40"
           >
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-foreground">
