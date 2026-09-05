@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -11,10 +11,14 @@ import {
   ChevronRight,
   FileQuestion,
   Receipt,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LocalErrorBoundary } from "@/components/ui/error-boundary";
+import { useMerchantMode } from "@/context/merchant-mode-context";
+import { UploadStatementModal } from "@/components/dashboard/upload-statement-modal";
+import { DisputeWithRelations } from "@/lib/types/domain";
 
 interface TransactionItem {
   id: string;
@@ -29,115 +33,83 @@ interface TransactionItem {
   disputeId?: string | null;
 }
 
-const initialTransactions: TransactionItem[] = [
-  {
-    id: "ord_1064_001",
-    paymentId: "pay_1064_xyz89",
-    customerName: "Rahul Sharma",
-    customerEmail: "rahul.sharma@example.com",
-    item: "Sony WH-1000XM5 Noise-Cancelling Headphones",
-    amount: 2499900,
-    currency: "INR",
-    status: "disputed",
-    date: "2026-08-15",
-    disputeId: "disp_1064_goods_not_received",
-  },
-  {
-    id: "ord_108_002",
-    paymentId: "pay_108_abc12",
-    customerName: "Priya Patel",
-    customerEmail: "priya.patel@example.com",
-    item: "Annual SaaS Subscription - Enterprise",
-    amount: 850000,
-    currency: "INR",
-    status: "disputed",
-    date: "2026-08-18",
-    disputeId: "disp_108_beneficiary_not_credited",
-  },
-  {
-    id: "ord_4837_003",
-    paymentId: "pay_4837_card55",
-    customerName: "Vikram Malhotra",
-    customerEmail: "vikram.m@example.com",
-    item: "Apple iPad Air M2 256GB WiFi",
-    amount: 1500000,
-    currency: "INR",
-    status: "disputed",
-    date: "2026-08-20",
-    disputeId: "disp_4837_no_cardholder_auth",
-  },
-  {
-    id: "ord_1061_004",
-    paymentId: "pay_1061_ref77",
-    customerName: "Ananya Iyer",
-    customerEmail: "ananya.iyer@example.com",
-    item: "Mechanical Gaming Keyboard RGB",
-    amount: 600000,
-    currency: "INR",
-    status: "disputed",
-    date: "2026-08-21",
-    disputeId: "disp_1061_credit_not_processed",
-  },
-  {
-    id: "ord_1084_005",
-    paymentId: "pay_1084_dup99",
-    customerName: "Amit Verma",
-    customerEmail: "amit.verma@example.com",
-    item: "Ergonomic Office Chair Mesh",
-    amount: 399900,
-    currency: "INR",
-    status: "disputed",
-    date: "2026-08-22",
-    disputeId: "disp_1084_duplicate_processing",
-  },
-  {
-    id: "ord_1062_006",
-    paymentId: "pay_1062_desc33",
-    customerName: "Sneha Reddy",
-    customerEmail: "sneha.reddy@example.com",
-    item: "4K HDR Video Capture Card",
-    amount: 320000,
-    currency: "INR",
-    status: "disputed",
-    date: "2026-08-23",
-    disputeId: "disp_1062_goods_not_as_described",
-  },
-  {
-    id: "ord_paid_007",
-    paymentId: "pay_live_clean01",
-    customerName: "Karan Singh",
-    customerEmail: "karan.s@example.com",
-    item: "Logitech MX Master 3S Mouse",
-    amount: 899500,
-    currency: "INR",
-    status: "captured",
-    date: "2026-08-24",
-    disputeId: null,
-  },
-  {
-    id: "ord_paid_008",
-    paymentId: "pay_live_clean02",
-    customerName: "Deepika Rao",
-    customerEmail: "deepika.rao@example.com",
-    item: "Dell UltraSharp 27-inch 4K Monitor",
-    amount: 4299900,
-    currency: "INR",
-    status: "captured",
-    date: "2026-08-25",
-    disputeId: null,
-  },
-];
-
 export default function TransactionsPage() {
-  const [transactions] = useState<TransactionItem[]>(initialTransactions);
-  const [loading, setLoading] = useState(true);
+  const { mode } = useMerchantMode();
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  const loadTransactions = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/disputes?mode=${mode}`);
+      const json = await res.json();
+      if (json.ok && json.data && Array.isArray(json.data) && json.data.length > 0) {
+        const mapped: TransactionItem[] = json.data.map((d: DisputeWithRelations) => ({
+          id: `txn_${d.paymentId.replace(/^pay_/, "")}`,
+          paymentId: d.paymentId,
+          customerName: d.order?.customer?.name || "Customer",
+          customerEmail: d.order?.customer?.email || "customer@example.in",
+          item: d.order?.item || `Transaction ${d.paymentId}`,
+          amount: d.order?.amount || d.amount || 0,
+          currency: "INR",
+          status: d.status === "open" || d.status === "under_review" ? "disputed" : "captured",
+          date: new Date(d.createdAt).toISOString().slice(0, 10),
+          disputeId: d.id,
+        }));
+
+        setTransactions(mapped);
+      } else if (mode === "live" && json.data?.length === 0) {
+        setTransactions([]);
+      }
+    } catch (err) {
+      console.error("Failed to load live transactions:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [mode]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 150);
-    return () => clearTimeout(timer);
-  }, []);
+    let ignore = false;
+    async function init() {
+      try {
+        const res = await fetch(`/api/disputes?mode=${mode}`);
+        const json = await res.json();
+        if (!ignore && json.ok && json.data && Array.isArray(json.data) && json.data.length > 0) {
+          const mapped: TransactionItem[] = json.data.map((d: DisputeWithRelations) => ({
+            id: `txn_${d.paymentId.replace(/^pay_/, "")}`,
+            paymentId: d.paymentId,
+            customerName: d.order?.customer?.name || "Customer",
+            customerEmail: d.order?.customer?.email || "customer@example.in",
+            item: d.order?.item || `Transaction ${d.paymentId}`,
+            amount: d.order?.amount || d.amount || 0,
+            currency: "INR",
+            status: d.status === "open" || d.status === "under_review" ? "disputed" : "captured",
+            date: new Date(d.createdAt).toISOString().slice(0, 10),
+            disputeId: d.id,
+          }));
+
+          setTransactions(mapped);
+        } else if (!ignore && mode === "live" && json.data?.length === 0) {
+          setTransactions([]);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error("Failed to load live transactions:", err);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+    init();
+    return () => {
+      ignore = true;
+    };
+  }, [mode]);
 
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
@@ -156,26 +128,17 @@ export default function TransactionsPage() {
     });
   }, [transactions, search, filterStatus]);
 
-  const handleExport = () => {
+  const handleExport = (format: "csv" | "json" = "csv") => {
     try {
-      if (filtered.length === 0) {
-        toast.info("No matching transactions to export");
-        return;
-      }
-      const blob = new Blob([JSON.stringify(filtered, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `razorpay-transactions-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success(`Exported ${filtered.length} transaction records`);
-    } catch (err) {
-      console.error("Export error:", err);
+      const exportUrl = `/api/export?type=transactions&format=${format}&mode=${mode}`;
+      const link = document.createElement("a");
+      link.href = exportUrl;
+      link.setAttribute("download", `razorpay-transactions-${mode}.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success(`Exported ${filtered.length} transactions (${format.toUpperCase()})`);
+    } catch {
       toast.error("Failed to export transactions");
     }
   };
@@ -191,7 +154,7 @@ export default function TransactionsPage() {
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-ink">
+              <h1 className="text-2xl font-bold tracking-tight text-ink dark:text-white">
                 Transactions Ledger
               </h1>
               <p className="text-xs text-muted-slate mt-1 flex items-center gap-1.5 flex-wrap">
@@ -200,9 +163,19 @@ export default function TransactionsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <button
-                onClick={handleExport}
+                type="button"
+                onClick={() => setUploadModalOpen(true)}
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold transition-all h-9.5 shadow-xs cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5 text-primary" />
+                <span>Import Statement</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleExport("csv")}
                 disabled={loading || filtered.length === 0}
                 className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-container text-xs font-semibold transition-all h-9.5 shadow-xs cursor-pointer disabled:opacity-50 w-full sm:w-auto"
               >
@@ -219,8 +192,8 @@ export default function TransactionsPage() {
                 onClick={() => setFilterStatus(st)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs ${
                   filterStatus === st
-                    ? "bg-[#0D1A48] text-white"
-                    : "bg-white border border-border-subtle text-muted-slate hover:text-ink hover:bg-slate-50"
+                    ? "bg-[#0D1A48] dark:bg-blue-600 text-white"
+                    : "bg-white dark:bg-slate-800 border border-border-subtle dark:border-slate-700 text-muted-slate hover:text-ink hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}
               >
                 {st}
@@ -228,11 +201,11 @@ export default function TransactionsPage() {
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl border border-border-subtle shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-border-subtle dark:border-slate-800 shadow-xs overflow-hidden">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-border-subtle bg-slate-50/70">
+                  <tr className="border-b border-border-subtle dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50">
                     <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
                       PAYMENT ID
                     </th>
@@ -240,7 +213,7 @@ export default function TransactionsPage() {
                       DATE
                     </th>
                     <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase">
-                      CUSTOMER & ITEM
+                      CUSTOMER &amp; ITEM
                     </th>
                     <th scope="col" className="py-3 px-4 text-xs font-semibold tracking-wider text-muted-slate uppercase text-right">
                       AMOUNT
@@ -253,27 +226,27 @@ export default function TransactionsPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="text-sm text-ink bg-white divide-y divide-border-subtle">
+                <tbody className="text-sm text-ink dark:text-slate-100 bg-white dark:bg-slate-900 divide-y divide-border-subtle dark:divide-slate-800">
                   {loading ? (
                     Array.from({ length: 5 }).map((_, idx) => (
                       <tr key={idx}>
-                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-32 bg-slate-100 rounded-lg" /></td>
-                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-24 bg-slate-100 rounded-lg" /></td>
-                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-40 bg-slate-100 rounded-lg" /></td>
-                        <td className="py-3.5 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100 rounded-lg" /></td>
-                        <td className="py-3.5 px-4"><Skeleton className="h-5 w-20 bg-slate-100 rounded-full" /></td>
-                        <td className="py-3.5 px-4 text-right"><Skeleton className="h-4 w-24 ml-auto bg-slate-100 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-32 bg-slate-100 dark:bg-slate-800 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-24 bg-slate-100 dark:bg-slate-800 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-4 w-40 bg-slate-100 dark:bg-slate-800 rounded-lg" /></td>
+                        <td className="py-3.5 px-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-100 dark:bg-slate-800 rounded-lg" /></td>
+                        <td className="py-3.5 px-4"><Skeleton className="h-5 w-20 bg-slate-100 dark:bg-slate-800 rounded-full" /></td>
+                        <td className="py-3.5 px-4 text-right"><Skeleton className="h-4 w-24 ml-auto bg-slate-100 dark:bg-slate-800 rounded-lg" /></td>
                       </tr>
                     ))
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-muted-slate">
                         <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
-                          <div className="p-3 bg-slate-100 rounded-2xl text-muted-slate">
+                          <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-muted-slate">
                             <FileQuestion className="w-6 h-6" />
                           </div>
                           <div>
-                            <p className="font-semibold text-ink text-sm">
+                            <p className="font-semibold text-ink dark:text-white text-sm">
                               No transactions found
                             </p>
                             <p className="text-xs text-muted-slate mt-0.5">
@@ -296,30 +269,30 @@ export default function TransactionsPage() {
                     filtered.map((tx) => (
                       <tr
                         key={tx.id}
-                        className="hover:bg-slate-50/80 transition-colors"
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                       >
                         <td className="py-3.5 px-4 font-mono font-medium text-xs text-primary">
                           {tx.paymentId}
                         </td>
                         <td className="py-3.5 px-4 text-muted-slate text-xs font-mono tabular-nums">{tx.date}</td>
                         <td className="py-3.5 px-4">
-                          <div className="font-semibold text-xs text-ink">
+                          <div className="font-semibold text-xs text-ink dark:text-white">
                             {tx.customerName}
                           </div>
                           <div className="text-xs text-muted-slate truncate max-w-xs">
                             {tx.item}
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 font-mono tabular-nums font-bold text-xs text-right text-ink">
+                        <td className="py-3.5 px-4 font-mono tabular-nums font-bold text-xs text-right text-ink dark:text-white">
                           ₹{((tx.amount || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="py-3.5 px-4">
                           {tx.status === "captured" ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
                               CAPTURED
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 text-[11px] font-bold border border-rose-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 text-[11px] font-bold border border-rose-200 dark:border-rose-800">
                               DISPUTED
                             </span>
                           )}
@@ -346,19 +319,19 @@ export default function TransactionsPage() {
               </table>
             </div>
 
-            <div className="px-5 py-3.5 border-t border-border-subtle flex justify-between items-center bg-white">
+            <div className="px-5 py-3.5 border-t border-border-subtle dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
               <span className="text-xs text-muted-slate font-mono tabular-nums">
                 Showing {filtered.length} of {transactions.length} payments
               </span>
               <div className="flex gap-1">
                 <button
-                  className="p-1.5 rounded-lg text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  className="p-1.5 rounded-lg text-muted-slate hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                   disabled
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
-                  className="p-1.5 rounded-lg text-muted-slate hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  className="p-1.5 rounded-lg text-muted-slate hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                   disabled
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -366,6 +339,12 @@ export default function TransactionsPage() {
               </div>
             </div>
           </div>
+
+          <UploadStatementModal
+            open={uploadModalOpen}
+            onOpenChange={setUploadModalOpen}
+            onUploadSuccess={loadTransactions}
+          />
         </motion.div>
       </LocalErrorBoundary>
     </DashboardShell>

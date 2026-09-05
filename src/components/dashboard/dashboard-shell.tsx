@@ -196,28 +196,16 @@ export function DashboardShell({
           <header className="flex items-center justify-between gap-2.5 sm:gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3 lg:gap-4.5 shrink-0">
               <Link href="/overview" className="flex items-center gap-2.5 group shrink-0">
-                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-slate-950 dark:bg-blue-600 flex items-center justify-center text-white shadow-xs group-hover:bg-primary transition-colors duration-200">
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-[#305EFF] flex items-center justify-center text-white shadow-xs group-hover:bg-[#244BCC] transition-colors duration-200">
                   <svg
-                    className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white"
+                    className="w-4.5 h-4.5 text-white"
                     viewBox="0 0 24 24"
-                    fill="none"
+                    fill="currentColor"
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M12 2L4 5V11.5C4 16.5 7.4 21.1 12 22C16.6 21.1 20 16.5 20 11.5V5L12 2Z"
+                      d="M13.5 2H6.5L3 14H9.8L7 22L17.8 9.5H11.2L13.5 2Z"
                       fill="currentColor"
-                      fillOpacity="0.2"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M14.5 7.5L9.5 16.5M10 7.5H15M9 16.5H14"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
                     />
                   </svg>
                 </div>

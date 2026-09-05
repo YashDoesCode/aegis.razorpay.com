@@ -42,20 +42,16 @@ export function WelcomeModal() {
           </button>
 
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-11 h-11 rounded-2xl bg-slate-950 dark:bg-blue-600 text-white flex items-center justify-center shadow-md">
+            <div className="w-11 h-11 rounded-2xl bg-[#305EFF] text-white flex items-center justify-center shadow-md">
               <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.75"
+                className="w-5.5 h-5.5 text-white"
                 viewBox="0 0 24 24"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <polygon
+                <path
+                  d="M13.5 2H6.5L3 14H9.8L7 22L17.8 9.5H11.2L13.5 2Z"
                   fill="currentColor"
-                  fillOpacity="0.2"
-                  points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
                 />
               </svg>
             </div>

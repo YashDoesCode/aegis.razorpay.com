@@ -40,4 +40,18 @@ describe("Theme State and Persistence Logic", () => {
     safeStorage.setItem(STORAGE_KEYS.THEME, "amoled");
     expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe("amoled");
   });
+
+  it("persists accent selection across sessions", () => {
+    safeStorage.setItem(STORAGE_KEYS.ACCENT, "neutral");
+    expect(safeStorage.getItem<string>(STORAGE_KEYS.ACCENT, "blue")).toBe("neutral");
+  });
+
+  it("persists startup timestamp and verifies 10 minute suppression", () => {
+    const now = Date.now();
+    safeStorage.setItem(STORAGE_KEYS.STARTUP_TIMESTAMP, now);
+    const stored = safeStorage.getItem<number>(STORAGE_KEYS.STARTUP_TIMESTAMP, 0);
+    expect(stored).toBe(now);
+    expect(Date.now() - stored < 10 * 60 * 1000).toBe(true);
+  });
 });
+

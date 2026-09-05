@@ -33,7 +33,7 @@ export default function SettingsPage() {
     disconnectAccount,
   } = useMerchantMode();
 
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, accent, setAccent } = useTheme();
   const { resetOnboarding } = useOnboarding();
 
   const [minWinnabilityScore, setMinWinnabilityScore] = useState(80);
@@ -203,6 +203,80 @@ export default function SettingsPage() {
                   </button>
                 );
               })}
+            </div>
+
+            <div className="pt-3 border-t border-slate-200/70 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  Accent Color Profile
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Controls primary buttons, focus rings, and active state highlights
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAccent("blue");
+                    toast.success("Accent set to Razorpay Blue");
+                  }}
+                  className={cn(
+                    "p-3 rounded-xl border text-left flex items-center justify-between transition cursor-pointer",
+                    accent === "blue"
+                      ? "bg-white dark:bg-slate-800 border-blue-600 ring-2 ring-blue-500/20 shadow-xs"
+                      : "bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-[#305EFF] border border-blue-400" />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                        Razorpay Blue
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Default corporate fintech indigo (#305EFF)
+                      </span>
+                    </div>
+                  </div>
+                  {accent === "blue" && (
+                    <div className="w-5 h-5 rounded-full bg-[#305EFF] text-white flex items-center justify-center">
+                      <Check className="w-3 h-3 stroke-[2.5]" />
+                    </div>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAccent("neutral");
+                    toast.success("Accent set to Neutral Slate");
+                  }}
+                  className={cn(
+                    "p-3 rounded-xl border text-left flex items-center justify-between transition cursor-pointer",
+                    accent === "neutral"
+                      ? "bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-100 ring-2 ring-slate-500/20 shadow-xs"
+                      : "bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-slate-900 dark:bg-slate-100 border border-slate-700" />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                        Neutral Slate
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        High-contrast monochrome minimal palette
+                      </span>
+                    </div>
+                  </div>
+                  {accent === "neutral" && (
+                    <div className="w-5 h-5 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center">
+                      <Check className="w-3 h-3 stroke-[2.5]" />
+                    </div>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 

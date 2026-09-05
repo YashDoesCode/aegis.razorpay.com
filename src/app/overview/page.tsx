@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   RotateCw,
-  ArrowUpRight,
+  Download,
   SlidersHorizontal,
   ChevronDown,
   AlertCircle,
+  Upload,
 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { HealthScore } from "@/components/dashboard/health-score";
@@ -19,6 +20,7 @@ import { OperationalDeepDive } from "@/components/dashboard/operational-deep-div
 import { WinnabilityDistribution } from "@/components/dashboard/winnability-distribution";
 import { FraudRiskCard } from "@/components/dashboard/fraud-risk-card";
 import { SignalsEvidenceCard } from "@/components/dashboard/signals-evidence-card";
+import { UploadStatementModal } from "@/components/dashboard/upload-statement-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LocalErrorBoundary } from "@/components/ui/error-boundary";
 import { useMerchantMode } from "@/context/merchant-mode-context";
 import { toast } from "sonner";
+import { DashboardOverviewData, TimeRangeOption } from "@/lib/dashboard/service";
 
 export default function OverviewPage() {
   const router = useRouter();
@@ -37,53 +40,53 @@ export default function OverviewPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<string>("All Disputes");
+  const [selectedRange, setSelectedRange] = useState<TimeRangeOption>("30D");
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
-  const [stats, setStats] = useState({
-    totalCount: 6,
-    totalPendingAmount: 6169800,
-    high: { count: 4, amount: 5449900 },
-    needsEvidence: { count: 0, amount: 0 },
-    low: { count: 2, amount: 719900 },
-  });
+  const [data, setData] = useState<DashboardOverviewData | null>(null);
 
-  const handleManualRefresh = async () => {
+  const fetchOverview = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     try {
-      setRefreshing(true);
-      setError(null);
-      const res = await fetch(`/api/disputes?mode=${mode}`);
+      const res = await fetch(`/api/dashboard/overview?mode=${mode}&range=${selectedRange}`);
       const json = await res.json();
-      if (json.ok && json.stats) {
-        setStats(json.stats);
-        toast.success("Dispute operations data synced");
-      } else if (!json.ok) {
-        setError(json.error || "Failed to load overview metrics");
+      if (json.ok && json.data) {
+        setData(json.data);
+        setError(null);
+        if (isRefresh) {
+          toast.success("Dispute operations data synced");
+        }
+      } else {
+        const msg = json.error || "Failed to load overview metrics";
+        setError(msg);
       }
     } catch (err) {
-      console.error("Error refreshing stats:", err);
-      setError("Unable to connect to dispute defense metrics");
+      console.error("Error loading overview:", err);
+      setError("Unable to connect to dispute defense aggregation engine");
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [mode, selectedRange]);
 
   useEffect(() => {
     let ignore = false;
-    async function init() {
+    async function load() {
       try {
-        setError(null);
-        const res = await fetch(`/api/disputes?mode=${mode}`);
+        const res = await fetch(`/api/dashboard/overview?mode=${mode}&range=${selectedRange}`);
         const json = await res.json();
         if (!ignore) {
-          if (json.ok && json.stats) {
-            setStats(json.stats);
-          } else if (!json.ok) {
+          if (json.ok && json.data) {
+            setData(json.data);
+            setError(null);
+          } else {
             setError(json.error || "Failed to load overview metrics");
           }
         }
       } catch (err) {
         if (!ignore) {
-          console.error("Error loading stats:", err);
-          setError("Unable to connect to dispute defense metrics");
+          console.error("Error loading overview:", err);
+          setError("Unable to connect to dispute defense aggregation engine");
         }
       } finally {
         if (!ignore) {
@@ -91,50 +94,28 @@ export default function OverviewPage() {
         }
       }
     }
-    init();
+    load();
     return () => {
       ignore = true;
     };
-  }, [mode]);
+  }, [mode, selectedRange]);
 
-  const totalExposureINR = React.useMemo(() => {
-    if (stats.totalPendingAmount && stats.totalPendingAmount > 0) {
-      return `₹${((stats.totalPendingAmount) / 100).toLocaleString("en-IN", {
-        maximumFractionDigits: 0,
-      })}`;
+  const handleExport = (format: "csv" | "json" | "pdf" | "docx" = "csv") => {
+    try {
+      toast.info(`Preparing ${format.toUpperCase()} export package...`);
+      const exportUrl = `/api/export?type=overview&format=${format}&mode=${mode}`;
+      const link = document.createElement("a");
+      link.href = exportUrl;
+      link.setAttribute("download", `razorpay-aegis-overview-${mode}.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => {
+        toast.success(`Dispute operations report (${format.toUpperCase()}) downloaded`);
+      }, 500);
+    } catch {
+      toast.error("Failed to generate export file");
     }
-    return "₹14,28,400";
-  }, [stats.totalPendingAmount]);
-
-  const recoveredINR = React.useMemo(() => {
-    if (stats.high.amount && stats.high.amount > 0) {
-      return `₹${((stats.high.amount) / 100).toLocaleString("en-IN", {
-        maximumFractionDigits: 0,
-      })}`;
-    }
-    return "₹8,95,200";
-  }, [stats.high.amount]);
-
-  const winRateNumber = React.useMemo(() => {
-    if (stats.totalCount > 0) {
-      return Math.round((stats.high.count / stats.totalCount) * 100);
-    }
-    return 71;
-  }, [stats.totalCount, stats.high.count]);
-
-  const healthScoreValue = React.useMemo(() => {
-    if (stats.totalCount > 0) {
-      const calculated = Math.round(50 + (winRateNumber * 0.35));
-      return Math.min(96, Math.max(60, calculated));
-    }
-    return 76;
-  }, [stats.totalCount, winRateNumber]);
-
-  const handleExport = () => {
-    toast.info("Exporting dispute operations summary report (CSV)...");
-    setTimeout(() => {
-      toast.success("Dispute operations summary downloaded");
-    }, 600);
   };
 
   const handleFilterSelect = (filter: string) => {
@@ -171,7 +152,7 @@ export default function OverviewPage() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-              <HealthScore score={healthScoreValue} />
+              <HealthScore score={data?.healthScore ?? 80} />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -224,7 +205,17 @@ export default function OverviewPage() {
 
               <button
                 type="button"
-                onClick={handleManualRefresh}
+                onClick={() => setUploadModalOpen(true)}
+                aria-label="Upload Statement"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition shadow-xs cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5 text-primary" />
+                <span>Upload Statement</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fetchOverview(true)}
                 disabled={refreshing}
                 aria-label="Refresh Data"
                 className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
@@ -236,14 +227,46 @@ export default function OverviewPage() {
                 />
               </button>
 
-              <button
-                type="button"
-                onClick={handleExport}
-                aria-label="Export Overview"
-                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
-              >
-                <ArrowUpRight className="w-3.5 h-3.5 stroke-[2]" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Export Overview Report"
+                    className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+                  >
+                    <Download className="w-3.5 h-3.5 stroke-[2]" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-44 p-1.5 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs"
+                >
+                  <DropdownMenuItem
+                    onClick={() => handleExport("csv")}
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                  >
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleExport("json")}
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                  >
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleExport("pdf")}
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                  >
+                    Export as PDF (Printable)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleExport("docx")}
+                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                  >
+                    Export as DOCX
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </section>
 
@@ -257,7 +280,7 @@ export default function OverviewPage() {
                 </div>
               </div>
               <button
-                onClick={handleManualRefresh}
+                onClick={() => fetchOverview(true)}
                 className="px-3 py-1 rounded-full bg-rose-600 text-white font-semibold hover:bg-rose-700 transition cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
               >
                 Retry Sync
@@ -278,9 +301,9 @@ export default function OverviewPage() {
                 </div>
               ) : (
                 <RecoveryMetric
-                  amount={stats.high.amount}
-                  displayAmount="₹4.8L"
-                  trendPercent={12.4}
+                  amount={data?.recoveredAmountPaise ?? 0}
+                  displayAmount={data?.recoveredAmountFormatted ?? "₹0"}
+                  trendPercent={data?.recoveryTrendPercent ?? 18.2}
                 />
               )}
 
@@ -299,32 +322,39 @@ export default function OverviewPage() {
                 </div>
               ) : (
                 <OperationalMetricGrid
-                  openQueueCount={stats.totalCount > 0 ? 128 : 0}
-                  highRiskCount={23}
-                  wonCount={91}
-                  winRatePercent={winRateNumber}
-                  evidenceGapsCount={17}
+                  openQueueCount={data?.openQueueCount ?? 0}
+                  highRiskCount={data?.highRiskCount ?? 0}
+                  wonCount={data?.wonCount ?? 0}
+                  winRatePercent={data?.winRatePercent ?? 0}
+                  evidenceGapsCount={data?.evidenceGapsCount ?? 0}
                 />
               )}
             </div>
 
             <div className="lg:col-span-8 flex">
               <ExposureRecoveryChart
-                totalExposure={totalExposureINR}
-                recoveredAmount={recoveredINR}
+                totalExposure={data?.totalExposureFormatted ?? "₹0"}
+                recoveredAmount={data?.recoveredAmountFormatted ?? "₹0"}
+                timeSeries={data?.timeSeries ?? []}
+                selectedRange={selectedRange}
+                onRangeChange={(r) => setSelectedRange(r)}
                 className="w-full"
               />
             </div>
           </section>
 
           <ActionQueue
-            dueTodayCount={12}
-            evidenceGapsCount={8}
-            highRiskCount={4}
-            courierEventsCount={3}
+            dueTodayCount={data?.actionQueue.dueTodayCount ?? 0}
+            evidenceGapsCount={data?.actionQueue.evidenceGapsCount ?? 0}
+            highRiskCount={data?.actionQueue.highRiskCount ?? 0}
+            courierEventsCount={data?.actionQueue.courierEventsCount ?? 0}
           />
 
-          <OperationalDeepDive />
+          <OperationalDeepDive
+            reasonCodeStats={data?.reasonCodeStats ?? []}
+            recentAuditFeed={data?.recentAuditFeed ?? []}
+            courierPerformance={data?.courierPerformance ?? []}
+          />
 
           <section
             id="tour-winnability-risk"
@@ -332,32 +362,38 @@ export default function OverviewPage() {
           >
             <div className="lg:col-span-5 flex">
               <WinnabilityDistribution
-                strongPercent={64}
-                moderatePercent={21}
-                weakPercent={10}
-                unknownPercent={5}
-                confidenceScore={85}
+                strongPercent={data?.winnabilityDistribution.strongPercent ?? 0}
+                moderatePercent={data?.winnabilityDistribution.moderatePercent ?? 0}
+                weakPercent={data?.winnabilityDistribution.weakPercent ?? 0}
+                unknownPercent={data?.winnabilityDistribution.unknownPercent ?? 0}
+                confidenceScore={data?.winnabilityDistribution.confidenceScore ?? 80}
                 className="w-full"
               />
             </div>
 
             <div className="lg:col-span-3 flex">
               <FraudRiskCard
-                score={72}
-                statusText="Velocity spike detected in card testing batches"
-                stabilityDelta={4}
+                score={data?.fraudSummary.score ?? 50}
+                statusText={data?.fraudSummary.statusText ?? "Clean transaction velocity"}
+                stabilityDelta={data?.fraudSummary.stabilityDelta ?? 4}
                 className="w-full"
               />
             </div>
 
             <div className="lg:col-span-4 flex">
               <SignalsEvidenceCard
-                matchedDeliveryRate={84}
-                readinessBoost={18}
+                matchedDeliveryRate={data?.signalsEvidence.matchedDeliveryRate ?? 85}
+                readinessBoost={data?.signalsEvidence.readinessBoost ?? 18}
                 className="w-full"
               />
             </div>
           </section>
+
+          <UploadStatementModal
+            open={uploadModalOpen}
+            onOpenChange={setUploadModalOpen}
+            onUploadSuccess={() => fetchOverview(true)}
+          />
         </div>
       </LocalErrorBoundary>
     </DashboardShell>
