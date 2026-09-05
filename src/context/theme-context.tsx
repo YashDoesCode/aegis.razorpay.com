@@ -44,7 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [theme, setThemeState] = useState<ThemeMode>(() => {
-    return safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light");
+    return safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "dark");
   });
 
   const [accent, setAccentState] = useState<AccentMode>(() => {

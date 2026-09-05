@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useStartupPlayback } from "./useStartupPlayback";
 import { StartupOverlay } from "./StartupOverlay";
 import { StartupVideo } from "./StartupVideo";
+import { useTheme } from "@/context/theme-context";
 
 export function StartupExperience() {
   const {
@@ -16,6 +17,10 @@ export function StartupExperience() {
     handleVideoEnded,
     handleVideoError,
   } = useStartupPlayback();
+
+  const { theme } = useTheme();
+  const isDark = theme === "dark" || theme === "amoled";
+  const videoSrc = isDark ? "/Intro (B&W).mp4" : "/Intro.mp4";
 
   return (
     <AnimatePresence mode="wait">
@@ -32,6 +37,7 @@ export function StartupExperience() {
           <StartupOverlay
             startupState={startupState}
             onUserGesture={handleUserGesture}
+            isDark={isDark}
           >
             <StartupVideo
               ref={videoRef}
@@ -39,6 +45,8 @@ export function StartupExperience() {
               onCanPlay={attemptAutoplay}
               onEnded={handleVideoEnded}
               onError={handleVideoError}
+              videoSrc={videoSrc}
+              isDark={isDark}
             />
           </StartupOverlay>
         </motion.div>

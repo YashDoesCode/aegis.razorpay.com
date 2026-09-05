@@ -26,9 +26,9 @@ describe("Theme, Accent, Sidebar, and Cache State Logic", () => {
     delete (globalThis as unknown as { window?: unknown }).window;
   });
 
-  it("defaults to light theme when uninitialized", () => {
-    const initialTheme = safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light");
-    expect(initialTheme).toBe("light");
+  it("defaults to dark theme when uninitialized", () => {
+    const initialTheme = safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "dark");
+    expect(initialTheme).toBe("dark");
   });
 
   it("defaults to neutral (monochrome) accent when uninitialized", () => {
@@ -38,12 +38,12 @@ describe("Theme, Accent, Sidebar, and Cache State Logic", () => {
 
   it("persists dark theme selection across sessions", () => {
     safeStorage.setItem(STORAGE_KEYS.THEME, "dark");
-    expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe("dark");
+    expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "dark")).toBe("dark");
   });
 
   it("persists amoled theme selection across sessions", () => {
     safeStorage.setItem(STORAGE_KEYS.THEME, "amoled");
-    expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe("amoled");
+    expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "dark")).toBe("amoled");
   });
 
   it("persists razorpay blue accent selection", () => {
@@ -60,7 +60,7 @@ describe("Theme, Accent, Sidebar, and Cache State Logic", () => {
         safeStorage.setItem(STORAGE_KEYS.THEME, theme);
         safeStorage.setItem(STORAGE_KEYS.ACCENT, accent);
 
-        expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe(theme);
+        expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "dark")).toBe(theme);
         expect(safeStorage.getItem<AccentMode>(STORAGE_KEYS.ACCENT, "neutral")).toBe(accent);
       }
     }
@@ -88,7 +88,7 @@ describe("Theme, Accent, Sidebar, and Cache State Logic", () => {
     const result = safeStorage.clearLocalData();
     expect(result).toBe(true);
 
-    expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe("light");
+    expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "dark")).toBe("dark");
     expect(safeStorage.getItem<AccentMode>(STORAGE_KEYS.ACCENT, "neutral")).toBe("neutral");
     expect(safeStorage.getItem<boolean>(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, false)).toBe(false);
     expect(safeStorage.getItem<boolean>(STORAGE_KEYS.PWA_DISMISSED, false)).toBe(false);

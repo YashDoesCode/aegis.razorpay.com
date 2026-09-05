@@ -58,7 +58,7 @@ export default function SettingsPage() {
 
   const handleClearLocalCache = () => {
     safeStorage.clearLocalData();
-    setTheme("light");
+    setTheme("dark");
     setAccent("neutral");
     setShowClearConfirm(false);
     toast.success("Local preferences and application cache reset");

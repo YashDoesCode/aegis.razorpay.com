@@ -9,6 +9,7 @@ interface StartupVideoProps {
   onEnded: () => void;
   onError: (e: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
   videoSrc?: string;
+  isDark?: boolean;
 }
 
 export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
@@ -18,15 +19,16 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
       onCanPlay,
       onEnded,
       onError,
-      videoSrc = "/Intro.mp4",
+      videoSrc = "/Intro (B&W).mp4",
+      isDark = true,
     },
     ref
   ) => {
     return (
       <div
-        className={`fixed inset-0 z-50 w-screen h-screen flex items-center justify-center bg-white dark:bg-slate-950 overflow-hidden transition-opacity duration-500 ${
-          startupState === "FADING_OUT" ? "opacity-0" : "opacity-100"
-        }`}
+        className={`fixed inset-0 z-50 w-screen h-screen flex items-center justify-center overflow-hidden transition-opacity duration-500 ${
+          isDark ? "bg-[#000000]" : "bg-white"
+        } ${startupState === "FADING_OUT" ? "opacity-0" : "opacity-100"}`}
       >
         <video
           ref={ref}
@@ -40,7 +42,9 @@ export const StartupVideo = forwardRef<HTMLVideoElement, StartupVideoProps>(
           onCanPlay={onCanPlay}
           onEnded={onEnded}
           onError={onError}
-          className="w-full h-full object-cover sm:object-contain pointer-events-none select-none transform-gpu bg-white dark:bg-slate-950"
+          className={`w-full h-full object-contain pointer-events-none select-none transform-gpu ${
+            isDark ? "bg-[#000000]" : "bg-white"
+          }`}
         />
       </div>
     );

@@ -7,12 +7,14 @@ interface StartupOverlayProps {
   startupState: StartupState;
   onUserGesture: (e?: React.SyntheticEvent | Event) => void;
   children: React.ReactNode;
+  isDark?: boolean;
 }
 
 export function StartupOverlay({
   startupState,
   onUserGesture,
   children,
+  isDark = true,
 }: StartupOverlayProps) {
   const overlayRef = useRef<HTMLDivElement | null>(null);
 
@@ -36,9 +38,15 @@ export function StartupOverlay({
           onUserGesture(e);
         }
       }}
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-white text-slate-900 select-none outline-none"
+      className={`fixed inset-0 z-[99999] flex items-center justify-center select-none outline-none ${
+        isDark ? "bg-[#000000] text-white" : "bg-white text-slate-900"
+      }`}
     >
-      <div className="absolute inset-0 z-0 flex items-center justify-center bg-white overflow-hidden">
+      <div
+        className={`absolute inset-0 z-0 flex items-center justify-center overflow-hidden ${
+          isDark ? "bg-[#000000]" : "bg-white"
+        }`}
+      >
         {children}
       </div>
     </div>
