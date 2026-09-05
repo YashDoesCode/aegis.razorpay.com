@@ -17,9 +17,6 @@ import { OperationalMetricGrid } from "@/components/dashboard/operational-metric
 import { ExposureRecoveryChart } from "@/components/dashboard/exposure-recovery-chart";
 import { ActionQueue } from "@/components/dashboard/action-queue";
 import { OperationalDeepDive } from "@/components/dashboard/operational-deep-dive";
-import { WinnabilityDistribution } from "@/components/dashboard/winnability-distribution";
-import { FraudRiskCard } from "@/components/dashboard/fraud-risk-card";
-import { SignalsEvidenceCard } from "@/components/dashboard/signals-evidence-card";
 import { UploadStatementModal } from "@/components/dashboard/upload-statement-modal";
 import {
   DropdownMenu,
@@ -60,185 +57,204 @@ export default function OverviewPage() {
         const msg = json.error || "Failed to load overview metrics";
         setError(msg);
       }
-    } catch (err) {
-      console.error("Error loading overview:", err);
-      setError("Unable to connect to dispute defense aggregation engine");
+    } catch {
+      setError("Network or server connection failed");
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      if (isRefresh) setRefreshing(false);
     }
   }, [mode, selectedRange]);
 
   useEffect(() => {
-    let ignore = false;
-    async function load() {
-      try {
-        const res = await fetch(`/api/dashboard/overview?mode=${mode}&range=${selectedRange}`);
-        const json = await res.json();
-        if (!ignore) {
-          if (json.ok && json.data) {
-            setData(json.data);
-            setError(null);
-          } else {
-            setError(json.error || "Failed to load overview metrics");
-          }
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error("Error loading overview:", err);
-          setError("Unable to connect to dispute defense aggregation engine");
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    }
-    load();
-    return () => {
-      ignore = true;
-    };
-  }, [mode, selectedRange]);
+    fetchOverview(false);
+  }, [fetchOverview]);
 
-  const handleExport = (format: "csv" | "json" | "pdf" | "docx" = "csv") => {
-    try {
-      toast.info(`Preparing ${format.toUpperCase()} export package...`);
-      const exportUrl = `/api/export?type=overview&format=${format}&mode=${mode}`;
-      const link = document.createElement("a");
-      link.href = exportUrl;
-      link.setAttribute("download", `razorpay-aegis-overview-${mode}.${format}`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => {
-        toast.success(`Dispute operations report (${format.toUpperCase()}) downloaded`);
-      }, 500);
-    } catch {
-      toast.error("Failed to generate export file");
-    }
+  const handleManualRefresh = () => {
+    fetchOverview(true);
   };
 
-  const handleFilterSelect = (filter: string) => {
-    setFilterState(filter);
-    if (filter === "Open Queue") {
-      router.push("/disputes?filter=open");
-    } else if (filter === "High-Risk (<24h SLA)") {
+  const handleFilterSelect = (filterName: string) => {
+    setFilterState(filterName);
+    if (filterName === "High Risk Only") {
       router.push("/disputes?filter=high_risk");
-    } else if (filter === "Evidence Gaps") {
-      router.push("/disputes?filter=needs_evidence");
-    } else if (filter === "Won Disputes") {
+    } else if (filterName === "Action Required") {
+      router.push("/disputes?filter=action_required");
+    } else if (filterName === "Under Review") {
+      router.push("/disputes?filter=under_review");
+    } else if (filterName === "Won Disputes") {
       router.push("/disputes?filter=won");
     } else {
       router.push("/disputes");
     }
   };
 
+  const handleExport = async (format: "csv" | "json" | "pdf" | "docx") => {
+    try {
+      toast.info(`Preparing ${format.toUpperCase()} export...`);
+      const res = await fetch(`/api/export?format=${format}&mode=${mode}&range=${selectedRange}`);
+      if (!res.ok) {
+        throw new Error("Export generation failed");
+      }
+
+      if (format === "csv") {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `razorpay-aegis-disputes-${mode}-${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else if (format === "json") {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `razorpay-aegis-disputes-${mode}-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else if (format === "docx") {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `razorpay-aegis-summary-${mode}-${Date.now()}.doc`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else if (format === "pdf") {
+        const html = await res.text();
+        const printWindow = window.open("", "_blank");
+        if (printWindow) {
+          printWindow.document.write(html);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => {
+            printWindow.print();
+          }, 300);
+        }
+      }
+
+      toast.success(`Dispute operations report (${format.toUpperCase()}) downloaded`);
+    } catch {
+      toast.error("Failed to generate export file");
+    }
+  };
+
   return (
     <DashboardShell>
       <LocalErrorBoundary fallbackTitle="Dispute Operations Console Unavailable">
-        <div className="w-full space-y-4 sm:space-y-5">
-          <section
-            id="tour-overview-header"
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-border/40"
-          >
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                Dispute Operations Console
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Real-time liability management, winnability analysis, and automated evidence pipelines.
-              </p>
+        <div className="space-y-4 w-full">
+          <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-border/60">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-primary rounded-full shrink-0" />
+              <div>
+                <h1 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">
+                  Dispute Operations Console
+                </h1>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Autonomous winnability modeling, proof-of-delivery sync &amp; multi-channel representment
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <HealthScore score={data?.healthScore ?? 80} />
+            <div className="flex items-center flex-wrap gap-2">
+              <HealthScore
+                score={data?.healthScore ?? 94}
+                activeShiftProtection={data?.activeProtection ?? true}
+              />
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label={`Filter disputes: ${filterState}`}
-                    className="flex items-center gap-1.5 bg-card hover:bg-muted border border-border px-2.5 py-1 rounded-lg text-xs font-medium text-foreground transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-1 focus-visible:ring-foreground"
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>{filterState}</span>
-                    <ChevronDown className="w-3 h-3 text-muted-foreground stroke-[2]" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-48 p-1 rounded-xl shadow-lg border border-border bg-card text-xs"
-                >
-                  <DropdownMenuItem
-                    onClick={() => handleFilterSelect("All Disputes")}
-                    className="rounded-lg px-2.5 py-1.5 cursor-pointer font-medium hover:bg-muted"
-                  >
-                    All Disputes
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleFilterSelect("Open Queue")}
-                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted"
-                  >
-                    Open Queue
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleFilterSelect("High-Risk (<24h SLA)")}
-                    className="rounded-lg px-2.5 py-1.5 cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-muted"
-                  >
-                    High-Risk (&lt;24h SLA)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleFilterSelect("Evidence Gaps")}
-                    className="rounded-lg px-2.5 py-1.5 cursor-pointer text-amber-600 dark:text-amber-400 hover:bg-muted"
-                  >
-                    Evidence Gaps
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleFilterSelect("Won Disputes")}
-                    className="rounded-lg px-2.5 py-1.5 cursor-pointer text-emerald-600 dark:text-emerald-400 hover:bg-muted"
-                  >
-                    Won Disputes
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <button
+                type="button"
+                onClick={handleManualRefresh}
+                disabled={refreshing}
+                aria-label="Synchronize Gateway Data"
+                className="px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground bg-card hover:bg-muted border border-border rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RotateCw
+                  className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-primary" : ""}`}
+                />
+                <span className="hidden sm:inline">Sync Data</span>
+              </button>
 
               <button
                 type="button"
                 onClick={() => setUploadModalOpen(true)}
-                aria-label="Upload Statement"
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-card hover:bg-muted border border-border text-xs font-medium text-foreground transition shadow-xs cursor-pointer"
+                aria-label="Upload Settlement or Dispute Statement"
+                className="px-2.5 py-1 text-xs font-medium text-primary hover:text-primary-foreground hover:bg-primary bg-primary/10 border border-primary/20 rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer"
               >
-                <Upload className="w-3.5 h-3.5 text-muted-foreground" />
+                <Upload className="w-3.5 h-3.5" />
                 <span>Upload Statement</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fetchOverview(true)}
-                disabled={refreshing}
-                aria-label="Refresh Data"
-                className="w-7.5 h-7.5 rounded-lg bg-card hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
-              >
-                <RotateCw
-                  className={`w-3.5 h-3.5 stroke-[1.75] ${
-                    refreshing ? "animate-spin text-foreground" : ""
-                  }`}
-                />
               </button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    aria-label="Export Overview Report"
-                    className="w-7.5 h-7.5 rounded-lg bg-card hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition shadow-xs cursor-pointer focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
+                    aria-label="Filter Disputes Context"
+                    className="px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground bg-card hover:bg-muted border border-border rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5 stroke-[2]" />
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    <span>{filterState}</span>
+                    <ChevronDown className="w-3 h-3 ml-0.5 opacity-60" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-44 p-1 rounded-xl shadow-lg border border-border bg-card text-xs"
+                  className="w-48 text-xs p-1 rounded-xl shadow-lg border border-border bg-card"
+                >
+                  <DropdownMenuItem
+                    onClick={() => handleFilterSelect("All Disputes")}
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
+                  >
+                    All Active Disputes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterSelect("Action Required")}
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
+                  >
+                    Action Required (Urgent)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterSelect("High Risk Only")}
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
+                  >
+                    High Risk Flagged
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterSelect("Under Review")}
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
+                  >
+                    Under Gateway Review
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterSelect("Won Disputes")}
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
+                  >
+                    Successfully Won
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Download Audit or Rebuttal Reports"
+                    className="px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground bg-card hover:bg-muted border border-border rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Export</span>
+                    <ChevronDown className="w-3 h-3 ml-0.5 opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-44 text-xs p-1 rounded-xl shadow-lg border border-border bg-card"
                 >
                   <DropdownMenuItem
                     onClick={() => handleExport("csv")}
@@ -354,39 +370,6 @@ export default function OverviewPage() {
             recentAuditFeed={data?.recentAuditFeed ?? []}
             courierPerformance={data?.courierPerformance ?? []}
           />
-
-          <section
-            id="tour-winnability-risk"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-stretch"
-          >
-            <div className="lg:col-span-5 flex">
-              <WinnabilityDistribution
-                strongPercent={data?.winnabilityDistribution.strongPercent ?? 0}
-                moderatePercent={data?.winnabilityDistribution.moderatePercent ?? 0}
-                weakPercent={data?.winnabilityDistribution.weakPercent ?? 0}
-                unknownPercent={data?.winnabilityDistribution.unknownPercent ?? 0}
-                confidenceScore={data?.winnabilityDistribution.confidenceScore ?? 80}
-                className="w-full"
-              />
-            </div>
-
-            <div className="lg:col-span-3 flex">
-              <FraudRiskCard
-                score={data?.fraudSummary.score ?? 50}
-                statusText={data?.fraudSummary.statusText ?? "Clean transaction velocity"}
-                stabilityDelta={data?.fraudSummary.stabilityDelta ?? 4}
-                className="w-full"
-              />
-            </div>
-
-            <div className="lg:col-span-4 flex">
-              <SignalsEvidenceCard
-                matchedDeliveryRate={data?.signalsEvidence.matchedDeliveryRate ?? 85}
-                readinessBoost={data?.signalsEvidence.readinessBoost ?? 18}
-                className="w-full"
-              />
-            </div>
-          </section>
 
           <UploadStatementModal
             open={uploadModalOpen}

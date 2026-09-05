@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +23,7 @@ import {
   ShieldCheck,
   Settings,
   PanelRight,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -104,6 +106,7 @@ export function DashboardShell({
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     return !safeStorage.getItem<boolean>(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, false);
   });
+  const [canInstall, setCanInstall] = useState(false);
 
   const effectiveSearch = onSearchChange ? searchQuery : internalSearch;
 
@@ -124,6 +127,17 @@ export function DashboardShell({
       safeStorage.setItem(STORAGE_KEYS.LAST_TAB, pathname);
     }
   }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+      if (!standalone) {
+        setCanInstall(true);
+      }
+    }
+  }, []);
 
   const handleToggleSidebar = () => {
     setSidebarOpen((prev) => {
@@ -191,6 +205,12 @@ export function DashboardShell({
     }, 500);
   };
 
+  const handleTriggerInstall = () => {
+    toast.info(
+      "To install Aegis: click the Install icon in your browser address bar or select Install Razorpay Aegis from your Chromium browser menu."
+    );
+  };
+
   const merchantName = merchant?.name || "Acme India Retail Ltd";
   const merchantInitials = React.useMemo(() => {
     const parts = merchantName.trim().split(" ");
@@ -209,19 +229,16 @@ export function DashboardShell({
         <div className="w-full min-h-screen p-3.5 sm:p-5 lg:p-6 flex flex-col justify-between gap-4 relative">
           <header className="flex items-center justify-between gap-3 sm:gap-4 pb-3 border-b border-border">
             <div className="flex items-center gap-3 lg:gap-5 shrink-0">
-              <Link href="/overview" className="flex items-center gap-2 group shrink-0">
-                <div className="w-7.5 h-7.5 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-xs transition-colors duration-200">
-                  <svg
-                    className="w-3.5 h-3.5"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M13.5 2H6.5L3 14H9.8L7 22L17.8 9.5H11.2L13.5 2Z"
-                      fill="currentColor"
-                    />
-                  </svg>
+              <Link href="/overview" className="flex items-center gap-2.5 group shrink-0">
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-xs shrink-0 border border-border/80 bg-card">
+                  <Image
+                    src="/Favicon.png"
+                    alt="Razorpay Aegis Logo"
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-contain"
+                    priority
+                  />
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
@@ -291,6 +308,18 @@ export function DashboardShell({
                   className="w-full pl-8 pr-3 py-1 text-xs bg-muted/40 border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-foreground focus:bg-card transition"
                 />
               </div>
+
+              {canInstall && (
+                <button
+                  type="button"
+                  onClick={handleTriggerInstall}
+                  aria-label="Install as App"
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-foreground bg-card hover:bg-muted border border-border rounded-lg shadow-xs transition cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-primary" />
+                  <span className="hidden md:inline">Install App</span>
+                </button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -430,6 +459,13 @@ export function DashboardShell({
                     <Sliders className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>Aegis Rules &amp; Themes</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleTriggerInstall}
+                    className="cursor-pointer gap-2 text-xs rounded-lg p-2 hover:bg-muted"
+                  >
+                    <Download className="w-3.5 h-3.5 text-primary" />
+                    <span>Install as App (Chromium)</span>
+                  </DropdownMenuItem>
                   {merchant.isConnected && (
                     <DropdownMenuItem
                       onClick={async () => {
@@ -473,6 +509,15 @@ export function DashboardShell({
               <nav className="relative w-[280px] h-full bg-card flex flex-col p-5 z-50 text-foreground shadow-xl border-r border-border overflow-y-auto">
                 <div className="flex items-center justify-between pb-4 border-b border-border">
                   <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md overflow-hidden flex items-center justify-center shadow-xs shrink-0 border border-border bg-card">
+                      <Image
+                        src="/Favicon.png"
+                        alt="Razorpay Aegis Logo"
+                        width={24}
+                        height={24}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                     <span className="font-semibold text-sm text-foreground">
                       Razorpay Aegis
                     </span>
@@ -561,12 +606,25 @@ export function DashboardShell({
               </motion.main>
             </AnimatePresence>
 
-            <div className="hidden lg:block shrink-0 sticky top-4 self-start">
-              <RightSidebar
-                isOpen={sidebarOpen}
-                onToggle={handleToggleSidebar}
-              />
-            </div>
+            <AnimatePresence initial={false}>
+              {sidebarOpen && (
+                <motion.div
+                  initial={{ opacity: 0, x: 24, width: 0 }}
+                  animate={{ opacity: 1, x: 0, width: "auto" }}
+                  exit={{ opacity: 0, x: 24, width: 0 }}
+                  transition={{
+                    duration: 0.22,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  className="hidden lg:block shrink-0 sticky top-4 self-start overflow-hidden"
+                >
+                  <RightSidebar
+                    isOpen={sidebarOpen}
+                    onToggle={handleToggleSidebar}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <ConnectRazorpayModal />

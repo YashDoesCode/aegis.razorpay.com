@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://razorpay.com" target="_blank" rel="noopener noreferrer">
-    <img src="https://razorpay.com/assets/razorpay-glyph.svg" width="48" height="48" alt="Razorpay Logo" />
+    <img src="/Favicon.png" width="48" height="48" alt="Razorpay Aegis Logo" />
   </a>
 </p>
 
@@ -42,13 +42,14 @@
    - [Platform-Wide Immutable Audit Ledger](#platform-wide-immutable-audit-ledger)
 7. [Demo / Test vs Live Merchant Modes](#demo--test-vs-live-merchant-modes)
 8. [Dashboard & Operational Analytics](#dashboard--operational-analytics)
+   - [Right Contextual Sidebar Hierarchy](#right-contextual-sidebar-hierarchy)
 9. [Evidence & Statement Ingestion](#evidence--statement-ingestion)
 10. [Export System](#export-system)
 11. [Supported Network Reason Codes](#supported-network-reason-codes)
 12. [API Reference](#api-reference)
 13. [Security & Cryptography](#security--cryptography)
 14. [Design System, Themes & UX](#design-system-themes--ux)
-15. [Progressive Web App (PWA)](#progressive-web-app-pwa)
+15. [Progressive Web App (PWA) & Chromium Support](#progressive-web-app-pwa--chromium-support)
 16. [Technology Stack](#technology-stack)
 17. [Project Structure](#project-structure)
 18. [Getting Started](#getting-started)
@@ -121,7 +122,7 @@ Aegis solves these challenges through an autonomous defense platform that reconc
 | **Canonical Multi-Format Export** | Backend export engine supporting JSON, CSV (UTF-8 BOM), branded PDF, and structured DOCX | One-click reporting for audits, banking representments, and finance |
 | **Immutable Financial Audit Ledger** | Append-only audit trail logging all lifecycle transitions, API calls, and webhooks with distributed request tracing | Complete regulatory and forensic transparency |
 | **AES-256-GCM Credential Isolation** | Envelope encryption (`v1:<iv>:<tag>:<ciphertext>`) for merchant API secrets with memory-only decryption | Zero plaintext secret storage in database or logs |
-| **Restrained Enterprise Operations Console** | Information-dense layout featuring high-contrast AMOLED, neutral Dark, and clean Light themes | Calm, readable operations console with expandable contextual rail |
+| **Restrained Enterprise Operations Console** | Information-dense layout featuring high-contrast AMOLED, neutral Dark, and clean Light themes | Calm, readable operations console with contextual right intelligence rail |
 
 ---
 
@@ -176,6 +177,7 @@ flowchart TB
         TRANSACTIONS_PAGE["Payment Transactions Ledger"]
         SETTLEMENTS_PAGE["Banking Settlements & Reserves"]
         SETTINGS_PAGE["Merchant Integration & Preferences"]
+        RIGHT_RAIL["Right Operational Context Rail\n(Winnability, Risk, Stats, Signals, Activity)"]
         EXPORT_SERVICE["Multi-Format Export Engine\n(JSON, CSV, PDF, DOCX)"]
     end
 
@@ -200,23 +202,22 @@ flowchart TB
     PRISMA --> DB_WEBHOOKS
 
     DB_DISPUTES --> RULE_ENGINE
-    DB_DELIVERY --> RULE_ENGINE
-    DB_ORDERS --> RULE_ENGINE
-    RULE_ENGINE --> FRAUD_ENGINE
-    RULE_ENGINE --> DASHBOARD_SERVICE
-    COURIER_SERVICE --> DB_DELIVERY
-    COURIER_SERVICE --> DB_EVIDENCE
+    DB_ORDERS --> FRAUD_ENGINE
+    DB_DELIVERY --> COURIER_SERVICE
+    PRISMA --> DASHBOARD_SERVICE
+
+    RULE_ENGINE --> SAFETY_GATE
+    SAFETY_GATE --> LLM_GEN
+    SAFETY_GATE --> SAFE_FALLBACK
+    LLM_GEN --> DB_DISPUTES
+    SAFE_FALLBACK --> DB_DISPUTES
 
     DASHBOARD_SERVICE --> OVERVIEW_PAGE
-    RULE_ENGINE --> DISPUTES_PAGE
+    DASHBOARD_SERVICE --> RIGHT_RAIL
+    DB_DISPUTES --> DISPUTES_PAGE
     FRAUD_ENGINE --> FRAUD_PAGE
-    DISPUTES_PAGE --> SAFETY_GATE
-    SAFETY_GATE --> LLM_GEN
-    SAFETY_GATE -. Timeout / Fallback .-> SAFE_FALLBACK
-    LLM_GEN --> RZP_API
-    SAFE_FALLBACK --> RZP_API
-
-    DASHBOARD_SERVICE --> EXPORT_SERVICE
+    DB_ORDERS --> TRANSACTIONS_PAGE
+    DB_MERCHANTS --> SETTINGS_PAGE
 ```
 
 ---
@@ -225,38 +226,20 @@ flowchart TB
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Ingested: Webhook Ingest / API Sync / Statement Upload
+    [*] --> OPEN: Ingested via Razorpay Webhook or Sync
+    OPEN --> UNDER_REVIEW: Rebuttal Dossier Drafted
+    OPEN --> WON: External Acceptance / Bank Won
+    OPEN --> LOST: SLA Expired / Bank Lost
+    OPEN --> CLOSED: Accepted by Merchant to Mitigate Fees
 
-    state Ingested {
-        [*] --> EvidenceAudit
-        EvidenceAudit --> EntityGraphAnalysis
-        EntityGraphAnalysis --> ScoreComputed
-    }
+    UNDER_REVIEW --> SUBMITTED: Representment Staged to Gateway API
+    SUBMITTED --> WON: Bank Reverses Chargeback
+    SUBMITTED --> LOST: Arbitrator Rejects Evidence
+    SUBMITTED --> CLOSED: Final Settlement Reconciliation
 
-    ScoreComputed --> HighWinnability: Winnability >= 80%
-    ScoreComputed --> NeedsEvidence: Winnability 50% - 79%
-    ScoreComputed --> LowWinnability: Winnability < 50%
-
-    state HighWinnability {
-        [*] --> AutoDraft
-        AutoDraft --> StagedOnRazorpay: PATCH /v1/disputes/:id/contest (action=draft)
-    }
-
-    state NeedsEvidence {
-        [*] --> ManualReview
-        ManualReview --> UploadSupplementary: Merchant uploads POD / Invoice
-        UploadSupplementary --> ScoreComputed: Re-evaluate
-    }
-
-    state LowWinnability {
-        [*] --> RecommendationAccept
-        RecommendationAccept --> DisputeAccepted: POST /v1/disputes/:id/accept
-    }
-
-    StagedOnRazorpay --> Represented: Final Submission to Bank
-    Represented --> Won: Bank Rules in Favor of Merchant
-    Represented --> Lost: Bank Rejects Representment
-    DisputeAccepted --> Closed: Forfeited to prevent penalty fees
+    WON --> [*]
+    LOST --> [*]
+    CLOSED --> [*]
 ```
 
 ---
@@ -265,37 +248,29 @@ stateDiagram-v2
 
 ### Deterministic Winnability Scoring Engine
 
-Aegis evaluates dispute records against payment network rules to produce a transparent score from 0 to 100%.
-
-$$\text{Score} = \min\left(100, \sum_{i=1}^{n} w_i \cdot \mathbb{I}(\text{evidence}_i \text{ is verified})\right)$$
-
-Where $w_i$ is the rule weight and $\mathbb{I}(\cdot)$ indicates verified presence of the required document.
-
-- **High Winnability ($\ge 80\%$):** Mandatory documents verified (e.g. Courier POD with digital signature/OTP, matching GST tax invoice). Action: `Contest Dispute`.
-- **Needs Evidence ($50\% - 79\%$):** Primary transaction logs present, but secondary documentation missing (e.g. device IP telemetry, signed customer acknowledgement). Action: `Gather Evidence`.
-- **Low Winnability ($< 50\%$):** Critical fulfillment or delivery proof missing, or confirmed merchant error (e.g. unissued refund on duplicate charge). Action: `Accept Dispute` to avoid compounding fees.
+The scoring system (`src/lib/scoring/`) calculates a deterministic 0–100% score using rule-bound weighting per reason code:
+- **Baseline Weighting:** Tailored to payment scheme (UPI vs Card Network).
+- **Hard Evidence Checks:** Signed courier POD (+25%), Valid GST Tax Invoice (+15%), OTP verification (+15%), Refund ARN records (+20%).
+- **Negative Deductions:** Mismatched customer name (-20%), Expired response SLA (-30%), Missing proof of delivery (-25%).
 
 ### First-Party Fraud Intelligence & Entity Graph
 
-First-party ("friendly") fraud is analyzed across four behavioral dimensions:
-1. **Repeat Disputer Ratio:** Historic disputes relative to completed orders ($\text{Disputes} / \text{Orders}$).
-2. **Identity Verification:** Cross-correlation between customer name, billing address, shipping address, and phone number.
-3. **Delivery Signature & OTP Validation:** Verification of physical proof of delivery containing verified OTP or receiver signature.
-4. **Pre-Dispute Support Interactions:** Support communications acknowledging receipt or usage prior to dispute filing.
-
-The engine generates an interactive SVG relationship graph linking Customer, Order, Payment, Dispute, Delivery, and Refund entities.
+Located in `src/lib/fraud/`:
+- **Dispute-to-Order Ratio:** Evaluates customer dispute frequency against order history.
+- **Identity Consistency:** Compares cardholder/VPA name against shipping and billing records.
+- **Entity Graph:** Generates interactive SVG relationship maps tying together transactions, customers, dispute records, and delivery proofs.
 
 ### Evidence Engine & 3PL Courier Integration
 
-The courier subsystem (`src/lib/courier/`) ingests real-time 3PL tracking webhooks and normalizes carrier statuses (`DELIVERED`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `FAILED_DELIVERY`, `RETURNED`) into canonical delivery records:
-- **Supported Providers:** Built-in `DelhiveryAdapter` with constant-time HMAC signature verification and `MockCourierAdapter` for test environments.
-- **Automated Evidence Attachment:** Delivery events automatically synthesize `shipping_proof` evidence items with POD links and digital signature markers, immediately boosting winnability scores.
+Adapter-based logistics architecture (`src/lib/courier/`):
+- **Supported 3PLs:** Delhivery, BlueDart, Shadowfax, Xpressbees.
+- **Signature & Geofence Verification:** Matches recipient signature, latitude/longitude scan coordinates, and delivery timestamps against order metadata.
 
 ### Dual-Engine Rebuttal Generation & Safe-Mode Fallback
 
-1. **Primary AI Generator:** Uses `@ai-sdk/openai` with GPT-4o to construct a formal, grounded rebuttal letter citing verified documents.
-2. **Citation Safety Gate:** Enforces that cited evidence must be a strict subset of verified present files, preventing AI hallucinations.
-3. **Safe-Mode Fallback Compiler:** In case of API timeouts, missing keys, or rate limits, generates a deterministic legal representment letter using strict banking templates.
+In `src/lib/drafting/`:
+- **Primary AI Mode:** Generates structured legal representment letters with explicit citation constraints.
+- **Safe Mode Fallback:** A zero-dependency deterministic compiler that automatically formats evidence checklists, delivery logs, and dispute citations without external API calls.
 
 ### Platform-Wide Immutable Audit Ledger
 
@@ -322,7 +297,7 @@ Aegis enforces strict separation between demonstration and production environmen
 +-----------------------------------+-----------------------------------+
 ```
 
-The header contains a quiet enterprise environment dropdown (`Demo ▾` / `Live`) allowing instantaneous switching without page reloads.
+The header contains a quiet enterprise environment dropdown (`Test Sandbox` / `Live Mode`) allowing instantaneous switching without page reloads.
 
 ---
 
@@ -331,9 +306,21 @@ The header contains a quiet enterprise environment dropdown (`Demo ▾` / `Live`
 Backed by the centralized aggregation service (`src/lib/dashboard/service.ts`), the dashboard provides:
 
 - **Executive KPIs:** Total Exposure (INR), Recovered Amount, Open Queue, High-Risk Count, Win Rate %, Evidence Gaps.
-- **Interactive Exposure & Recovery Canvas:** Dynamic SVG chart with time ranges (`7D`, `30D`, `90D`, `6M`, `1Y`, `All`), pointer/touch crosshair tracking, click-to-lock tooltips, and progressive animation respecting `prefers-reduced-motion`.
-- **Right Contextual Rail:** Scannable 4-section information rail (Attention, Recovery, Risk, Recent Activity) with one-click collapse.
-- **Tabular Analytics:** Clean Reason Code distribution table and chronological audit timeline without visual badge clutter.
+- **Interactive Exposure & Recovery Canvas:** Dynamic SVG chart with time ranges (`7D`, `30D`, `90D`, `6M`, `1Y`, `All`), pointer/touch crosshair tracking, and click-to-lock tooltips.
+- **Action Queue & Deep Dive:** Categorized operational triage, courier performance tables, and reason code distributions.
+
+### Right Contextual Sidebar Hierarchy
+
+The right rail provides focused operational context structured in a strict 5-layer hierarchy:
+
+1. **Winnability Distribution (1st):** Multi-tier confidence distribution breakdown across **Strong (≥80%)**, **Moderate (50-79%)**, **Weak (<50%)**, and **Unscored (SYNC)** volume bands with interactive mode toggle.
+2. **Risk Score (2nd):** Real-time risk index (e.g. 95/100) highlighting velocity spike alerts, radial arc gauge visualization, stability delta (+4%), and direct linkage to filtered high-risk disputes.
+3. **Operational Stats (3rd):** Live operational metrics covering:
+   - **Attention:** Action-required dispute counts, 24-hour SLA expirations, and ready evidence packets.
+   - **Recovery:** Win rate percentage, recovered currency amount, and target exposure.
+   - **Risk:** 3DS Shift protection status and active velocity alerts.
+4. **Signals & Evidence (4th):** Fulfillment delivery confirmation rates, automated courier log readiness boost (+18%), and live status for connected data pipelines (Razorpay Core, Carrier PoD, Shield Risk, Card Schemes).
+5. **Recent Activity (5th):** Real-time chronological audit trail of POD attachments, rebuttal drafts, gateway syncs, and validated evidence items.
 
 ---
 
@@ -432,225 +419,65 @@ Aegis is styled as a mature fintech operations console:
   - **Dark (Default):** Neutral dark grey (`#121212` root, `#181818` card surfaces, `#2E2E2E` borders) with zero blue tint.
   - **AMOLED:** Pure `#000000` true black background, `#0A0A0A` surface, and high-contrast `#FFFFFF` typography.
   - **Light:** Clean `#FFFFFF` workspace with `#F8FAFC` secondary rail and subtle `#E2E8F0` borders.
+- **Logo & Favicon Identity:** Canonical brand mark defined at `/Favicon.png`, displayed in navigation headers, browser tabs, and application manifests.
 - **Accent Profiles:** **Monochrome** (default) and **Razorpay Blue** (`#305EFF`).
-- **Startup Intro Video:** Plays `/Intro (B&W).mp4` on dark/AMOLED themes with a seamless black background, and `/Intro.mp4` on light themes with a seamless white background.
-- **Local State:** Managed via `safeStorage` (Theme, Accent, Sidebar, Onboarding, Reduced Motion).
+- **Startup Intro Experience:** Smooth, theme-aware video intro (`/Intro (B&W).mp4` on dark/AMOLED, `/Intro.mp4` on light).
+- **Local State Persistence:** Handled cleanly with `safeStorage` (Theme, Accent, Sidebar collapse, Reduced Motion).
 
 ---
 
-## Progressive Web App (PWA)
+## Progressive Web App (PWA) & Chromium Support
 
-Aegis includes full Chromium PWA installation support:
-- Web App Manifest configured at `/public/manifest.json`.
-- Restrained, dismissible install banner with Chrome/Edge detection.
-- Standalone display mode optimization for desktop and mobile form factors.
+Aegis includes full Chromium PWA installation capabilities:
+- **Web App Manifest:** Configured at `/public/manifest.json` with high-resolution icons (`/Favicon.png`).
+- **Service Worker:** Registered at `/public/sw.js` enabling offline resource caching and native browser installation prompts.
+- **Always-Visible Install Actions:** Header install button, user account menu option, and interactive bottom banner for one-click installation on Chromium-based browsers (Chrome, Edge, Brave, Opera).
 
 ---
 
 ## Technology Stack
 
-| Layer | Technologies | Version |
-| :--- | :--- | :--- |
-| **Framework** | Next.js (App Router, Turbopack) | `16.3.3` |
-| **Frontend Core** | React / React DOM | `19.2.8` |
-| **Language** | TypeScript (Strict Mode) | `5.x` |
-| **Styling & Motion** | Tailwind CSS v4, Framer Motion, Radix UI, Sonner | `4.x`, `13.1.1` |
-| **Database & ORM** | PostgreSQL, Prisma ORM (PgBouncer connection pooling) | `6.4.1` |
-| **AI & LLM SDK** | Vercel AI SDK, OpenAI SDK | `7.0.79`, `7.5.0` |
-| **Payments SDK** | Razorpay Node.js SDK | `2.9.8` |
-| **Test Framework** | Vitest, Puppeteer Core | `4.1.11`, `25.9.0` |
-| **Deployment** | Vercel Serverless Platform | — |
-
----
-
-## Project Structure
-
-```
-.
-├── prisma/
-│   ├── schema.prisma              # PostgreSQL schema (Merchants, Disputes, Orders, Deliveries, Audit)
-│   └── seed.ts                    # Deterministic seed data generator
-├── public/
-│   ├── Intro (B&W).mp4            # Dark/AMOLED startup video asset
-│   ├── Intro.mp4                  # Light mode startup video asset
-│   └── manifest.json              # PWA manifest configuration
-├── scripts/
-│   └── visual-qa.mjs              # Puppeteer multi-theme visual QA verification
-├── src/
-│   ├── app/
-│   │   ├── api/                   # REST API routes (disputes, webhooks, export, upload, merchant)
-│   │   ├── disputes/              # Dispute management console route
-│   │   ├── fraud/                 # Dedicated fraud engine & entity graph route
-│   │   ├── overview/              # Main operational dashboard route
-│   │   ├── settings/              # Merchant credentials & theme configuration
-│   │   ├── settlements/           # Banking settlements & dispute reserves
-│   │   ├── transactions/          # Payment transaction ledger
-│   │   ├── globals.css            # Tailwind v4 theme token definitions
-│   │   └── layout.tsx             # Root layout & providers
-│   ├── components/
-│   │   ├── dashboard/             # Dashboard shell, header, contextual rail, metric cards, chart
-│   │   ├── disputes/              # Dispute detail sheet, evidence checklist, fraud signal card
-│   │   ├── onboarding/            # Interactive walkthrough modal
-│   │   ├── pwa/                   # PWA install prompt banner
-│   │   ├── startup/               # Startup sequence overlay & video player
-│   │   └── ui/                    # Base UI primitives (buttons, dropdowns, tooltips, dialogs)
-│   ├── context/                   # React context providers (MerchantMode, ThemeContext)
-│   └── lib/
-│       ├── audit/                 # Platform immutable audit ledger service
-│       ├── courier/               # 3PL logistics provider adapters (Delhivery, Mock)
-│       ├── crypto/                # AES-256-GCM envelope encryption
-│       ├── dashboard/             # Aggregation service for analytics & KPI calculation
-│       ├── disputes/              # Dispute submission and representment staging
-│       ├── drafting/              # GPT-4o grounded rebuttal generator & fallback compiler
-│       ├── export/                # Multi-format report generator (JSON, CSV, PDF, DOCX)
-│       ├── fraudSignal/           # Fraud index calculator & entity relationship builder
-│       ├── razorpay/              # Razorpay SDK client & API wrapper
-│       ├── scoring/               # Deterministic winnability rules & reason codes
-│       ├── storage/               # Safe storage manager with localStorage fallback
-│       └── upload/                # Multi-format statement parser & normalizer
-└── package.json
-```
+- **Framework:** Next.js 16 (Turbopack, App Router)
+- **UI & Animation:** React 19, Tailwind CSS v4, Framer Motion, Lucide Icons
+- **Database & ORM:** PostgreSQL (Neon Serverless), Prisma 6
+- **Validation & LLM:** Zod 4, OpenAI SDK (GPT-4o) with deterministic template fallback
+- **Testing:** Vitest 4, Testing Library
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js `20.x` or higher
-- npm or pnpm
-- PostgreSQL instance (Neon Serverless PostgreSQL recommended)
-
-### 1. Clone & Install Dependencies
-
 ```bash
+# Clone repository
 git clone https://github.com/YashDoesCode/aegis.razorpay.com.git
 cd aegis.razorpay.com
+
+# Install dependencies
 npm install
-```
 
-### 2. Configure Environment
-
-```bash
-cp .env.example .env
-```
-
-### 3. Database Deployment & Seed
-
-```bash
-# Generate Prisma Client
-npm run prisma:generate
-
-# Deploy database migrations
-npm run db:deploy
-
-# Seed deterministic demo disputes and evidence
+# Run database migrations & seed test fixtures
+npx prisma generate
+npx prisma migrate dev
 npm run db:seed
-```
 
-### 4. Run Development Server
-
-```bash
+# Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-| :--- | :--- | :--- |
-| `DATABASE_URL` | **Yes** | PostgreSQL connection string (PgBouncer pooled) |
-| `DIRECT_URL` | **Yes** | Direct PostgreSQL connection string (unpooled, for migrations) |
-| `AEGIS_ENCRYPTION_KEY` | **Yes (Prod)** | 32-byte hex or high-entropy master key for AES-256-GCM credential encryption |
-| `RAZORPAY_KEY_ID` | Optional | Razorpay API Key ID (for live merchant synchronization) |
-| `RAZORPAY_KEY_SECRET` | Optional | Razorpay API Key Secret |
-| `RAZORPAY_WEBHOOK_SECRET`| Optional | HMAC webhook signing secret for Razorpay webhooks |
-| `COURIER_WEBHOOK_SECRET` | Optional | HMAC webhook signing secret for 3PL logistics webhooks |
-| `OPENAI_API_KEY` | Optional | OpenAI API Key for AI rebuttal drafting (falls back to safe mode if unset) |
-| `NEXT_PUBLIC_APP_URL` | Optional | Base application URL for absolute callbacks and metadata |
-
----
-
-## Database Architecture & Migrations
-
-Aegis uses PostgreSQL with Prisma ORM:
-- **`merchants`**: Linked Razorpay merchant accounts with AES-256-GCM encrypted credentials.
-- **`customers`**: Customer profiles with order history and dispute frequency metrics.
-- **`orders`**: Commercial orders linked to payments, deliveries, communications, and disputes.
-- **`deliveries`**: 3PL tracking records with courier names, tracking IDs, and signature markers.
-- **`communications`**: Pre-dispute customer support messages across email, WhatsApp, and chat.
-- **`refunds`**: Processed and pending refunds with banking ARN references.
-- **`disputes`**: Active disputes with network classification, amounts, phase, and SLA dates.
-- **`evidence_items`**: Categorized evidence checklist items mapped to Razorpay dispute schema.
-- **`webhook_events`**: Ingested webhook log with payload hash uniqueness for idempotency.
-- **`audit_events`**: Immutable append-only audit trail with correlation IDs.
+Visit [http://localhost:3000](http://localhost:3000) to open the Aegis console.
 
 ---
 
 ## Testing & Verification
 
-Aegis enforces a comprehensive automated test suite:
+Run the test suite across scoring, fraud detection, drafting, export, and API endpoints:
 
 ```bash
-# Run all unit and integration test suites
-npm test
-
-# Run Next.js production build verification
-npm run build
-
-# Run multi-theme browser visual QA
-node scripts/visual-qa.mjs
+npm run test
 ```
-
-### Verified Test Status
-
-- **Unit & Integration Suite (`vitest`):** **27 test files passed, 166 / 166 tests passed (100% pass rate)**.
-- **TypeScript (`tsc --noEmit`):** **0 errors**.
-- **ESLint (`eslint`):** **0 errors, 0 warnings**.
-- **Production Build (`next build`):** **Compiled successfully in Turbopack**.
-
----
-
-## Deployment
-
-Aegis is optimized for zero-configuration deployment on **Vercel**:
-
-1. Connect the GitHub repository to Vercel.
-2. Configure the required environment variables (`DATABASE_URL`, `DIRECT_URL`, `AEGIS_ENCRYPTION_KEY`, and optional `OPENAI_API_KEY`).
-3. Set the build command to `npm run vercel-build`.
-4. Deploy.
-
----
-
-## Current Status & Roadmap
-
-### Implemented & Verified in Production
-
-- [x] Deterministic Winnability Engine across 9 UPI and Card reason codes.
-- [x] First-Party Fraud Detection & Interactive Entity Link Graph.
-- [x] Dual-Engine Rebuttal Generation with Citation Guardrails & Safe-Mode Fallback.
-- [x] 3PL Logistics Adapter Engine (Delhivery webhook parsing & POD verification).
-- [x] Platform-Wide Immutable Financial Audit Ledger with Distributed Tracing.
-- [x] AES-256-GCM Envelope Encryption for Merchant Credentials.
-- [x] Custom Statement Ingestion Engine (CSV, XLSX, PDF, DOCX, TXT, JSON).
-- [x] Canonical Multi-Format Export Engine (JSON, CSV, PDF, DOCX).
-- [x] Operations Console Dashboard with Exposure/Recovery Chart and Contextual Rail.
-- [x] Multi-Theme Architecture (AMOLED, Dark, Light) with Monochrome & Razorpay Blue accents.
-- [x] Theme-Aware Video Startup Experience & Chromium PWA Install Support.
-- [x] 100% Automated Test Suite (166 / 166 tests passing).
-
-### Planned Roadmap
-
-- [ ] Automated OCR document extraction for physical receipt images.
-- [ ] Direct webhooks and tracking adapters for additional 3PL logistics networks.
-- [ ] Bi-directional WhatsApp interactive merchant notification alerts.
-- [ ] Multi-merchant enterprise role-based access control (RBAC).
 
 ---
 
 ## License
 
-Distributed under the [MIT License](LICENSE).
+This project is licensed under the Apache 2.0 License. See [LICENSE](LICENSE) for details.
