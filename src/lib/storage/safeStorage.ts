@@ -5,6 +5,8 @@ export const STORAGE_KEYS = {
   ONBOARDING: "aegis:onboarding:v1",
   LAST_TAB: "aegis:nav:last_tab:v1",
   NAV_COLLAPSED: "aegis:nav:collapsed:v1",
+  RIGHT_SIDEBAR_COLLAPSED: "aegis:sidebar:collapsed:v1",
+  PWA_DISMISSED: "aegis:pwa:dismissed:v1",
   REDUCED_MOTION: "aegis:motion:reduced:v1",
 } as const;
 
@@ -15,7 +17,7 @@ export interface OnboardingState {
 }
 
 export type ThemeMode = "light" | "dark" | "amoled";
-export type AccentMode = "blue" | "neutral";
+export type AccentMode = "neutral" | "blue";
 
 class SafeStorage {
   private isAvailable(): boolean {
@@ -61,6 +63,19 @@ class SafeStorage {
     try {
       window.localStorage.removeItem(key);
     } catch {}
+  }
+
+  clearLocalData(): boolean {
+    if (!this.isAvailable()) return false;
+    try {
+      const keys = Object.values(STORAGE_KEYS);
+      for (const k of keys) {
+        window.localStorage.removeItem(k);
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 

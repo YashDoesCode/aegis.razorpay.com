@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TimeRangeOption, TimeSeriesPoint } from "@/lib/dashboard/service";
@@ -23,13 +23,17 @@ export function ExposureRecoveryChart({
   className,
 }: ExposureRecoveryChartProps) {
   const [internalRange, setInternalRange] = useState<TimeRangeOption>(selectedRange);
-  const [hoveredPoint, setHoveredPoint] = useState<TimeSeriesPoint | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
 
   const activeRange = onRangeChange ? selectedRange : internalRange;
   const ranges: TimeRangeOption[] = ["7D", "30D", "90D", "6M", "1Y", "All"];
 
   const handleRangeClick = (range: TimeRangeOption) => {
+    setIsLocked(false);
+    setSelectedIndex(null);
     if (onRangeChange) {
       onRangeChange(range);
     } else {
@@ -70,7 +74,7 @@ export function ExposureRecoveryChart({
       const x = padding + (i / Math.max(1, points.length - 1)) * (width - padding * 2);
       const yExp = height - (p.exposurePaise / max) * (height - 30);
       const yRec = height - (p.recoveredPaise / max) * (height - 30);
-      return { x, yExp, yRec, point: p };
+      return { x, yExp, yRec, point: p, index: i };
     });
 
     const expPath = coords.reduce((acc, c, i) => `${acc} ${i === 0 ? "M" : "L"} ${c.x.toFixed(1)},${c.yExp.toFixed(1)}`, "");
@@ -89,7 +93,52 @@ export function ExposureRecoveryChart({
     };
   }, [points]);
 
-  const activeTooltip = hoveredPoint || points[points.length - 1] || null;
+  const activeIndex = selectedIndex ?? coordinates.length - 1;
+  const activeCoord = coordinates[activeIndex] || coordinates[coordinates.length - 1] || null;
+  const activePoint = activeCoord?.point || points[points.length - 1] || null;
+
+  const updateNearestPoint = useCallback((clientX: number) => {
+    if (!containerRef.current || coordinates.length === 0) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const relativeX = (clientX - rect.left) / rect.width;
+    const targetSvgX = 20 + relativeX * (1000 - 40);
+
+    let nearestIdx = 0;
+    let minDistance = Infinity;
+
+    for (let i = 0; i < coordinates.length; i++) {
+      const dist = Math.abs(coordinates[i].x - targetSvgX);
+      if (dist < minDistance) {
+        minDistance = dist;
+        nearestIdx = i;
+      }
+    }
+
+    setSelectedIndex(nearestIdx);
+  }, [coordinates]);
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isLocked) return;
+    updateNearestPoint(e.clientX);
+  };
+
+  const handleClick = (e: React.PointerEvent<HTMLDivElement>) => {
+    updateNearestPoint(e.clientX);
+    setIsLocked((prev) => !prev);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev === null ? coordinates.length - 2 : Math.max(0, prev - 1)));
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev === null ? 0 : Math.min(coordinates.length - 1, prev + 1)));
+    } else if (e.key === "Escape") {
+      setIsLocked(false);
+      setSelectedIndex(null);
+    }
+  };
 
   const lineVariants: Variants = {
     hidden: { pathLength: prefersReducedMotion ? 1 : 0, opacity: prefersReducedMotion ? 1 : 0 },
@@ -97,8 +146,8 @@ export function ExposureRecoveryChart({
       pathLength: 1,
       opacity: 1,
       transition: {
-        pathLength: { duration: prefersReducedMotion ? 0 : 0.7, ease: "easeInOut" },
-        opacity: { duration: 0.2 },
+        pathLength: { duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" },
+        opacity: { duration: 0.15 },
       },
     },
   };
@@ -108,8 +157,8 @@ export function ExposureRecoveryChart({
     visible: {
       opacity: 1,
       transition: {
-        duration: prefersReducedMotion ? 0 : 0.5,
-        delay: prefersReducedMotion ? 0 : 0.3,
+        duration: prefersReducedMotion ? 0 : 0.4,
+        delay: prefersReducedMotion ? 0 : 0.2,
         ease: "easeOut",
       },
     },
@@ -118,41 +167,41 @@ export function ExposureRecoveryChart({
   return (
     <div
       id="tour-exposure-chart"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       className={cn(
-        "bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 relative flex flex-col justify-between shadow-xs transition-colors duration-200",
+        "bg-card rounded-xl p-4 sm:p-5 border border-border relative flex flex-col justify-between shadow-xs transition-colors duration-200 outline-hidden focus-visible:ring-1 focus-visible:ring-foreground",
         className
       )}
+      aria-label="Interactive Dispute Exposure & Recovery Chart"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3 pb-1.5">
+      <div className="flex flex-wrap items-start justify-between gap-3 pb-2">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Dispute Exposure &amp; Recovery
             </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-semibold border border-blue-100 dark:border-blue-800">
-              Live Gateway Cycle
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium border border-border">
+              Gateway Cycle
             </span>
           </div>
 
-          <div className="flex flex-wrap items-baseline gap-3 sm:gap-4 mt-1">
+          <div className="flex flex-wrap items-baseline gap-4 mt-1">
             <div>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">Total Exposure:</span>
-              <span className="text-lg sm:text-xl md:text-2xl font-bold font-mono text-slate-950 dark:text-white tabular-nums ml-1">
+              <span className="text-xs text-muted-foreground">Exposure</span>
+              <span className="text-xl font-semibold font-mono text-foreground tabular-nums ml-1.5">
                 {totalExposure}
-              </span>
-              <span className="text-[11px] font-mono font-medium text-emerald-600 dark:text-emerald-400 ml-1">
-                ↓ 8.4%
               </span>
             </div>
 
-            <div className="h-3 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+            <div className="h-3 w-px bg-border hidden sm:block" />
 
             <div>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">Recovered:</span>
-              <span className="text-lg sm:text-xl md:text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums ml-1">
+              <span className="text-xs text-muted-foreground">Recovered</span>
+              <span className="text-xl font-semibold font-mono text-foreground tabular-nums ml-1.5">
                 {recoveredAmount}
               </span>
-              <span className="text-[11px] font-mono font-medium text-emerald-600 dark:text-emerald-400 ml-1">
+              <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 ml-1.5">
                 (+18.2%)
               </span>
             </div>
@@ -160,7 +209,7 @@ export function ExposureRecoveryChart({
         </div>
 
         <div
-          className="flex items-center gap-0.5 bg-white dark:bg-slate-800 p-0.5 sm:p-1 rounded-full border border-slate-200/80 dark:border-slate-700 text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400 shadow-xs shrink-0"
+          className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border text-xs font-medium text-muted-foreground shadow-xs shrink-0"
           role="tablist"
           aria-label="Chart time range"
         >
@@ -171,10 +220,10 @@ export function ExposureRecoveryChart({
                 key={range}
                 onClick={() => handleRangeClick(range)}
                 className={cn(
-                  "px-2 sm:px-2.5 py-0.5 rounded-full transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-100 focus-visible:outline-hidden",
+                  "px-2.5 py-0.5 rounded-md transition-all duration-150 cursor-pointer text-xs focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden",
                   isActive
-                    ? "bg-slate-950 dark:bg-blue-600 text-white font-bold shadow-xs"
-                    : "hover:text-slate-950 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                    ? "bg-card text-foreground font-medium shadow-xs border border-border"
+                    : "hover:text-foreground"
                 )}
                 role="tab"
                 aria-selected={isActive}
@@ -186,18 +235,23 @@ export function ExposureRecoveryChart({
         </div>
       </div>
 
-      <div className="relative w-full h-44 sm:h-52 mt-1 select-none">
-        <div className="absolute inset-x-0 top-3 border-b border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono pointer-events-none">
+      <div
+        ref={containerRef}
+        onPointerMove={handlePointerMove}
+        onPointerDown={handleClick}
+        className="relative w-full h-44 sm:h-52 mt-1 select-none cursor-crosshair touch-none"
+      >
+        <div className="absolute inset-x-0 top-3 border-b border-dashed border-border flex items-center justify-between text-[10px] text-muted-foreground font-mono pointer-events-none">
           <span>₹{(maxVal / 10000000).toFixed(1)}L</span>
-          <span className="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-sans font-medium">
-            Upper Risk Bound
+          <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-sans font-normal">
+            Max Exposure
           </span>
         </div>
 
-        <div className="absolute inset-x-0 top-20 border-b border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono pointer-events-none">
+        <div className="absolute inset-x-0 top-20 border-b border-dashed border-border flex items-center justify-between text-[10px] text-muted-foreground font-mono pointer-events-none">
           <span>₹{((maxVal * 0.5) / 10000000).toFixed(1)}L</span>
-          <span className="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-sans font-medium">
-            Target Defense Base
+          <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-sans font-normal">
+            Target Base
           </span>
         </div>
 
@@ -206,16 +260,16 @@ export function ExposureRecoveryChart({
           className="w-full h-full overflow-visible"
           preserveAspectRatio="none"
           viewBox="0 0 1000 200"
-          aria-label="Dispute Exposure and Recovery historical trend chart"
+          aria-label="Historical trend chart"
         >
           <defs>
             <linearGradient id="expGrad" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#305EFF" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="#305EFF" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#0F172A" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#0F172A" stopOpacity="0.0" />
             </linearGradient>
             <linearGradient id="recGrad" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#00A251" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="#00A251" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#059669" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#059669" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -237,10 +291,11 @@ export function ExposureRecoveryChart({
           <motion.path
             d={exposurePath}
             fill="none"
-            stroke="#305EFF"
+            stroke="#64748B"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth="2.5"
+            strokeWidth="1.75"
+            strokeDasharray="4 4"
             initial="hidden"
             animate="visible"
             variants={lineVariants}
@@ -248,71 +303,97 @@ export function ExposureRecoveryChart({
           <motion.path
             d={recoveryPath}
             fill="none"
-            stroke="#00A251"
+            stroke="currentColor"
+            className="text-foreground"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth="2.5"
+            strokeWidth="2"
             initial="hidden"
             animate="visible"
             variants={lineVariants}
           />
 
-          {coordinates.map((c, i) => (
-            <g key={i} className="cursor-pointer" onMouseEnter={() => setHoveredPoint(c.point)}>
-              <circle
-                cx={c.x}
-                cy={c.yExp}
-                r="4"
-                fill="#FFFFFF"
-                stroke="#305EFF"
-                strokeWidth="2"
-              />
-              <circle
-                cx={c.x}
-                cy={c.yRec}
-                r="4"
-                fill="#FFFFFF"
-                stroke="#00A251"
-                strokeWidth="2"
-              />
-            </g>
-          ))}
+          {activeCoord && (
+            <line
+              x1={activeCoord.x}
+              y1={10}
+              x2={activeCoord.x}
+              y2={190}
+              stroke="currentColor"
+              className="text-muted-foreground opacity-40"
+              strokeDasharray="3 3"
+              strokeWidth="1"
+            />
+          )}
+
+          {coordinates.map((c, i) => {
+            const isActive = i === activeIndex;
+            return (
+              <g key={i}>
+                <circle
+                  cx={c.x}
+                  cy={c.yExp}
+                  r={isActive ? "4" : "3"}
+                  fill="var(--card)"
+                  stroke="#64748B"
+                  strokeWidth="1.5"
+                />
+                <circle
+                  cx={c.x}
+                  cy={c.yRec}
+                  r={isActive ? "4.5" : "3"}
+                  fill="var(--card)"
+                  stroke="currentColor"
+                  className="text-foreground"
+                  strokeWidth="2"
+                />
+              </g>
+            );
+          })}
         </svg>
 
-        {activeTooltip && (
-          <div className="absolute right-3 sm:right-6 top-1 bg-slate-950 dark:bg-slate-900 text-white text-xs p-2.5 rounded-xl shadow-xl min-w-[190px] border border-slate-800 z-10 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-1 border-b border-slate-800 text-[11px] text-slate-400">
-              <span className="font-medium">{activeTooltip.label}</span>
-              <span className="text-emerald-400 bg-emerald-950/70 px-1.5 py-0.5 rounded font-mono font-semibold text-[10px]">
-                {activeTooltip.winRate}% Win
+        {activePoint && (
+          <div className="absolute right-3 sm:right-6 top-1 bg-card text-foreground text-xs p-3 rounded-lg shadow-md min-w-[200px] border border-border z-10 pointer-events-none animate-in fade-in duration-100">
+            <div className="flex items-center justify-between pb-1.5 border-b border-border text-[11px] text-muted-foreground">
+              <span className="font-medium text-foreground">{activePoint.label}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-medium text-[11px]">
+                {activePoint.winRate}% Win
               </span>
             </div>
             <div className="flex items-center justify-between pt-1.5 text-xs font-mono">
-              <span className="text-slate-400 flex items-center gap-1.5 font-sans text-[11px]">
-                <span className="w-2 h-2 rounded-full bg-blue-500" /> Exposure
+              <span className="text-muted-foreground flex items-center gap-1.5 font-sans text-[11px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Exposure
               </span>
-              <span className="font-bold text-white">
-                ₹{(activeTooltip.exposurePaise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              <span className="font-medium text-foreground">
+                ₹{(activePoint.exposurePaise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
               </span>
             </div>
             <div className="flex items-center justify-between pt-1 text-xs font-mono">
-              <span className="text-slate-400 flex items-center gap-1.5 font-sans text-[11px]">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" /> Recovered
+              <span className="text-muted-foreground flex items-center gap-1.5 font-sans text-[11px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Recovered
               </span>
-              <span className="font-bold text-emerald-400">
-                ₹{(activeTooltip.recoveredPaise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                ₹{(activePoint.recoveredPaise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
               </span>
             </div>
+            {isLocked && (
+              <div className="mt-1.5 pt-1 border-t border-border text-[10px] text-muted-foreground text-center">
+                Point locked (click to release)
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 pt-1.5 border-t border-slate-200/80 dark:border-slate-800 font-medium overflow-x-auto">
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border font-mono overflow-x-auto">
         {points.map((p, idx) => (
           <span
             key={idx}
-            onMouseEnter={() => setHoveredPoint(p)}
-            className="px-1 py-0.5 rounded text-[10px] sm:text-[11px] font-mono cursor-pointer hover:text-slate-900 dark:hover:text-white"
+            onClick={() => setSelectedIndex(idx)}
+            className={cn(
+              "px-1 py-0.5 rounded text-[11px] cursor-pointer transition",
+              idx === activeIndex ? "text-foreground font-semibold" : "hover:text-foreground"
+            )}
           >
             {p.label}
           </span>

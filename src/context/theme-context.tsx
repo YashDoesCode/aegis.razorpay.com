@@ -48,7 +48,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [accent, setAccentState] = useState<AccentMode>(() => {
-    return safeStorage.getItem<AccentMode>(STORAGE_KEYS.ACCENT, "blue");
+    return safeStorage.getItem<AccentMode>(STORAGE_KEYS.ACCENT, "neutral");
   });
 
   useEffect(() => {
@@ -88,4 +88,3 @@ export function useTheme(): ThemeContextValue {
   }
   return context;
 }
-

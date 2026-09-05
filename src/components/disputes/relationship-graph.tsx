@@ -24,36 +24,32 @@ import {
 } from "lucide-react";
 import { FraudGraphNode, FraudGraphEdge } from "@/lib/fraudSignal/types";
 
-// =========================================================================
-// CUSTOM RAZORPAY NODES (4px radius, Inter typography, clean design tokens)
-// =========================================================================
-
 function CustomCustomerNode({ data }: NodeProps) {
   const meta = data.meta as { priorOrders?: number; priorDisputes?: number } | undefined;
   const priorOrders = meta?.priorOrders ?? 0;
   const priorDisputes = meta?.priorDisputes ?? 0;
 
   return (
-    <div className="bg-white border-2 border-[#0D1A48] rounded-[4px] shadow-sm w-56 overflow-hidden text-xs">
-      <Handle type="source" position={Position.Right} className="!bg-[#0D1A48] !w-2.5 !h-2.5" />
-      <div className="bg-[#0D1A48] text-white px-3 py-1.5 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 font-semibold">
-          <User className="w-3.5 h-3.5 text-blue-300" />
+    <div className="bg-card border border-border rounded-lg shadow-2xs w-56 overflow-hidden text-xs">
+      <Handle type="source" position={Position.Right} className="!bg-foreground !w-2 !h-2" />
+      <div className="bg-muted px-3 py-1.5 flex items-center justify-between border-b border-border">
+        <div className="flex items-center gap-1.5 font-medium text-foreground">
+          <User className="w-3.5 h-3.5 text-muted-foreground" />
           <span>Customer</span>
         </div>
         {priorDisputes > 0 ? (
-          <span className="text-[9px] bg-red-500/30 text-red-200 px-1 py-0.2 rounded font-mono font-bold">
+          <span className="text-[9px] bg-destructive/10 text-destructive px-1 py-0.2 rounded font-mono font-medium">
             {priorDisputes} Prior Disp
           </span>
         ) : (
-          <span className="text-[9px] bg-emerald-500/30 text-emerald-200 px-1 py-0.2 rounded font-mono">
+          <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1 py-0.2 rounded font-mono">
             {priorOrders} Orders
           </span>
         )}
       </div>
-      <div className="p-2.5 space-y-1 bg-white">
-        <div className="font-semibold text-slate-900 truncate">{String(data.label || "")}</div>
-        <div className="text-[10px] text-slate-500 truncate">{String(data.sublabel || "")}</div>
+      <div className="p-2.5 space-y-0.5 bg-card">
+        <div className="font-medium text-foreground truncate">{String(data.label || "")}</div>
+        <div className="text-[10px] text-muted-foreground truncate">{String(data.sublabel || "")}</div>
       </div>
     </div>
   );
@@ -61,18 +57,18 @@ function CustomCustomerNode({ data }: NodeProps) {
 
 function CustomOrderNode({ data }: NodeProps) {
   return (
-    <div className="bg-white border border-[#305EFF] rounded-[4px] shadow-sm w-52 overflow-hidden text-xs">
-      <Handle type="target" position={Position.Left} className="!bg-[#305EFF] !w-2.5 !h-2.5" />
-      <Handle type="source" position={Position.Right} className="!bg-[#305EFF] !w-2.5 !h-2.5" />
-      <div className="bg-[#305EFF]/10 border-b border-[#305EFF]/20 text-[#305EFF] px-3 py-1.5 flex items-center justify-between font-semibold">
+    <div className="bg-card border border-border rounded-lg shadow-2xs w-52 overflow-hidden text-xs">
+      <Handle type="target" position={Position.Left} className="!bg-primary !w-2 !h-2" />
+      <Handle type="source" position={Position.Right} className="!bg-primary !w-2 !h-2" />
+      <div className="bg-primary/5 border-b border-border text-foreground px-3 py-1.5 flex items-center justify-between font-medium">
         <div className="flex items-center gap-1.5">
-          <ShoppingBag className="w-3.5 h-3.5" />
+          <ShoppingBag className="w-3.5 h-3.5 text-primary" />
           <span>Order</span>
         </div>
-        <span className="text-[10px] font-bold text-slate-900">{String(data.sublabel || "")}</span>
+        <span className="text-[10px] font-medium text-foreground">{String(data.sublabel || "")}</span>
       </div>
-      <div className="p-2.5 bg-white">
-        <div className="font-semibold text-slate-800 line-clamp-2 leading-tight">
+      <div className="p-2.5 bg-card">
+        <div className="font-medium text-foreground line-clamp-2 leading-tight">
           {String(data.label || "")}
         </div>
       </div>
@@ -85,18 +81,18 @@ function CustomPaymentNode({ data }: NodeProps) {
   const network = meta?.network || "UPI";
 
   return (
-    <div className="bg-white border border-slate-300 rounded-[4px] shadow-xs w-48 overflow-hidden text-xs">
-      <Handle type="target" position={Position.Left} className="!bg-slate-600 !w-2 !h-2" />
-      <div className="bg-slate-100 border-b border-slate-200 text-slate-700 px-2.5 py-1 flex items-center justify-between font-semibold text-[11px]">
-        <div className="flex items-center gap-1">
-          <CreditCard className="w-3 h-3 text-slate-500" />
+    <div className="bg-card border border-border rounded-lg shadow-2xs w-48 overflow-hidden text-xs">
+      <Handle type="target" position={Position.Left} className="!bg-muted-foreground !w-2 !h-2" />
+      <div className="bg-muted px-2.5 py-1 flex items-center justify-between font-medium text-[11px] border-b border-border">
+        <div className="flex items-center gap-1 text-foreground">
+          <CreditCard className="w-3 h-3 text-muted-foreground" />
           <span>Payment Rail</span>
         </div>
-        <span className="text-[9px] bg-slate-200 text-slate-800 px-1 rounded uppercase font-bold">
+        <span className="text-[9px] bg-muted-foreground/10 text-foreground px-1 rounded uppercase font-medium">
           {network}
         </span>
       </div>
-      <div className="p-2 bg-white font-mono text-[10px] text-slate-600 truncate">
+      <div className="p-2 bg-card font-mono text-[10px] text-muted-foreground truncate">
         {String(data.sublabel || "")}
       </div>
     </div>
@@ -105,18 +101,18 @@ function CustomPaymentNode({ data }: NodeProps) {
 
 function CustomDisputeNode({ data }: NodeProps) {
   return (
-    <div className="bg-white border-2 border-red-500 rounded-[4px] shadow-sm w-52 overflow-hidden text-xs ring-2 ring-red-500/20">
-      <Handle type="target" position={Position.Left} className="!bg-red-500 !w-2.5 !h-2.5" />
-      <div className="bg-red-600 text-white px-3 py-1.5 flex items-center justify-between font-semibold">
+    <div className="bg-card border border-destructive/40 rounded-lg shadow-2xs w-52 overflow-hidden text-xs ring-1 ring-destructive/20">
+      <Handle type="target" position={Position.Left} className="!bg-destructive !w-2 !h-2" />
+      <div className="bg-destructive text-destructive-foreground px-3 py-1.5 flex items-center justify-between font-medium">
         <div className="flex items-center gap-1.5">
           <ShieldAlert className="w-3.5 h-3.5" />
           <span>Dispute Active</span>
         </div>
-        <span className="text-[10px] font-bold text-white">{String(data.sublabel || "")}</span>
+        <span className="text-[10px] font-medium text-destructive-foreground">{String(data.sublabel || "")}</span>
       </div>
-      <div className="p-2.5 bg-red-50/50 space-y-0.5">
-        <div className="font-bold text-red-950 truncate">{String(data.label || "")}</div>
-        <div className="text-[10px] text-red-700 font-medium">Status: {String(data.status || "open")}</div>
+      <div className="p-2.5 bg-destructive/5 space-y-0.5">
+        <div className="font-medium text-foreground truncate">{String(data.label || "")}</div>
+        <div className="text-[10px] text-destructive font-medium">Status: {String(data.status || "open")}</div>
       </div>
     </div>
   );
@@ -127,22 +123,22 @@ function CustomDeliveryNode({ data }: NodeProps) {
   const isSigned = meta?.signatureCaptured ?? false;
 
   return (
-    <div className="bg-white border border-emerald-500 rounded-[4px] shadow-xs w-48 overflow-hidden text-xs">
+    <div className="bg-card border border-border rounded-lg shadow-2xs w-48 overflow-hidden text-xs">
       <Handle type="target" position={Position.Left} className="!bg-emerald-500 !w-2 !h-2" />
-      <div className="bg-emerald-50 border-b border-emerald-200 text-emerald-800 px-2.5 py-1 flex items-center justify-between font-semibold text-[11px]">
+      <div className="bg-emerald-500/10 border-b border-border text-emerald-700 dark:text-emerald-400 px-2.5 py-1 flex items-center justify-between font-medium text-[11px]">
         <div className="flex items-center gap-1">
-          <Truck className="w-3 h-3 text-emerald-600" />
+          <Truck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
           <span>Fulfillment</span>
         </div>
         {isSigned && (
-          <span className="text-[9px] bg-emerald-200 text-emerald-900 px-1 rounded flex items-center gap-0.5 font-bold">
-            <CheckCircle2 className="w-2.5 h-2.5" /> OTP Signed
+          <span className="text-[9px] bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 px-1 rounded flex items-center gap-0.5 font-medium">
+            <CheckCircle2 className="w-2.5 h-2.5" /> Signed
           </span>
         )}
       </div>
-      <div className="p-2 bg-white space-y-0.5">
-        <div className="font-semibold text-slate-800 text-[11px] truncate">{String(data.label || "")}</div>
-        <div className="font-mono text-[10px] text-slate-500 truncate">{String(data.sublabel || "")}</div>
+      <div className="p-2 bg-card space-y-0.5">
+        <div className="font-medium text-foreground text-[11px] truncate">{String(data.label || "")}</div>
+        <div className="font-mono text-[10px] text-muted-foreground truncate">{String(data.sublabel || "")}</div>
       </div>
     </div>
   );
@@ -150,14 +146,14 @@ function CustomDeliveryNode({ data }: NodeProps) {
 
 function CustomCommunicationNode({ data }: NodeProps) {
   return (
-    <div className="bg-white border border-blue-400 rounded-[4px] shadow-xs w-48 overflow-hidden text-xs">
-      <Handle type="target" position={Position.Left} className="!bg-blue-400 !w-2 !h-2" />
-      <div className="bg-blue-50 border-b border-blue-200 text-blue-800 px-2.5 py-1 flex items-center gap-1 font-semibold text-[11px]">
-        <MessageSquare className="w-3 h-3 text-blue-600" />
-        <span>Customer Communication</span>
+    <div className="bg-card border border-border rounded-lg shadow-2xs w-48 overflow-hidden text-xs">
+      <Handle type="target" position={Position.Left} className="!bg-primary !w-2 !h-2" />
+      <div className="bg-primary/5 border-b border-border text-foreground px-2.5 py-1 flex items-center gap-1 font-medium text-[11px]">
+        <MessageSquare className="w-3 h-3 text-primary" />
+        <span>Communication</span>
       </div>
-      <div className="p-2 bg-white">
-        <p className="text-[10px] text-slate-700 line-clamp-2 italic leading-snug">
+      <div className="p-2 bg-card">
+        <p className="text-[10px] text-muted-foreground line-clamp-2 italic leading-snug">
           &ldquo;{String(data.sublabel || "")}&rdquo;
         </p>
       </div>
@@ -190,7 +186,7 @@ export function RelationshipGraph({
 
   if (!nodes || nodes.length === 0) {
     return (
-      <div className="w-full h-48 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-[4px] text-xs text-slate-500">
+      <div className="w-full h-48 flex items-center justify-center bg-muted/20 border border-border rounded-lg text-xs text-muted-foreground">
         No graph relationship nodes available.
       </div>
     );
@@ -199,7 +195,7 @@ export function RelationshipGraph({
   return (
     <div
       style={{ height }}
-      className="w-full bg-[#FAFAFC] border border-slate-200 rounded-[4px] relative overflow-hidden flat-shadow"
+      className="w-full bg-card border border-border rounded-lg relative overflow-hidden shadow-2xs"
     >
       <ReactFlow
         nodes={nodes}
@@ -211,26 +207,25 @@ export function RelationshipGraph({
         maxZoom={1.5}
         proOptions={{ hideAttribution: true }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#E2E8F0" />
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="currentColor" className="opacity-10 text-foreground" />
         <Controls
           showInteractive={false}
-          className="!bg-white !border-slate-200 !shadow-sm !rounded-[4px] !p-0.5"
+          className="!bg-card !border-border !shadow-2xs !rounded-md !p-0.5 text-foreground"
         />
       </ReactFlow>
 
-      {/* Legend Badge */}
-      <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-xs border border-slate-200 px-2.5 py-1 rounded-[3px] text-[10px] font-semibold text-slate-600 flex items-center gap-3 pointer-events-none shadow-2xs">
+      <div className="absolute top-2 left-2 bg-card/90 backdrop-blur-xs border border-border px-2.5 py-1 rounded text-[10px] font-medium text-muted-foreground flex items-center gap-3 pointer-events-none shadow-2xs">
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-[#0D1A48]" /> Customer
+          <span className="w-1.5 h-1.5 rounded-full bg-foreground" /> Customer
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-[#305EFF]" /> Order
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" /> Order
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-red-500" /> Dispute
+          <span className="w-1.5 h-1.5 rounded-full bg-destructive" /> Dispute
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" /> Delivery Proof
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Delivery
         </span>
       </div>
     </div>

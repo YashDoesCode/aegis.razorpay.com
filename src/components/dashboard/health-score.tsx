@@ -15,35 +15,35 @@ export function HealthScore({ score = 76, className }: HealthScoreProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 px-3 py-1 rounded-full text-xs shadow-xs select-none transition-colors duration-200",
+        "flex items-center gap-2 bg-card border border-border px-2.5 py-1 rounded-lg text-xs shadow-xs select-none transition-colors duration-200",
         className
       )}
-      title={`Aegis Health Score: ${normalizedScore}/100 based on representment win rate & evidence readiness`}
+      title={`Aegis Health Score: ${normalizedScore}/100`}
       role="status"
       aria-label={`Aegis Health Score: ${normalizedScore} out of 100`}
     >
-      <div className="flex items-center gap-[2.5px]" aria-hidden="true">
+      <div className="flex items-center gap-[2px]" aria-hidden="true">
         {Array.from({ length: 10 }).map((_, i) => {
           const isActive = i < activeSegments;
           return (
             <span
               key={i}
               className={cn(
-                "w-1 h-3 rounded-full transition-colors duration-300",
-                isActive ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"
+                "w-1 h-2.5 rounded-sm transition-colors duration-200",
+                isActive ? "bg-emerald-600 dark:bg-emerald-500" : "bg-muted"
               )}
             />
           );
         })}
       </div>
 
-      <span className="font-mono font-bold text-slate-900 dark:text-white text-xs tabular-nums">
+      <span className="font-mono font-medium text-foreground text-xs tabular-nums">
         {normalizedScore}
-        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">/100</span>
+        <span className="text-[10px] text-muted-foreground font-normal">/100</span>
       </span>
 
-      <span className="text-slate-500 dark:text-slate-400 font-medium border-l border-slate-200 dark:border-slate-700 pl-2 text-[11px] whitespace-nowrap">
-        Health Score
+      <span className="text-muted-foreground font-normal border-l border-border pl-2 text-[11px] whitespace-nowrap">
+        Health
       </span>
     </div>
   );

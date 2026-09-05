@@ -38,19 +38,18 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
   const isInsufficient = band === "insufficient_signal";
 
   return (
-    <div className="bg-white rounded-[4px] border border-border-subtle p-5 shadow-xs space-y-4">
-      {/* Top Banner & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-subtle pb-3.5">
+    <div className="bg-card rounded-xl border border-border p-4 shadow-2xs space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
         <div className="flex items-center gap-2.5">
           <div
-            className={`w-8 h-8 rounded-[4px] flex items-center justify-center font-bold text-xs ${
+            className={`w-7 h-7 rounded-lg flex items-center justify-center font-medium text-xs ${
               isHigh
-                ? "bg-rose-100 text-rose-700"
+                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                 : isMedium
-                ? "bg-amber-100 text-amber-800"
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                 : isInsufficient
-                ? "bg-slate-100 text-slate-600"
-                : "bg-emerald-100 text-emerald-800"
+                ? "bg-muted text-muted-foreground"
+                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
             }`}
           >
             {isHigh ? (
@@ -65,50 +64,49 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
-                First-Party & Friendly-Fraud Signal
+              <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                First-Party &amp; Friendly-Fraud Signal
               </h3>
               <span
-                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[3px] ${
+                className={`text-[10px] font-medium uppercase tracking-wide px-2 py-0.5 rounded border ${
                   isHigh
-                    ? "bg-rose-50 text-rose-700 border border-rose-200"
+                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
                     : isMedium
-                    ? "bg-amber-50 text-amber-800 border border-amber-200"
+                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
                     : isInsufficient
-                    ? "bg-slate-100 text-slate-700 border border-slate-200"
-                    : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-muted text-muted-foreground border-border"
+                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                 }`}
               >
                 {band === "high"
-                  ? "High First-Party Risk"
+                  ? "High Risk"
                   : band === "medium"
                   ? "Medium Risk"
                   : band === "insufficient_signal"
                   ? "Insufficient Signal"
-                  : "Clean Customer Profile"}
+                  : "Clean Profile"}
               </span>
             </div>
-            <p className="text-[11px] text-muted-slate mt-0.5">
-              Behavioral repeat-disputer telemetry computed strictly from verified customer order records
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Behavioral repeat-disputer telemetry computed from verified customer order records
             </p>
           </div>
         </div>
 
-        {/* Score Pill */}
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-[4px] shrink-0 self-start sm:self-auto">
+        <div className="flex items-center gap-2 bg-muted/40 border border-border px-3 py-1.5 rounded-lg shrink-0 self-start sm:self-auto">
           <div className="text-right">
-            <span className="text-[10px] uppercase font-bold text-slate-500 block leading-tight">
+            <span className="text-[10px] uppercase font-medium text-muted-foreground block leading-tight">
               Fraud Index
             </span>
             <span
-              className={`text-sm font-bold font-mono ${
+              className={`text-xs font-semibold font-mono ${
                 isHigh
-                  ? "text-rose-600"
+                  ? "text-rose-600 dark:text-rose-400"
                   : isMedium
-                  ? "text-amber-600"
+                  ? "text-amber-600 dark:text-amber-400"
                   : isInsufficient
-                  ? "text-slate-500"
-                  : "text-emerald-600"
+                  ? "text-muted-foreground"
+                  : "text-emerald-600 dark:text-emerald-400"
               }`}
             >
               {score}%
@@ -117,44 +115,42 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
         </div>
       </div>
 
-      {/* Repeat Disputer Warning Callout */}
       {isRepeatDisputer && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-[4px] flex items-start gap-2.5 text-xs text-rose-900">
-          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+        <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
-            <span className="font-semibold block">
+            <span className="font-medium block">
               Repeat Disputer Anomaly Detected
             </span>
-            <span className="text-[11px] text-rose-800 leading-relaxed block">
+            <span className="text-[11px] opacity-90 leading-relaxed block">
               Customer profile exhibits historical chargebacks. Lifetime dispute-to-order ratio is{" "}
-              <strong>{(disputeToOrderRatio * 100).toFixed(0)}%</strong>.
+              <strong className="font-semibold">{(disputeToOrderRatio * 100).toFixed(0)}%</strong>.
             </span>
           </div>
         </div>
       )}
 
-      {/* Contributing Factors Breakdown */}
       <div className="space-y-2">
-        <div className="text-[11px] font-bold text-slate-700 tracking-wider uppercase">
-          Contributing Evidence & Telemetry
+        <div className="text-[11px] font-medium text-muted-foreground tracking-wide uppercase">
+          Contributing Evidence &amp; Telemetry
         </div>
         <div className="space-y-1.5">
           {contributingFactors.map((factor) => (
             <div
               key={factor.id}
-              className="flex items-start justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-[4px] text-xs text-slate-800"
+              className="flex items-start justify-between p-2.5 bg-muted/30 border border-border rounded-lg text-xs"
             >
               <div className="space-y-0.5 pr-2">
-                <span className="font-semibold text-slate-900 block">{factor.label}</span>
-                <span className="text-[11px] text-slate-600 block">{factor.evidence}</span>
+                <span className="font-medium text-foreground block">{factor.label}</span>
+                <span className="text-[11px] text-muted-foreground block">{factor.evidence}</span>
               </div>
               <span
-                className={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                className={`font-mono text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0 ${
                   factor.weight > 0
-                    ? "bg-rose-100 text-rose-800"
+                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                     : factor.weight < 0
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-slate-200 text-slate-700"
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "bg-muted text-muted-foreground"
                 }`}
               >
                 {factor.weight > 0 ? `+${factor.weight}` : factor.weight < 0 ? factor.weight : "0"} pts
@@ -164,28 +160,26 @@ export function FraudSignalCard({ fraudSignal }: FraudSignalCardProps) {
         </div>
       </div>
 
-      {/* Defense Strategy Impact */}
-      <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-[4px] text-xs text-blue-950 space-y-1">
-        <div className="flex items-center gap-1.5 font-bold text-[#0D1A48]">
+      <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-xs space-y-1">
+        <div className="flex items-center gap-1.5 font-medium text-foreground">
           <Scale className="w-3.5 h-3.5 text-primary" />
           <span>Contest Strategy Adjustment</span>
         </div>
-        <p className="text-[11px] text-blue-900 leading-relaxed">
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
           {defenseImpact.explanation}
         </p>
       </div>
 
-      {/* Relationship Graph Toggle & Canvas */}
-      <div className="pt-2 border-t border-slate-100 space-y-3">
+      <div className="pt-2 border-t border-border space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
             <Network className="w-3.5 h-3.5 text-primary" />
             <span>Entity Relationship Graph ({relationshipGraph?.nodes?.length || 0} nodes)</span>
           </div>
           <button
             type="button"
             onClick={() => setShowGraph(!showGraph)}
-            className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline cursor-pointer"
+            className="flex items-center gap-1 text-xs text-primary font-medium hover:underline cursor-pointer"
           >
             <span>{showGraph ? "Hide Graph" : "Inspect Graph"}</span>
             {showGraph ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}

@@ -141,18 +141,18 @@ export function UploadStatementModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-2xl">
-        <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+      <DialogContent className="sm:max-w-lg p-5 rounded-xl bg-card border border-border text-foreground shadow-lg">
+        <DialogHeader className="pb-3 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <FileSpreadsheet className="w-4 h-4" />
               </div>
               <div>
-                <DialogTitle className="text-sm sm:text-base font-bold text-slate-950 dark:text-white">
-                  Upload Custom Merchant Statement
+                <DialogTitle className="text-sm font-semibold text-foreground">
+                  Upload Merchant Statement
                 </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+                <DialogDescription className="text-xs text-muted-foreground">
                   Ingest transaction sheets, POD delivery logs, and dispute records (Max 10MB)
                 </DialogDescription>
               </div>
@@ -162,34 +162,34 @@ export function UploadStatementModal({
 
         {successData ? (
           <div className="py-4 space-y-4">
-            <div className="p-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <div className="space-y-1 text-xs">
-                <p className="font-bold text-emerald-950 dark:text-emerald-200">
-                  Statement Ingested &amp; Normalized Successfully
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 text-xs">
+                <p className="font-medium text-emerald-900 dark:text-emerald-200">
+                  Statement Ingested Successfully
                 </p>
-                <p className="text-emerald-800 dark:text-emerald-300">
-                  File: <span className="font-mono font-medium">{successData.filename}</span>
+                <p className="text-emerald-700 dark:text-emerald-400">
+                  File: <span className="font-mono">{successData.filename}</span>
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] text-slate-400 font-sans block">Records Processed</span>
-                <span className="text-base font-bold text-slate-900 dark:text-white">{successData.recordsProcessed}</span>
+            <div className="grid grid-cols-2 gap-2.5 text-xs font-mono">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border">
+                <span className="text-[10px] text-muted-foreground font-sans block">Records Processed</span>
+                <span className="text-sm font-medium text-foreground">{successData.recordsProcessed}</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] text-slate-400 font-sans block">New Orders Extracted</span>
-                <span className="text-base font-bold text-slate-900 dark:text-white">{successData.newOrdersCreated}</span>
+              <div className="p-3 rounded-lg bg-muted/40 border border-border">
+                <span className="text-[10px] text-muted-foreground font-sans block">New Orders Extracted</span>
+                <span className="text-sm font-medium text-foreground">{successData.newOrdersCreated}</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] text-slate-400 font-sans block">Deliveries / PODs Linked</span>
-                <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">{successData.newDeliveriesCreated}</span>
+              <div className="p-3 rounded-lg bg-muted/40 border border-border">
+                <span className="text-[10px] text-muted-foreground font-sans block">Deliveries / PODs Linked</span>
+                <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{successData.newDeliveriesCreated}</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] text-slate-400 font-sans block">Disputes Linked</span>
-                <span className="text-base font-bold text-primary">{successData.matchedDisputes}</span>
+              <div className="p-3 rounded-lg bg-muted/40 border border-border">
+                <span className="text-[10px] text-muted-foreground font-sans block">Disputes Linked</span>
+                <span className="text-sm font-medium text-primary">{successData.matchedDisputes}</span>
               </div>
             </div>
 
@@ -197,7 +197,7 @@ export function UploadStatementModal({
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 bg-slate-950 dark:bg-blue-600 text-white font-semibold text-xs rounded-xl hover:bg-primary transition cursor-pointer"
+                className="px-3.5 py-1.5 bg-primary text-primary-foreground font-medium text-xs rounded-lg hover:opacity-90 transition-opacity cursor-pointer shadow-2xs"
               >
                 Close &amp; View Dashboard
               </button>
@@ -212,10 +212,10 @@ export function UploadStatementModal({
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={cn(
-                "border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2",
+                "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2",
                 dragActive
-                  ? "border-primary bg-blue-50/50 dark:bg-blue-950/20"
-                  : "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700"
+                  ? "border-primary bg-primary/5"
+                  : "border-border bg-muted/20 hover:border-muted-foreground/30"
               )}
             >
               <input
@@ -225,28 +225,28 @@ export function UploadStatementModal({
                 onChange={(e) => handleFiles(e.target.files)}
                 className="hidden"
               />
-              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/80 text-primary flex items-center justify-center">
-                <Upload className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Upload className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">
+                <p className="text-xs font-medium text-foreground">
                   Click to browse or drag and drop statement file
                 </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-[11px] text-muted-foreground mt-0.5">
                   Supported formats: CSV, XLSX, PDF, DOCX, TXT, JSON (up to 10MB)
                 </p>
               </div>
             </div>
 
             {selectedFile && (
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 text-xs">
+              <div className="p-2.5 rounded-lg bg-muted/40 border border-border flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2 truncate">
                   <FileText className="w-4 h-4 text-primary shrink-0" />
                   <div className="truncate">
-                    <span className="font-bold text-slate-900 dark:text-white truncate block">
+                    <span className="font-medium text-foreground truncate block">
                       {selectedFile.name}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
+                    <span className="text-[10px] text-muted-foreground font-mono">
                       {(selectedFile.size / 1024).toFixed(1)} KB
                     </span>
                   </div>
@@ -257,26 +257,26 @@ export function UploadStatementModal({
                     e.stopPropagation();
                     setSelectedFile(null);
                   }}
-                  className="p-1 text-slate-400 hover:text-rose-500 transition cursor-pointer"
+                  className="p-1 text-muted-foreground hover:text-destructive transition cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+              <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={uploading}
-                className="px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -284,17 +284,17 @@ export function UploadStatementModal({
                 type="button"
                 onClick={handleUploadSubmit}
                 disabled={!selectedFile || uploading}
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white font-semibold text-xs rounded-xl hover:bg-primary-container disabled:opacity-50 transition shadow-xs cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground font-medium text-xs rounded-lg hover:opacity-90 disabled:opacity-50 transition shadow-2xs cursor-pointer"
               >
                 {uploading ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Processing Statement...</span>
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Upload &amp; Extract Data</span>
+                    <span>Upload &amp; Extract</span>
                   </>
                 )}
               </button>

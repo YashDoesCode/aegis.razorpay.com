@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { safeStorage, STORAGE_KEYS, ThemeMode } from "@/lib/storage/safeStorage";
+import { safeStorage, STORAGE_KEYS, ThemeMode, AccentMode } from "@/lib/storage/safeStorage";
 
-describe("Theme State and Persistence Logic", () => {
+describe("Theme, Accent, Sidebar, and Cache State Logic", () => {
   const memoryStore: Record<string, string> = {};
 
   beforeEach(() => {
@@ -31,6 +31,11 @@ describe("Theme State and Persistence Logic", () => {
     expect(initialTheme).toBe("light");
   });
 
+  it("defaults to neutral (monochrome) accent when uninitialized", () => {
+    const initialAccent = safeStorage.getItem<AccentMode>(STORAGE_KEYS.ACCENT, "neutral");
+    expect(initialAccent).toBe("neutral");
+  });
+
   it("persists dark theme selection across sessions", () => {
     safeStorage.setItem(STORAGE_KEYS.THEME, "dark");
     expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe("dark");
@@ -41,17 +46,51 @@ describe("Theme State and Persistence Logic", () => {
     expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe("amoled");
   });
 
-  it("persists accent selection across sessions", () => {
-    safeStorage.setItem(STORAGE_KEYS.ACCENT, "neutral");
-    expect(safeStorage.getItem<string>(STORAGE_KEYS.ACCENT, "blue")).toBe("neutral");
+  it("persists razorpay blue accent selection", () => {
+    safeStorage.setItem(STORAGE_KEYS.ACCENT, "blue");
+    expect(safeStorage.getItem<AccentMode>(STORAGE_KEYS.ACCENT, "neutral")).toBe("blue");
   });
 
-  it("persists startup timestamp and verifies 10 minute suppression", () => {
-    const now = Date.now();
-    safeStorage.setItem(STORAGE_KEYS.STARTUP_TIMESTAMP, now);
-    const stored = safeStorage.getItem<number>(STORAGE_KEYS.STARTUP_TIMESTAMP, 0);
-    expect(stored).toBe(now);
-    expect(Date.now() - stored < 10 * 60 * 1000).toBe(true);
+  it("supports all six theme and accent combinations", () => {
+    const themes: ThemeMode[] = ["light", "dark", "amoled"];
+    const accents: AccentMode[] = ["neutral", "blue"];
+
+    for (const theme of themes) {
+      for (const accent of accents) {
+        safeStorage.setItem(STORAGE_KEYS.THEME, theme);
+        safeStorage.setItem(STORAGE_KEYS.ACCENT, accent);
+
+        expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe(theme);
+        expect(safeStorage.getItem<AccentMode>(STORAGE_KEYS.ACCENT, "neutral")).toBe(accent);
+      }
+    }
+  });
+
+  it("persists right sidebar collapsed state", () => {
+    expect(safeStorage.getItem<boolean>(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, false)).toBe(false);
+    safeStorage.setItem(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, true);
+    expect(safeStorage.getItem<boolean>(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, false)).toBe(true);
+  });
+
+  it("persists PWA dismissal state", () => {
+    expect(safeStorage.getItem<boolean>(STORAGE_KEYS.PWA_DISMISSED, false)).toBe(false);
+    safeStorage.setItem(STORAGE_KEYS.PWA_DISMISSED, true);
+    expect(safeStorage.getItem<boolean>(STORAGE_KEYS.PWA_DISMISSED, false)).toBe(true);
+  });
+
+  it("clears local cache and resets display state when clearLocalData is called", () => {
+    safeStorage.setItem(STORAGE_KEYS.THEME, "amoled");
+    safeStorage.setItem(STORAGE_KEYS.ACCENT, "blue");
+    safeStorage.setItem(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, true);
+    safeStorage.setItem(STORAGE_KEYS.PWA_DISMISSED, true);
+    safeStorage.setItem(STORAGE_KEYS.ONBOARDING, { completed: true, skipped: false });
+
+    const result = safeStorage.clearLocalData();
+    expect(result).toBe(true);
+
+    expect(safeStorage.getItem<ThemeMode>(STORAGE_KEYS.THEME, "light")).toBe("light");
+    expect(safeStorage.getItem<AccentMode>(STORAGE_KEYS.ACCENT, "neutral")).toBe("neutral");
+    expect(safeStorage.getItem<boolean>(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, false)).toBe(false);
+    expect(safeStorage.getItem<boolean>(STORAGE_KEYS.PWA_DISMISSED, false)).toBe(false);
   });
 });
-

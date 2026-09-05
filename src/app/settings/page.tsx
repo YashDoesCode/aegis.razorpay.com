@@ -16,13 +16,16 @@ import {
   Zap,
   Sparkles,
   Check,
+  Trash2,
+  Download,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { LocalErrorBoundary } from "@/components/ui/error-boundary";
 import { useMerchantMode } from "@/context/merchant-mode-context";
 import { useTheme } from "@/context/theme-context";
 import { useOnboarding } from "@/components/onboarding";
-import { ThemeMode } from "@/lib/storage/safeStorage";
+import { safeStorage, ThemeMode, AccentMode } from "@/lib/storage/safeStorage";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
@@ -40,6 +43,7 @@ export default function SettingsPage() {
   const [autoDraftEnabled, setAutoDraftEnabled] = useState(true);
   const [autoAcceptLowScore, setAutoAcceptLowScore] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleSave = async () => {
     try {
@@ -52,6 +56,14 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleClearLocalCache = () => {
+    safeStorage.clearLocalData();
+    setTheme("light");
+    setAccent("neutral");
+    setShowClearConfirm(false);
+    toast.success("Local preferences and application cache reset");
   };
 
   const themeOptions: {
@@ -73,18 +85,18 @@ export default function SettingsPage() {
     {
       id: "dark",
       name: "Dark",
-      description: "Low-light workspace engineered for dark environments",
+      description: "Neutral very-dark grey workspace",
       icon: Moon,
-      previewBg: "bg-[#131B2E]",
-      previewBorder: "border-slate-700",
+      previewBg: "bg-[#181818]",
+      previewBorder: "border-[#262626]",
     },
     {
       id: "amoled",
       name: "AMOLED",
-      description: "Pure-black display mode with pitch-black surfaces",
+      description: "Pure-black display with true #000000 surfaces",
       icon: Zap,
       previewBg: "bg-[#000000]",
-      previewBorder: "border-neutral-800",
+      previewBorder: "border-[#1F1F1F]",
     },
   ];
 
@@ -95,22 +107,22 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15, ease: "easeOut" }}
-          className="w-full max-w-4xl space-y-5"
+          className="w-full max-w-4xl space-y-4 sm:space-y-5"
         >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
                 Settings &amp; Defense Parameters
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Configure autonomous dispute defense rules, workspace themes, and Razorpay API credentials
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Configure autonomous dispute defense rules, appearance profiles, and gateway credentials
               </p>
             </div>
 
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-white hover:bg-primary-container text-xs font-semibold rounded-xl shadow-xs cursor-pointer disabled:opacity-50 h-9"
+              className="flex items-center gap-2 px-3.5 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-lg shadow-xs cursor-pointer disabled:opacity-50 h-8.5"
             >
               {saving ? (
                 <>
@@ -126,14 +138,14 @@ export default function SettingsPage() {
             </Button>
           </div>
 
-          <div className="bg-slate-50/70 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-800 pb-3">
+          <div className="bg-card p-4 sm:p-5 rounded-xl border border-border shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
-                <h2 className="text-sm font-bold text-slate-950 dark:text-white uppercase tracking-wider">
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Workspace Appearance &amp; Themes
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Select your preferred display theme for the Aegis defense console
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Select your preferred workspace theme and accent profile
                 </p>
               </div>
 
@@ -143,10 +155,10 @@ export default function SettingsPage() {
                   resetOnboarding();
                   toast.info("Product tour restarted");
                 }}
-                className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Replay Product Tour</span>
+                <span>Replay Tour</span>
               </button>
             </div>
 
@@ -163,41 +175,41 @@ export default function SettingsPage() {
                       toast.success(`Theme set to ${opt.name}`);
                     }}
                     className={cn(
-                      "p-3.5 rounded-xl border text-left flex flex-col justify-between gap-3 transition cursor-pointer relative",
+                      "p-3 rounded-lg border text-left flex flex-col justify-between gap-3 transition cursor-pointer",
                       isSelected
-                        ? "bg-white dark:bg-slate-800 border-primary ring-2 ring-primary/20 shadow-xs"
-                        : "bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                        ? "bg-card border-foreground ring-1 ring-foreground shadow-xs"
+                        : "bg-muted/40 border-border hover:border-muted-foreground/40"
                     )}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
-                            "w-6 h-6 rounded-lg flex items-center justify-center border",
+                            "w-5 h-5 rounded-md flex items-center justify-center border",
                             opt.previewBg,
                             opt.previewBorder
                           )}
                         >
                           <IconComponent
                             className={cn(
-                              "w-3.5 h-3.5",
+                              "w-3 h-3",
                               opt.id === "light" ? "text-slate-900" : "text-white"
                             )}
                           />
                         </div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                        <span className="text-xs font-medium text-foreground">
                           {opt.name}
                         </span>
                       </div>
 
                       {isSelected && (
-                        <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center">
-                          <Check className="w-3 h-3 stroke-[2.5]" />
+                        <div className="w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 stroke-[2.5]" />
                         </div>
                       )}
                     </div>
 
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                    <p className="text-[11px] text-muted-foreground leading-snug">
                       {opt.description}
                     </p>
                   </button>
@@ -205,16 +217,47 @@ export default function SettingsPage() {
               })}
             </div>
 
-            <div className="pt-3 border-t border-slate-200/70 dark:border-slate-800">
+            <div className="pt-3 border-t border-border">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-900 dark:text-white">
+                <span className="text-xs font-medium text-foreground">
                   Accent Color Profile
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Controls primary buttons, focus rings, and active state highlights
+                <span className="text-[11px] text-muted-foreground">
+                  Controls focus rings, primary highlights, and active elements
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAccent("neutral");
+                    toast.success("Accent set to Neutral Monochrome (Default)");
+                  }}
+                  className={cn(
+                    "p-3 rounded-lg border text-left flex items-center justify-between transition cursor-pointer",
+                    accent === "neutral"
+                      ? "bg-card border-foreground ring-1 ring-foreground shadow-xs"
+                      : "bg-muted/40 border-border hover:border-muted-foreground/40"
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-foreground border border-border" />
+                    <div>
+                      <span className="text-xs font-medium text-foreground block">
+                        Monochrome (Default)
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Restrained, high-contrast minimal fintech palette
+                      </span>
+                    </div>
+                  </div>
+                  {accent === "neutral" && (
+                    <div className="w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                    </div>
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -222,57 +265,26 @@ export default function SettingsPage() {
                     toast.success("Accent set to Razorpay Blue");
                   }}
                   className={cn(
-                    "p-3 rounded-xl border text-left flex items-center justify-between transition cursor-pointer",
+                    "p-3 rounded-lg border text-left flex items-center justify-between transition cursor-pointer",
                     accent === "blue"
-                      ? "bg-white dark:bg-slate-800 border-blue-600 ring-2 ring-blue-500/20 shadow-xs"
-                      : "bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                      ? "bg-card border-blue-600 ring-1 ring-blue-600 shadow-xs"
+                      : "bg-muted/40 border-border hover:border-muted-foreground/40"
                   )}
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="w-5 h-5 rounded-full bg-[#305EFF] border border-blue-400" />
+                    <div className="w-4 h-4 rounded-full bg-[#305EFF] border border-blue-400" />
                     <div>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                      <span className="text-xs font-medium text-foreground block">
                         Razorpay Blue
                       </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Default corporate fintech indigo (#305EFF)
+                      <span className="text-[11px] text-muted-foreground">
+                        Corporate fintech accent tone (#305EFF)
                       </span>
                     </div>
                   </div>
                   {accent === "blue" && (
-                    <div className="w-5 h-5 rounded-full bg-[#305EFF] text-white flex items-center justify-center">
-                      <Check className="w-3 h-3 stroke-[2.5]" />
-                    </div>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAccent("neutral");
-                    toast.success("Accent set to Neutral Slate");
-                  }}
-                  className={cn(
-                    "p-3 rounded-xl border text-left flex items-center justify-between transition cursor-pointer",
-                    accent === "neutral"
-                      ? "bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-100 ring-2 ring-slate-500/20 shadow-xs"
-                      : "bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-5 h-5 rounded-full bg-slate-900 dark:bg-slate-100 border border-slate-700" />
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                        Neutral Slate
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                        High-contrast monochrome minimal palette
-                      </span>
-                    </div>
-                  </div>
-                  {accent === "neutral" && (
-                    <div className="w-5 h-5 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center">
-                      <Check className="w-3 h-3 stroke-[2.5]" />
+                    <div className="w-4 h-4 rounded-full bg-[#305EFF] text-white flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 stroke-[2.5]" />
                     </div>
                   )}
                 </button>
@@ -280,77 +292,75 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="bg-slate-50/70 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-slate-950 text-white flex items-center justify-center font-bold text-xs">
+          <div className="bg-card p-4 sm:p-5 rounded-xl border border-border shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
                   RZP
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-950 dark:text-white uppercase tracking-wider">
-                    Razorpay Merchant Integration
+                  <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Razorpay Merchant Gateway
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Active gateway credentials, live API authentication, and mode status
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Active gateway credentials and environment mode status
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <span
+                className={`text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1.5 ${
+                  mode === "live"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                    : "bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                }`}
+              >
                 <span
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
-                    mode === "live"
-                      ? "bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                      : "bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    mode === "live" ? "bg-emerald-600" : "bg-amber-600"
                   }`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      mode === "live" ? "bg-emerald-600 animate-pulse" : "bg-amber-600"
-                    }`}
-                  />
-                  {mode === "live" ? "Live Mode Active" : "Test Sandbox Active"}
-                </span>
-              </div>
+                />
+                {mode === "live" ? "Live Mode" : "Test Mode"}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg border border-border bg-muted/40 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                    Connected Merchant Account
+                  <span className="text-xs font-medium text-foreground">
+                    Connected Merchant
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground font-medium border border-border">
                     {merchant.isConnected ? "VERIFIED LIVE" : "SANDBOX MODE"}
                   </span>
                 </div>
-                <div className="font-mono text-xs text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-800 flex justify-between items-center">
+                <div className="font-mono text-xs text-foreground bg-card p-2 rounded border border-border flex justify-between items-center">
                   <span>{merchant.name}</span>
-                  <span className="text-[11px] text-slate-400 dark:text-slate-500">({merchant.merchantId})</span>
+                  <span className="text-[11px] text-muted-foreground">({merchant.merchantId})</span>
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 space-y-2">
+              <div className="p-3 rounded-lg border border-border bg-muted/40 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="text-xs font-medium text-foreground">
                     Razorpay API Key ID
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold border border-primary/20">
-                    SERVER SECURED
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground font-medium border border-border">
+                    ENCRYPTED
                   </span>
                 </div>
-                <div className="font-mono text-xs text-slate-500 dark:text-slate-400 truncate bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                <div className="font-mono text-xs text-muted-foreground truncate bg-card p-2 rounded border border-border">
                   {merchant.maskedKeyId || "rzp_live_••••••••"}
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/70 dark:border-slate-800">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-border">
+              <p className="text-[11px] text-muted-foreground">
                 Credentials are encrypted and processed strictly server-side.
               </p>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {merchant.isConnected && (
                   <button
                     type="button"
@@ -358,9 +368,9 @@ export default function SettingsPage() {
                       await disconnectAccount();
                       toast.info("Live account disconnected. Switched to Test Mode.");
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/60 rounded-xl border border-amber-200 dark:border-amber-800 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/60 rounded-lg border border-border transition cursor-pointer"
                   >
-                    <Unlink className="w-3.5 h-3.5" />
+                    <Unlink className="w-3 h-3" />
                     <span>Disconnect Live Account</span>
                   </button>
                 )}
@@ -368,36 +378,36 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setIsConnectModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-primary hover:bg-primary-container rounded-xl transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition cursor-pointer"
                 >
-                  <PlusCircle className="w-3.5 h-3.5" />
+                  <PlusCircle className="w-3 h-3" />
                   <span>Connect Razorpay Account</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-50/70 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-5">
-            <div className="flex items-center gap-2 border-b border-slate-200/70 dark:border-slate-800 pb-4">
-              <Sliders className="w-4 h-4 text-primary" />
+          <div className="bg-card p-4 sm:p-5 rounded-xl border border-border shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-border pb-3">
+              <Sliders className="w-4 h-4 text-muted-foreground" />
               <div>
-                <h2 className="text-sm font-bold text-slate-950 dark:text-white uppercase tracking-wider">
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Autonomous Defense Thresholds
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Control how the deterministic scoring engine and rebuttal drafting handle incoming disputes
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Control automated winnability scoring and representment staging
                 </p>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-medium text-foreground">
                     Minimum Winnability Score for Auto-Contest Staging
                   </label>
-                  <span className="font-mono font-bold text-primary text-xs">
-                    {minWinnabilityScore}% (High Winnability)
+                  <span className="font-mono font-medium text-foreground text-xs">
+                    {minWinnabilityScore}%
                   </span>
                 </div>
                 <input
@@ -409,13 +419,10 @@ export default function SettingsPage() {
                   onChange={(e) => setMinWinnabilityScore(Number(e.target.value))}
                   className="w-full accent-primary cursor-pointer"
                 />
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                  Disputes scoring at or above this threshold will automatically generate grounded representment packages staged in DRAFT mode on Razorpay API.
-                </p>
               </div>
 
-              <div className="pt-2 space-y-3">
-                <label className="flex items-start gap-3 cursor-pointer">
+              <div className="pt-2 space-y-2.5">
+                <label className="flex items-start gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={autoDraftEnabled}
@@ -423,16 +430,16 @@ export default function SettingsPage() {
                     className="mt-0.5 rounded text-primary focus:ring-primary"
                   />
                   <div>
-                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+                    <span className="text-xs font-medium text-foreground block">
                       Auto-Draft Grounded Rebuttal Letters
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                    <span className="text-[11px] text-muted-foreground block">
                       Automatically assemble PODs, GST invoices, and communication threads upon new chargeback webhook.
                     </span>
                   </div>
                 </label>
 
-                <label className="flex items-start gap-3 cursor-pointer">
+                <label className="flex items-start gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={autoAcceptLowScore}
@@ -440,10 +447,10 @@ export default function SettingsPage() {
                     className="mt-0.5 rounded text-primary focus:ring-primary"
                   />
                   <div>
-                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+                    <span className="text-xs font-medium text-foreground block">
                       Auto-Accept Low Winnability Disputes (&lt;30%)
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                    <span className="text-[11px] text-muted-foreground block">
                       Mitigate merchant processing penalties by promptly accepting disputes where mandatory delivery proof is completely missing.
                     </span>
                   </div>
@@ -452,33 +459,61 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="bg-slate-50/70 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-200/70 dark:border-slate-800 pb-3">
-              <Shield className="w-4 h-4 text-slate-700 dark:text-slate-300" />
-              <div>
-                <h2 className="text-sm font-bold text-slate-950 dark:text-white uppercase tracking-wider">
-                  Acquiring Infrastructure &amp; Gateway Spec
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Active database topology and payment gateway specs
-                </p>
+          <div className="bg-card p-4 sm:p-5 rounded-xl border border-border shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Local Application Data &amp; Cache
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Clear local browser preferences, saved UI states, and cached tour indicators
+                  </p>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-1 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg border border-border transition cursor-pointer"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Reset Local App Data</span>
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div>
-                <div className="text-slate-500 dark:text-slate-400 font-semibold">Datastore</div>
-                <div className="font-mono text-slate-900 dark:text-slate-100 mt-0.5">Neon Serverless PostgreSQL</div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Resetting local data removes saved display preferences, cached UI states, onboarding indicators, and sidebar positions from this browser. It does <strong className="text-foreground">not</strong> delete server-side disputes, database records, merchant API credentials, uploaded statements, or audit records.
+            </p>
+
+            {showClearConfirm && (
+              <div className="p-3.5 rounded-lg border border-border bg-muted/60 space-y-2 animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Confirm Local Cache Reset</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Are you sure you want to reset your local browser preferences? Workspace theme and accent will return to defaults.
+                </p>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowClearConfirm(false)}
+                    className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground rounded-md transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearLocalCache}
+                    className="px-3 py-1 text-xs font-medium bg-rose-600 text-white hover:bg-rose-700 rounded-md shadow-xs transition cursor-pointer"
+                  >
+                    Confirm Reset
+                  </button>
+                </div>
               </div>
-              <div>
-                <div className="text-slate-500 dark:text-slate-400 font-semibold">Network Protocols</div>
-                <div className="text-slate-900 dark:text-slate-100 mt-0.5">NPCI UPI 2.0 / RuPay / Visa / MC</div>
-              </div>
-              <div>
-                <div className="text-slate-500 dark:text-slate-400 font-semibold">Contest Staging</div>
-                <div className="text-slate-900 dark:text-slate-100 mt-0.5">Strict DRAFT (Zero Unintended Submissions)</div>
-              </div>
-            </div>
+            )}
           </div>
         </motion.div>
       </LocalErrorBoundary>

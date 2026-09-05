@@ -21,18 +21,18 @@ export function FraudRiskCard({
   return (
     <div
       className={cn(
-        "bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between shadow-xs transition-colors duration-200",
+        "bg-card rounded-xl p-4 sm:p-5 border border-border flex flex-col justify-between shadow-xs transition-colors duration-200",
         className
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Risk Score
         </span>
         <Link
           href="/disputes?filter=high_risk"
           aria-label="Risk Details"
-          className="w-7 h-7 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+          className="w-6 h-6 rounded-md bg-muted/60 hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition shadow-xs cursor-pointer focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
           <ArrowUpRight className="w-3.5 h-3.5 stroke-[2]" />
         </Link>
@@ -40,55 +40,56 @@ export function FraudRiskCard({
 
       <div className="my-0.5">
         <div className="flex items-baseline">
-          <span className="text-3xl font-extrabold font-mono text-slate-950 dark:text-white tabular-nums">
+          <span className="text-2xl font-semibold font-mono text-foreground tabular-nums">
             {score}
           </span>
-          <span className="text-slate-400 dark:text-slate-500 text-xs font-normal ml-1 font-mono">
+          <span className="text-muted-foreground text-xs font-normal ml-1 font-mono">
             /100
           </span>
         </div>
-        <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium mt-0.5 leading-snug">
+        <p className="text-[11px] text-muted-foreground font-normal mt-0.5 leading-snug">
           {statusText}
         </p>
       </div>
 
       <div className="relative flex flex-col items-center justify-end overflow-hidden pt-1 select-none">
         <svg
-          className="w-40 sm:w-44 h-20 sm:h-22 overflow-visible"
+          className="w-36 h-18 overflow-visible"
           viewBox="0 0 200 100"
           aria-hidden="true"
         >
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
             fill="none"
-            className="stroke-slate-200 dark:stroke-slate-800"
+            stroke="currentColor"
+            className="text-muted"
             strokeLinecap="round"
-            strokeWidth="14"
+            strokeWidth="10"
           />
           <path
             d="M 20 100 A 80 80 0 0 1 135 28"
             fill="none"
-            stroke="#10B981"
+            stroke="currentColor"
+            className="text-emerald-600 dark:text-emerald-500"
             strokeLinecap="round"
-            strokeWidth="14"
+            strokeWidth="10"
           />
           <circle
-            className="shadow-sm"
             cx="135"
             cy="28"
-            fill="#0F172A"
-            r="7"
-            stroke="#FFFFFF"
-            strokeWidth="2.5"
+            fill="var(--card)"
+            r="5"
+            stroke="currentColor"
+            className="text-foreground"
+            strokeWidth="2"
           />
         </svg>
 
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center mt-1.5 font-medium">
-          Stability improved by{" "}
-          <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+        <p className="text-[11px] text-muted-foreground text-center mt-1 font-normal">
+          Stability delta{" "}
+          <span className="text-emerald-600 dark:text-emerald-400 font-mono">
             +{stabilityDelta}%
-          </span>{" "}
-          vs last run
+          </span>
         </p>
       </div>
     </div>

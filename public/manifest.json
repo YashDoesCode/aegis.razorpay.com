@@ -1,0 +1,18 @@
+{
+  "name": "Razorpay Aegis",
+  "short_name": "Aegis",
+  "description": "Autonomous dispute winnability scoring, evidence orchestration, and rebuttal drafting for Razorpay merchants.",
+  "start_url": "/overview",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0F172A",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

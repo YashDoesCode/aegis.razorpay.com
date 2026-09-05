@@ -21,6 +21,7 @@ import {
   Landmark,
   ShieldCheck,
   Settings,
+  PanelRight,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,6 +35,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { ConnectRazorpayModal } from "./connect-razorpay-modal";
 import { ModeSwitcher } from "./mode-switcher";
+import { RightSidebar } from "./right-sidebar";
 import { useMerchantMode } from "@/context/merchant-mode-context";
 import { safeStorage, STORAGE_KEYS } from "@/lib/storage/safeStorage";
 import { cn } from "@/lib/utils";
@@ -99,6 +101,9 @@ export function DashboardShell({
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [internalSearch, setInternalSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    return !safeStorage.getItem<boolean>(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, false);
+  });
 
   const effectiveSearch = onSearchChange ? searchQuery : internalSearch;
 
@@ -119,6 +124,14 @@ export function DashboardShell({
       safeStorage.setItem(STORAGE_KEYS.LAST_TAB, pathname);
     }
   }, [pathname]);
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      safeStorage.setItem(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, !next);
+      return next;
+    });
+  };
 
   useEffect(() => {
     fetch(`/api/disputes?mode=${mode}`)
@@ -190,16 +203,16 @@ export function DashboardShell({
   return (
     <TooltipProvider delay={100}>
       <div
-        className="w-full min-h-screen bg-white dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-slate-900 selection:text-white transition-colors duration-200"
+        className="w-full min-h-screen bg-background text-foreground font-sans antialiased transition-colors duration-200"
         suppressHydrationWarning
       >
-        <div className="w-full min-h-screen p-4 sm:p-6 lg:p-8 flex flex-col justify-between gap-4 sm:gap-6 relative">
-          <header className="flex items-center justify-between gap-2.5 sm:gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-3 lg:gap-4.5 shrink-0">
-              <Link href="/overview" className="flex items-center gap-2.5 group shrink-0">
-                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-[#305EFF] flex items-center justify-center text-white shadow-xs group-hover:bg-[#244BCC] transition-colors duration-200">
+        <div className="w-full min-h-screen p-3 sm:p-5 lg:p-6 flex flex-col justify-between gap-4 relative">
+          <header className="flex items-center justify-between gap-2.5 sm:gap-4 pb-3 border-b border-border">
+            <div className="flex items-center gap-3 lg:gap-5 shrink-0">
+              <Link href="/overview" className="flex items-center gap-2 group shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-xs transition-colors duration-200">
                   <svg
-                    className="w-4.5 h-4.5 text-white"
+                    className="w-4 h-4"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                     xmlns="http://www.w3.org/2000/svg"
@@ -212,14 +225,14 @@ export function DashboardShell({
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[14px] sm:text-[15px] font-extrabold tracking-tight text-slate-950 dark:text-white leading-none">
+                    <span className="text-[14px] font-semibold tracking-tight text-foreground leading-none">
                       Razorpay
                     </span>
-                    <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/80 px-1.5 py-0.5 rounded border border-blue-100/60 dark:border-blue-800/60">
+                    <span className="text-[10px] font-medium tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
                       Aegis
                     </span>
                   </div>
-                  <span className="text-[9px] sm:text-[10px] font-medium tracking-wide text-slate-400 dark:text-slate-500 uppercase mt-0.5 sm:mt-1">
+                  <span className="text-[10px] font-normal tracking-wide text-muted-foreground mt-0.5">
                     Dispute Operations
                   </span>
                 </div>
@@ -227,7 +240,7 @@ export function DashboardShell({
 
               <div className="hidden lg:flex items-center">
                 <nav
-                  className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-full border border-slate-200/70 dark:border-slate-700/70 text-xs font-medium text-slate-600 dark:text-slate-300 transition-all duration-200 gap-1"
+                  className="flex items-center bg-muted/60 p-1 rounded-lg border border-border text-xs font-normal text-muted-foreground transition-all duration-200 gap-1"
                   aria-label="Main Navigation"
                 >
                   {navItems.map((item) => {
@@ -246,10 +259,10 @@ export function DashboardShell({
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "px-3 xl:px-3.5 py-1 sm:py-1.5 rounded-full transition-all duration-150 cursor-pointer text-[11px] sm:text-xs flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-100 focus-visible:outline-hidden whitespace-nowrap",
+                          "px-3 py-1 rounded-md transition-all duration-150 cursor-pointer text-xs flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-foreground focus-visible:outline-hidden whitespace-nowrap",
                           isActive
-                            ? "bg-slate-950 dark:bg-blue-600 text-white font-semibold shadow-xs"
-                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
+                            ? "bg-card text-foreground font-medium shadow-xs border border-border"
+                            : "hover:text-foreground hover:bg-card/50"
                         )}
                       >
                         <IconComp className="w-3.5 h-3.5 stroke-[1.75] shrink-0" />
@@ -264,8 +277,8 @@ export function DashboardShell({
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
               <ModeSwitcher />
 
-              <div className="relative hidden md:block w-36 lg:w-44 xl:w-56 2xl:w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <div className="relative hidden md:block w-36 lg:w-44 xl:w-52">
+                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-muted-foreground">
                   <Search className="w-3.5 h-3.5" />
                 </div>
                 <input
@@ -275,7 +288,7 @@ export function DashboardShell({
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Search dispute, RRN..."
                   aria-label="Search dispute, RRN, order ID"
-                  className="w-full pl-8 pr-3 py-1 sm:py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-full text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-slate-400 focus:bg-white dark:focus:bg-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400 transition"
+                  className="w-full pl-8 pr-3 py-1 text-xs bg-muted/50 border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-foreground focus:bg-card transition"
                 />
               </div>
 
@@ -284,59 +297,71 @@ export function DashboardShell({
                   <button
                     aria-label="Notifications"
                     data-testid="notification-bell"
-                    className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white relative transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                    className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg bg-card hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground relative transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-foreground"
                   >
-                    <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.75]" />
+                    <Bell className="w-3.5 h-3.5 stroke-[1.75]" />
                     {notifications.some((n) => n.unread) && (
-                      <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-800" />
+                      <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-rose-500" />
                     )}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-80 p-2 space-y-1 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                  className="w-80 p-2 space-y-1 rounded-xl shadow-lg border border-border bg-card"
                 >
                   <DropdownMenuLabel className="flex items-center justify-between text-xs px-2 py-1">
-                    <span className="font-bold text-slate-900 dark:text-white">
+                    <span className="font-semibold text-foreground">
                       Dispute Alerts ({mode === "live" ? "Live" : "Test"})
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 font-bold border border-rose-100 dark:border-rose-800">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground font-medium border border-border">
                       {notifications.length} Pending
                     </span>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                  <DropdownMenuSeparator className="bg-border" />
                   {notifications.length > 0 ? (
                     notifications.map((n) => (
                       <DropdownMenuItem
                         key={n.id}
                         onClick={() => router.push("/disputes")}
-                        className="flex flex-col items-start gap-0.5 p-2.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                        className="flex flex-col items-start gap-0.5 p-2 cursor-pointer hover:bg-muted rounded-lg transition-colors"
                       >
                         <div className="flex items-center gap-2 w-full">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                          <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                          <span className="font-medium text-xs text-foreground truncate">
                             {n.title}
                           </span>
                         </div>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 pl-3.5 font-mono">
+                        <span className="text-[10px] text-muted-foreground pl-3.5 font-mono">
                           {n.time}
                         </span>
                       </DropdownMenuItem>
                     ))
                   ) : (
-                    <div className="py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                    <div className="py-4 text-center text-xs text-muted-foreground">
                       No pending dispute alerts in {mode.toUpperCase()} mode.
                     </div>
                   )}
-                  <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                  <DropdownMenuSeparator className="bg-border" />
                   <DropdownMenuItem
                     onClick={() => router.push("/disputes")}
-                    className="text-center justify-center font-semibold text-xs text-primary cursor-pointer rounded-xl py-2 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                    className="text-center justify-center font-medium text-xs text-foreground cursor-pointer rounded-lg py-1.5 hover:bg-muted"
                   >
                     View all in Defense Console &rarr;
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <button
+                type="button"
+                onClick={handleToggleSidebar}
+                aria-label={sidebarOpen ? "Hide info panel" : "Show info panel"}
+                className={cn(
+                  "hidden lg:flex w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg border border-border items-center justify-center text-muted-foreground hover:text-foreground transition cursor-pointer shadow-xs",
+                  sidebarOpen ? "bg-muted text-foreground" : "bg-card"
+                )}
+              >
+                <PanelRight className="w-3.5 h-3.5 stroke-[1.75]" />
+              </button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -344,13 +369,13 @@ export function DashboardShell({
                     id="tour-merchant-menu"
                     data-testid="user-profile-menu"
                     aria-label={`Merchant Account Menu: ${merchant.name || "Acme India Retail Ltd"}`}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 pl-1.5 pr-2.5 sm:pr-3 py-1 rounded-full cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-card hover:bg-muted border border-border pl-1.5 pr-2.5 py-1 rounded-lg cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-2 focus-visible:ring-foreground"
                   >
-                    <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full bg-slate-950 dark:bg-blue-600 text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold tracking-tight">
+                    <div className="w-5.5 h-5.5 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-medium tracking-tight">
                       {merchantInitials}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[85px] sm:max-w-[110px] truncate">
+                      <span className="text-xs font-medium text-foreground max-w-[85px] sm:max-w-[110px] truncate">
                         {merchant.name || "Acme India Retail Ltd"}
                       </span>
                       <span
@@ -365,40 +390,40 @@ export function DashboardShell({
                         title={
                           mode === "live"
                             ? merchant.isConnected
-                              ? "Live Connected"
-                              : "Live Mode"
+                            ? "Live Connected"
+                            : "Live Mode"
                             : "Test Sandbox Mode"
                         }
                       />
                     </div>
-                    <ChevronDown className="w-3 h-3 text-slate-400 stroke-[2]" />
+                    <ChevronDown className="w-3 h-3 text-muted-foreground stroke-[2]" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-64 p-2 space-y-1 text-xs rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                  className="w-60 p-1.5 space-y-1 text-xs rounded-xl shadow-lg border border-border bg-card"
                 >
                   <DropdownMenuLabel className="px-2 py-1">
                     <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                      <span className="text-xs font-semibold text-foreground">
                         {merchant.name || "Acme India Retail Ltd"}
                       </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                      <span className="text-[10px] text-muted-foreground font-mono">
                         {merchant.merchantId || "acc_demo_test_01"}
                       </span>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                  <DropdownMenuSeparator className="bg-border" />
                   <DropdownMenuItem
                     onClick={() => setIsConnectModalOpen(true)}
-                    className="cursor-pointer gap-2 text-xs rounded-xl p-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="cursor-pointer gap-2 text-xs rounded-lg p-2 hover:bg-muted"
                   >
-                    <PlusCircle className="w-3.5 h-3.5 text-primary" />
+                    <PlusCircle className="w-3.5 h-3.5 text-foreground" />
                     <span>Connect Razorpay Account</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={toggleMode}
-                    className="cursor-pointer gap-2 text-xs rounded-xl p-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="cursor-pointer gap-2 text-xs rounded-lg p-2 hover:bg-muted"
                   >
                     <Zap className="w-3.5 h-3.5 text-amber-500" />
                     <span>
@@ -407,9 +432,9 @@ export function DashboardShell({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => router.push("/settings")}
-                    className="cursor-pointer gap-2 text-xs rounded-xl p-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="cursor-pointer gap-2 text-xs rounded-lg p-2 hover:bg-muted"
                   >
-                    <Sliders className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <Sliders className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>Aegis Rules &amp; Themes</span>
                   </DropdownMenuItem>
                   {merchant.isConnected && (
@@ -418,16 +443,16 @@ export function DashboardShell({
                         await disconnectAccount();
                         toast.info("Disconnected live Razorpay account");
                       }}
-                      className="cursor-pointer gap-2 text-xs text-amber-700 dark:text-amber-400 rounded-xl p-2 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                      className="cursor-pointer gap-2 text-xs text-amber-700 dark:text-amber-400 rounded-lg p-2 hover:bg-muted"
                     >
                       <Unlink className="w-3.5 h-3.5" />
                       <span>Disconnect Live Account</span>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                  <DropdownMenuSeparator className="bg-border" />
                   <DropdownMenuItem
                     onClick={handleSignOut}
-                    className="cursor-pointer gap-2 text-xs text-rose-600 dark:text-rose-400 focus:text-rose-700 focus:bg-rose-50 dark:focus:bg-rose-950/50 rounded-xl p-2"
+                    className="cursor-pointer gap-2 text-xs text-rose-600 dark:text-rose-400 focus:bg-muted rounded-lg p-2"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign out</span>
@@ -438,7 +463,7 @@ export function DashboardShell({
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 transition shadow-xs cursor-pointer"
+                className="lg:hidden w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg bg-card hover:bg-muted border border-border flex items-center justify-center text-foreground transition shadow-xs cursor-pointer"
                 aria-label="Open Mobile Menu"
               >
                 <Menu className="w-4 h-4" />
@@ -449,29 +474,26 @@ export function DashboardShell({
           {mobileMenuOpen && (
             <div className="fixed inset-0 z-50 lg:hidden flex">
               <div
-                className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                className="fixed inset-0 bg-background/80 backdrop-blur-xs transition-opacity"
                 onClick={() => setMobileMenuOpen(false)}
               />
-              <nav className="relative w-[280px] h-full bg-white dark:bg-slate-900 flex flex-col p-5 z-50 text-slate-900 dark:text-white shadow-2xl overflow-y-auto">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+              <nav className="relative w-[280px] h-full bg-card flex flex-col p-5 z-50 text-foreground shadow-xl border-r border-border overflow-y-auto">
+                <div className="flex items-center justify-between pb-4 border-b border-border">
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-base text-slate-950 dark:text-white">
-                      Razorpay
-                    </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/80 px-1.5 py-0.5 rounded border border-blue-100/60 dark:border-blue-800/60">
-                      Aegis
+                    <span className="font-semibold text-sm text-foreground">
+                      Razorpay Aegis
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="p-1 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg hover:bg-muted"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="py-4 space-y-1.5">
+                <div className="py-4 space-y-1">
                   {navItems.map((item) => {
                     const isActive =
                       item.href === "/overview"
@@ -488,10 +510,10 @@ export function DashboardShell({
                         href={item.href}
                         onClick={() => setMobileMenuOpen(false)}
                         className={cn(
-                          "flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors",
+                          "flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors",
                           isActive
-                            ? "bg-slate-950 dark:bg-blue-600 text-white shadow-xs"
-                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-white"
+                            ? "bg-muted text-foreground border border-border"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
                       >
                         <IconComp className="w-4 h-4 stroke-[1.75]" />
@@ -501,7 +523,7 @@ export function DashboardShell({
                   })}
                 </div>
 
-                <div className="mt-auto border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3 text-xs">
+                <div className="mt-auto border-t border-border pt-4 space-y-2 text-xs">
                   <div className="px-1">
                     <ModeSwitcher />
                   </div>
@@ -511,17 +533,17 @@ export function DashboardShell({
                       setMobileMenuOpen(false);
                       setIsConnectModalOpen(true);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left rounded-lg hover:bg-muted"
                   >
-                    <PlusCircle className="w-4 h-4 text-primary" />
+                    <PlusCircle className="w-4 h-4 text-foreground" />
                     <span>Connect Razorpay Account</span>
                   </button>
                   <Link
                     href="/settings"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
+                    className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
                   >
-                    <Sliders className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                    <Sliders className="w-4 h-4 text-muted-foreground" />
                     <span>Defense Rules &amp; Themes</span>
                   </Link>
                 </div>
@@ -529,21 +551,30 @@ export function DashboardShell({
             </div>
           )}
 
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.main
-              key={pathname}
-              initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
-              transition={{
-                duration: 0.28,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="flex flex-col gap-4 sm:gap-6 flex-1 w-full"
-            >
-              {children}
-            </motion.main>
-          </AnimatePresence>
+          <div className="flex gap-4 sm:gap-5 flex-1 items-start w-full">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.main
+                key={pathname}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{
+                  duration: 0.2,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="flex flex-col gap-4 sm:gap-5 flex-1 w-full min-w-0"
+              >
+                {children}
+              </motion.main>
+            </AnimatePresence>
+
+            <div className="hidden lg:block shrink-0 sticky top-4 self-start">
+              <RightSidebar
+                isOpen={sidebarOpen}
+                onToggle={handleToggleSidebar}
+              />
+            </div>
+          </div>
 
           <ConnectRazorpayModal />
         </div>

@@ -77,7 +77,7 @@ export function ProductTour() {
                   y={targetBounds.top - 8}
                   width={targetBounds.width + 16}
                   height={targetBounds.height + 16}
-                  rx="16"
+                  rx="12"
                   fill="black"
                 />
               </mask>
@@ -85,13 +85,13 @@ export function ProductTour() {
             <rect
               width="100%"
               height="100%"
-              fill="rgba(15, 23, 42, 0.65)"
+              fill="rgba(0, 0, 0, 0.6)"
               mask="url(#tour-spotlight-cutout)"
-              className="backdrop-blur-md"
+              className="backdrop-blur-xs"
             />
           </svg>
         ) : (
-          <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-md pointer-events-auto" />
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-xs pointer-events-auto" />
         )}
 
         {targetBounds && (
@@ -100,7 +100,7 @@ export function ProductTour() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="absolute rounded-2xl ring-4 ring-blue-500/80 shadow-[0_0_40px_rgba(59,130,246,0.6)] pointer-events-none transition-all duration-300"
+            className="absolute rounded-xl ring-2 ring-primary/80 shadow-md pointer-events-none transition-all duration-300"
             style={{
               top: `${targetBounds.top - 8}px`,
               left: `${targetBounds.left - 8}px`,
@@ -113,18 +113,18 @@ export function ProductTour() {
         <div className="fixed inset-x-4 bottom-6 sm:bottom-8 z-[99998] flex justify-center pointer-events-auto">
           <motion.div
             ref={popoverRef}
-            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col gap-3"
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-md bg-card border border-border rounded-xl p-4 shadow-lg flex flex-col gap-3"
             role="region"
             aria-label="Product tour step guidance"
           >
             <div className="flex items-center justify-between pb-1">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   Step {currentStepIndex + 1} of {totalSteps}
                 </span>
               </div>
@@ -133,34 +133,34 @@ export function ProductTour() {
                 type="button"
                 onClick={skipTour}
                 aria-label="Exit tour"
-                className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition cursor-pointer"
+                className="w-6 h-6 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground transition-colors cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
               <div
-                className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                className="bg-primary h-full rounded-full transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
 
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-foreground">
                 {currentStep.title}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 {currentStep.description}
               </p>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between pt-2 border-t border-border">
               <button
                 type="button"
                 onClick={prevStep}
                 disabled={currentStepIndex === 0}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Back</span>
@@ -170,7 +170,7 @@ export function ProductTour() {
                 <button
                   type="button"
                   onClick={skipTour}
-                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition cursor-pointer"
+                  className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   Skip
                 </button>
@@ -179,7 +179,7 @@ export function ProductTour() {
                   <button
                     type="button"
                     onClick={completeTour}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-semibold shadow-xs transition cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1 bg-primary hover:opacity-90 text-primary-foreground rounded-lg text-xs font-medium shadow-2xs transition-opacity cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Finish</span>
@@ -188,7 +188,7 @@ export function ProductTour() {
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="flex items-center gap-1 px-4 py-1.5 bg-slate-950 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-full text-xs font-semibold shadow-xs transition cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1 bg-primary hover:opacity-90 text-primary-foreground rounded-lg text-xs font-medium shadow-2xs transition-opacity cursor-pointer"
                   >
                     <span>Next</span>
                     <ChevronRight className="w-3.5 h-3.5" />

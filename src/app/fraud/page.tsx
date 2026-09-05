@@ -183,21 +183,21 @@ export default function FraudEnginePage() {
     >
       <LocalErrorBoundary fallbackTitle="Fraud Engine Error">
         <motion.div
-          initial={{ opacity: 0, y: 4 }}
+          initial={{ opacity: 0, y: 3 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15, ease: "easeOut" }}
           className="w-full space-y-5"
         >
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-slate-950 dark:bg-blue-600 text-white flex items-center justify-center shadow-xs">
-                <ShieldCheck className="w-4.5 h-4.5 stroke-[1.75]" />
+              <div className="w-7 h-7 rounded-lg bg-foreground text-background flex items-center justify-center shadow-2xs">
+                <ShieldCheck className="w-4 h-4 stroke-[1.75]" />
               </div>
               <div>
-                <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                <h1 className="text-xl font-semibold tracking-tight text-foreground leading-tight">
                   Fraud Engine &amp; Repeat Disputer Telemetry
                 </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Behavioral pattern detection, friendly-fraud scoring, and multi-entity relationship mapping
                 </p>
               </div>
@@ -208,7 +208,7 @@ export default function FraudEnginePage() {
                 type="button"
                 onClick={loadData}
                 disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-card text-foreground hover:bg-muted transition-colors cursor-pointer shadow-2xs"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
                 <span>Sync Telemetry</span>
@@ -217,63 +217,63 @@ export default function FraudEnginePage() {
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs space-y-1">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-4 rounded-xl border border-border bg-card shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
                 <span>Evaluated Disputes</span>
-                <Receipt className="w-4 h-4 text-blue-500" />
+                <Receipt className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              <div className="text-xl font-semibold text-foreground tracking-tight">
                 {metrics.total}
               </div>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-muted-foreground">
                 100% telemetry coverage
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs space-y-1">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <div className="p-4 rounded-xl border border-border bg-card shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
                 <span>High First-Party Risk</span>
-                <ShieldAlert className="w-4 h-4 text-rose-500" />
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
               </div>
-              <div className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 tracking-tight">
+              <div className="text-xl font-semibold text-rose-600 dark:text-rose-400 tracking-tight">
                 {metrics.highRiskCount}
               </div>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-muted-foreground">
                 ₹{(metrics.highRiskValue / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })} high risk
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs space-y-1">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <div className="p-4 rounded-xl border border-border bg-card shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
                 <span>Repeat Disputer Rate</span>
-                <TrendingUp className="w-4 h-4 text-amber-500" />
+                <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
               </div>
-              <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
+              <div className="text-xl font-semibold text-amber-600 dark:text-amber-400 tracking-tight">
                 {metrics.repeatRate}%
               </div>
-              <p className="text-[10px] text-slate-400">
-                {metrics.repeatDisputerCount} customers with prior disputes
+              <p className="text-[10px] text-muted-foreground">
+                {metrics.repeatDisputerCount} accounts with prior disputes
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs space-y-1">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <div className="p-4 rounded-xl border border-border bg-card shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
                 <span>Clean Customer Ratio</span>
-                <Users className="w-4 h-4 text-emerald-500" />
+                <Users className="w-3.5 h-3.5 text-emerald-500" />
               </div>
-              <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+              <div className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 tracking-tight">
                 {metrics.total > 0
                   ? `${Math.round((metrics.cleanCount / metrics.total) * 100)}%`
                   : "0%"}
               </div>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-muted-foreground">
                 {metrics.cleanCount} low-risk accounts
               </p>
             </div>
@@ -282,15 +282,15 @@ export default function FraudEnginePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             <div className="lg:col-span-5 space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs">
+                <div className="flex items-center bg-muted p-0.5 rounded-lg text-xs">
                   <button
                     type="button"
                     onClick={() => setRiskFilter("all")}
                     className={cn(
-                      "px-2.5 py-1 rounded-md font-medium transition cursor-pointer",
+                      "px-2.5 py-1 rounded font-medium transition-colors cursor-pointer",
                       riskFilter === "all"
-                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        ? "bg-card text-foreground shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     All ({metrics.total})
@@ -299,10 +299,10 @@ export default function FraudEnginePage() {
                     type="button"
                     onClick={() => setRiskFilter("high")}
                     className={cn(
-                      "px-2.5 py-1 rounded-md font-medium transition cursor-pointer",
+                      "px-2.5 py-1 rounded font-medium transition-colors cursor-pointer",
                       riskFilter === "high"
-                        ? "bg-rose-500 text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                        ? "bg-rose-500 text-white shadow-2xs"
+                        : "text-muted-foreground hover:text-rose-600"
                     )}
                   >
                     High ({metrics.highRiskCount})
@@ -311,10 +311,10 @@ export default function FraudEnginePage() {
                     type="button"
                     onClick={() => setRiskFilter("medium")}
                     className={cn(
-                      "px-2.5 py-1 rounded-md font-medium transition cursor-pointer",
+                      "px-2.5 py-1 rounded font-medium transition-colors cursor-pointer",
                       riskFilter === "medium"
-                        ? "bg-amber-500 text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
+                        ? "bg-amber-500 text-white shadow-2xs"
+                        : "text-muted-foreground hover:text-amber-600"
                     )}
                   >
                     Medium ({metrics.mediumRiskCount})
@@ -323,10 +323,10 @@ export default function FraudEnginePage() {
                     type="button"
                     onClick={() => setRiskFilter("clean")}
                     className={cn(
-                      "px-2.5 py-1 rounded-md font-medium transition cursor-pointer",
+                      "px-2.5 py-1 rounded font-medium transition-colors cursor-pointer",
                       riskFilter === "clean"
-                        ? "bg-emerald-600 text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                        ? "bg-emerald-600 text-white shadow-2xs"
+                        : "text-muted-foreground hover:text-emerald-600"
                     )}
                   >
                     Clean ({metrics.cleanCount})
@@ -334,20 +334,20 @@ export default function FraudEnginePage() {
                 </div>
               </div>
 
-              <div className="space-y-2 max-h-[640px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[640px] overflow-y-auto pr-1 custom-scrollbar">
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2"
+                      className="p-3 rounded-xl border border-border bg-card space-y-2"
                     >
                       <Skeleton className="h-4 w-3/4" />
                       <Skeleton className="h-3 w-1/2" />
                     </div>
                   ))
                 ) : filteredDisputes.length === 0 ? (
-                  <div className="p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs">
-                    <FileQuestion className="w-6 h-6 mx-auto mb-2 text-slate-400" />
+                  <div className="p-8 text-center border border-dashed border-border rounded-xl bg-muted/40 text-muted-foreground text-xs">
+                    <FileQuestion className="w-5 h-5 mx-auto mb-2 opacity-50" />
                     No disputes match the active filter in {mode.toUpperCase()} mode.
                   </div>
                 ) : (
@@ -362,43 +362,43 @@ export default function FraudEnginePage() {
                         key={d.id}
                         onClick={() => setSelectedDisputeId(d.id)}
                         className={cn(
-                          "p-3.5 rounded-xl border transition-all cursor-pointer text-left relative",
+                          "p-3 rounded-xl border transition-colors cursor-pointer text-left relative",
                           isSelected
-                            ? "border-blue-500 dark:border-blue-500 bg-blue-50/30 dark:bg-blue-950/20 shadow-xs ring-1 ring-blue-500/20"
-                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
+                            ? "border-primary bg-primary/5 shadow-2xs"
+                            : "border-border bg-card hover:border-muted-foreground/30"
                         )}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex flex-col">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-xs text-slate-900 dark:text-white">
+                              <span className="font-medium text-xs text-foreground">
                                 {d.order?.customer?.name || "Customer"}
                               </span>
                               {d.fraudSignal?.isRepeatDisputer && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                <span className="text-[9px] px-1.5 py-0.2 rounded font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                                   Repeat
                                 </span>
                               )}
                             </div>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+                            <span className="text-[11px] text-muted-foreground truncate max-w-[200px]">
                               {d.order?.item || `Dispute ${d.id}`}
                             </span>
                           </div>
 
                           <div className="text-right shrink-0">
-                            <div className="font-bold text-xs text-slate-900 dark:text-white">
+                            <div className="font-medium text-xs text-foreground">
                               ₹{((d.amount || 0) / 100).toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
                               })}
                             </div>
                             <span
                               className={cn(
-                                "inline-block text-[10px] font-bold px-1.5 py-0.5 rounded uppercase mt-0.5",
+                                "inline-block text-[9px] font-medium px-1.5 py-0.5 rounded uppercase mt-0.5",
                                 isHigh
-                                  ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
                                   : isMedium
-                                  ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                                  : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                               )}
                             >
                               {band === "high"
@@ -410,7 +410,7 @@ export default function FraudEnginePage() {
                           </div>
                         </div>
 
-                        <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="mt-2 pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
                           <span className="font-mono text-[10px]">
                             Disputes: {d.order?.customer?.priorDisputesCount || 0} / Orders: {d.order?.customer?.priorOrdersCount || 0}
                           </span>
@@ -420,7 +420,7 @@ export default function FraudEnginePage() {
                               e.stopPropagation();
                               handleOpenSheet(d);
                             }}
-                            className="text-primary hover:underline font-semibold flex items-center gap-0.5 text-[11px] cursor-pointer"
+                            className="text-primary hover:underline font-medium flex items-center gap-0.5 text-[11px] cursor-pointer"
                           >
                             <span>Defense File</span>
                             <ArrowRight className="w-3 h-3" />
@@ -436,26 +436,26 @@ export default function FraudEnginePage() {
             <div className="lg:col-span-7 space-y-4">
               {activeDispute ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700/60">
+                  <div className="flex items-center justify-between bg-muted/40 p-3 rounded-xl border border-border">
                     <div className="flex items-center gap-2">
                       <Network className="w-4 h-4 text-primary" />
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      <span className="text-xs font-medium text-foreground">
                         Active Telemetry Profile: {activeDispute.id} ({activeDispute.order?.customer?.name})
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleOpenSheet(activeDispute)}
-                      className="px-3 py-1 bg-slate-950 dark:bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-primary transition cursor-pointer"
+                      className="px-2.5 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-lg hover:opacity-90 transition-opacity cursor-pointer shadow-2xs"
                     >
-                      Open Full Defense Sheet
+                      Open Defense Sheet
                     </button>
                   </div>
 
                   <FraudSignalCard fraudSignal={activeDispute.fraudSignal} />
                 </div>
               ) : (
-                <div className="p-12 text-center border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 text-slate-500 text-xs">
+                <div className="p-12 text-center border border-border rounded-xl bg-card text-muted-foreground text-xs">
                   Select a dispute to view its fraud risk profile and relationship graph.
                 </div>
               )}

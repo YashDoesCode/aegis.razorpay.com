@@ -142,16 +142,15 @@ export default function OverviewPage() {
             className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-0.5"
           >
             <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
                 Dispute Operations Console
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Real-time chargeback liability, winnability probability, and automated
-                evidence pipelines.
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Real-time liability management, winnability analysis, and automated evidence pipelines.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <HealthScore score={data?.healthScore ?? 80} />
 
               <DropdownMenu>
@@ -159,44 +158,44 @@ export default function OverviewPage() {
                   <button
                     type="button"
                     aria-label={`Filter disputes: ${filterState}`}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-slate-200 transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                    className="flex items-center gap-1.5 bg-card hover:bg-muted border border-border px-2.5 py-1 rounded-lg text-xs font-medium text-foreground transition shadow-xs cursor-pointer outline-hidden focus-visible:ring-1 focus-visible:ring-foreground"
                   >
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>{filterState}</span>
-                    <ChevronDown className="w-3 h-3 text-slate-400 stroke-[2]" />
+                    <ChevronDown className="w-3 h-3 text-muted-foreground stroke-[2]" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-48 p-1.5 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs"
+                  className="w-48 p-1 rounded-xl shadow-lg border border-border bg-card text-xs"
                 >
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("All Disputes")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer font-medium hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer font-medium hover:bg-muted"
                   >
                     All Disputes
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("Open Queue")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted"
                   >
                     Open Queue
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("High-Risk (<24h SLA)")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-rose-700 dark:text-rose-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-muted"
                   >
                     High-Risk (&lt;24h SLA)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("Evidence Gaps")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-amber-700 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer text-amber-600 dark:text-amber-400 hover:bg-muted"
                   >
                     Evidence Gaps
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleFilterSelect("Won Disputes")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer text-emerald-700 dark:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer text-emerald-600 dark:text-emerald-400 hover:bg-muted"
                   >
                     Won Disputes
                   </DropdownMenuItem>
@@ -207,9 +206,9 @@ export default function OverviewPage() {
                 type="button"
                 onClick={() => setUploadModalOpen(true)}
                 aria-label="Upload Statement"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition shadow-xs cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-card hover:bg-muted border border-border text-xs font-medium text-foreground transition shadow-xs cursor-pointer"
               >
-                <Upload className="w-3.5 h-3.5 text-primary" />
+                <Upload className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Upload Statement</span>
               </button>
 
@@ -218,11 +217,11 @@ export default function OverviewPage() {
                 onClick={() => fetchOverview(true)}
                 disabled={refreshing}
                 aria-label="Refresh Data"
-                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+                className="w-7.5 h-7.5 rounded-lg bg-card hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition shadow-xs cursor-pointer disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
               >
                 <RotateCw
                   className={`w-3.5 h-3.5 stroke-[1.75] ${
-                    refreshing ? "animate-spin text-primary" : ""
+                    refreshing ? "animate-spin text-foreground" : ""
                   }`}
                 />
               </button>
@@ -232,36 +231,36 @@ export default function OverviewPage() {
                   <button
                     type="button"
                     aria-label="Export Overview Report"
-                    className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+                    className="w-7.5 h-7.5 rounded-lg bg-card hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition shadow-xs cursor-pointer focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
                   >
                     <Download className="w-3.5 h-3.5 stroke-[2]" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-44 p-1.5 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs"
+                  className="w-44 p-1 rounded-xl shadow-lg border border-border bg-card text-xs"
                 >
                   <DropdownMenuItem
                     onClick={() => handleExport("csv")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
                   >
                     Export as CSV
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleExport("json")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
                   >
                     Export as JSON
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleExport("pdf")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
                   >
                     Export as PDF (Printable)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleExport("docx")}
-                    className="rounded-xl px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                    className="rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted font-medium"
                   >
                     Export as DOCX
                   </DropdownMenuItem>
@@ -271,33 +270,33 @@ export default function OverviewPage() {
           </section>
 
           {error && !loading && (
-            <div className="bg-rose-50/70 dark:bg-rose-950/50 rounded-2xl border border-rose-200 dark:border-rose-800 p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="bg-rose-50/60 dark:bg-rose-950/40 rounded-xl border border-border p-3.5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2.5">
                 <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
                 <div>
-                  <span className="font-bold text-rose-950 dark:text-rose-200">Sync Alert: </span>
-                  <span className="text-rose-800 dark:text-rose-300">{error}</span>
+                  <span className="font-semibold text-foreground">Sync Alert: </span>
+                  <span className="text-muted-foreground">{error}</span>
                 </div>
               </div>
               <button
                 onClick={() => fetchOverview(true)}
-                className="px-3 py-1 rounded-full bg-rose-600 text-white font-semibold hover:bg-rose-700 transition cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
+                className="px-3 py-1 rounded-md bg-rose-600 text-white font-medium hover:bg-rose-700 transition cursor-pointer shrink-0"
               >
                 Retry Sync
               </button>
             </div>
           )}
 
-          <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
             <div
               id="tour-hero-metrics"
-              className="lg:col-span-4 flex flex-col justify-between gap-3 sm:gap-3.5"
+              className="lg:col-span-4 flex flex-col justify-between gap-3"
             >
               {loading ? (
-                <div className="bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
-                  <Skeleton className="h-3 w-28 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
-                  <Skeleton className="h-10 w-36 bg-slate-200/70 dark:bg-slate-800 rounded-lg" />
-                  <Skeleton className="h-3 w-48 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
+                <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+                  <Skeleton className="h-3 w-28 bg-muted rounded" />
+                  <Skeleton className="h-9 w-36 bg-muted rounded" />
+                  <Skeleton className="h-3 w-48 bg-muted rounded" />
                 </div>
               ) : (
                 <RecoveryMetric
@@ -308,15 +307,15 @@ export default function OverviewPage() {
               )}
 
               {loading ? (
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 flex-1">
+                <div className="grid grid-cols-2 gap-2.5 flex-1">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl p-3.5 border border-slate-200/80 dark:border-slate-800 space-y-2"
+                      className="bg-card rounded-xl p-3 border border-border space-y-2"
                     >
-                      <Skeleton className="h-3 w-16 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
-                      <Skeleton className="h-7 w-12 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
-                      <Skeleton className="h-3 w-20 bg-slate-200/70 dark:bg-slate-800 rounded-md" />
+                      <Skeleton className="h-3 w-16 bg-muted rounded" />
+                      <Skeleton className="h-7 w-12 bg-muted rounded" />
+                      <Skeleton className="h-3 w-20 bg-muted rounded" />
                     </div>
                   ))}
                 </div>
@@ -358,7 +357,7 @@ export default function OverviewPage() {
 
           <section
             id="tour-winnability-risk"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-stretch"
           >
             <div className="lg:col-span-5 flex">
               <WinnabilityDistribution

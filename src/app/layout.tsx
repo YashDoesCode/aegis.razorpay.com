@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Inter, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,6 +7,7 @@ import { MerchantModeProvider } from "@/context/merchant-mode-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { StartupProvider, StartupExperience } from "@/components/startup";
 import { OnboardingProvider, OnboardingManager } from "@/components/onboarding";
+import { PwaInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,23 +15,36 @@ const inter = Inter({
   display: "swap",
 });
 
-const interTight = Inter_Tight({
-  subsets: ["latin"],
-  variable: "--font-inter-tight",
-  display: "swap",
-  weight: ["500", "600", "700"],
-});
-
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains-mono",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
 });
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#121212" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   title: "Razorpay Aegis | Autonomous Dispute Defense",
   description: "AI-powered dispute winnability scoring, evidence orchestration, and automated rebuttal drafting on Razorpay.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Razorpay Aegis",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -41,11 +55,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${interTight.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full`}
       suppressHydrationWarning
     >
       <body
-        className="h-full bg-rp-bg text-rp-ink font-sans antialiased"
+        className="h-full bg-background text-foreground font-sans antialiased"
         suppressHydrationWarning
       >
         <ThemeProvider>
@@ -55,6 +69,7 @@ export default function RootLayout({
                 <TooltipProvider delay={200}>
                   <StartupExperience />
                   <OnboardingManager />
+                  <PwaInstallPrompt />
                   {children}
                   <Toaster richColors position="top-right" />
                 </TooltipProvider>

@@ -3,12 +3,12 @@
 import React, { useRef } from "react";
 import Link from "next/link";
 import {
-  Zap,
   Clock,
   FileSearch,
   ShieldAlert,
   PackageCheck,
   ChevronRight,
+  ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,86 +39,86 @@ export function ActionQueue({
     <section
       id="tour-action-queue"
       className={cn(
-        "bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl p-2 sm:p-2.5 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 shadow-xs transition-colors duration-200",
+        "bg-card rounded-xl p-2 sm:p-2.5 border border-border flex items-center justify-between gap-2.5 shadow-xs transition-colors duration-200",
         className
       )}
       aria-label="Action Queue"
     >
-      <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold text-slate-950 dark:text-white px-1.5 sm:px-2 shrink-0">
-        <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700 dark:text-slate-300 stroke-[2.2]" />
-        <span className="uppercase tracking-wider text-[10px] sm:text-[11px] whitespace-nowrap">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground px-1.5 shrink-0">
+        <ListTodo className="w-3.5 h-3.5 stroke-[2]" />
+        <span className="uppercase tracking-wide text-[11px] whitespace-nowrap">
           Action Queue
         </span>
       </div>
 
       <div
         ref={scrollContainerRef}
-        className="flex items-center gap-2.5 overflow-x-auto py-0.5 custom-scrollbar flex-1"
+        className="flex items-center gap-2 overflow-x-auto py-0.5 custom-scrollbar flex-1"
       >
         <Link
           href="/disputes?filter=due_today"
-          className="flex items-center gap-2 sm:gap-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-750 px-2.5 sm:px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-hidden"
+          className="flex items-center gap-2 bg-muted/40 hover:bg-muted px-2.5 py-1.5 rounded-lg border border-border shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
-          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-rose-50 dark:bg-rose-950/80 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:bg-rose-100 dark:group-hover:bg-rose-900 transition-colors shrink-0">
-            <Clock className="w-3.5 h-3.5 stroke-[2]" />
+          <div className="w-5 h-5 rounded-md bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+            <Clock className="w-3 h-3 stroke-[2]" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">
-              {dueTodayCount} disputes due today
+            <div className="text-xs font-medium text-foreground">
+              {dueTodayCount} due today
             </div>
-            <div className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
-              Action required • SLA &lt; 6h
+            <div className="text-[10px] text-rose-600 dark:text-rose-400 font-mono">
+              SLA &lt; 24h
             </div>
           </div>
         </Link>
 
         <Link
           href="/disputes?filter=evidence_gaps"
-          className="flex items-center gap-2 sm:gap-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-750 px-2.5 sm:px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-900/60 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-hidden"
+          className="flex items-center gap-2 bg-muted/40 hover:bg-muted px-2.5 py-1.5 rounded-lg border border-border shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
-          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-amber-50 dark:bg-amber-950/80 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:bg-amber-100 dark:group-hover:bg-amber-900 transition-colors shrink-0">
-            <FileSearch className="w-3.5 h-3.5 stroke-[2]" />
+          <div className="w-5 h-5 rounded-md bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+            <FileSearch className="w-3 h-3 stroke-[2]" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
+            <div className="text-xs font-medium text-foreground">
               {evidenceGapsCount} evidence gaps
             </div>
-            <div className="text-[10px] font-medium text-amber-700 dark:text-amber-400">
-              Carrier PoD pending match
+            <div className="text-[10px] text-muted-foreground">
+              POD pending match
             </div>
           </div>
         </Link>
 
         <Link
           href="/disputes?filter=high_risk"
-          className="flex items-center gap-2 sm:gap-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-750 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-slate-700 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+          className="flex items-center gap-2 bg-muted/40 hover:bg-muted px-2.5 py-1.5 rounded-lg border border-border shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
-          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 group-hover:bg-slate-200 dark:group-hover:bg-slate-600 transition-colors shrink-0">
-            <ShieldAlert className="w-3.5 h-3.5 stroke-[2]" />
+          <div className="w-5 h-5 rounded-md bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+            <ShieldAlert className="w-3 h-3 stroke-[2]" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-slate-950 dark:group-hover:text-white transition-colors">
+            <div className="text-xs font-medium text-foreground">
               {highRiskCount} high-risk claims
             </div>
-            <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
-              &gt; ₹50,000 claim exposure
+            <div className="text-[10px] text-muted-foreground">
+              &gt; ₹50,000 exposure
             </div>
           </div>
         </Link>
 
         <Link
           href="/disputes?filter=courier_sync"
-          className="flex items-center gap-2 sm:gap-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-750 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-slate-700 shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden"
+          className="flex items-center gap-2 bg-muted/40 hover:bg-muted px-2.5 py-1.5 rounded-lg border border-border shrink-0 cursor-pointer transition shadow-xs group focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
         >
-          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors shrink-0">
-            <PackageCheck className="w-3.5 h-3.5 stroke-[2]" />
+          <div className="w-5 h-5 rounded-md bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+            <PackageCheck className="w-3 h-3 stroke-[2]" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-              {courierEventsCount} courier events sync
+            <div className="text-xs font-medium text-foreground">
+              {courierEventsCount} courier sync events
             </div>
-            <div className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-              Auto-linking tracking logs
+            <div className="text-[10px] text-muted-foreground">
+              Auto-linked tracking
             </div>
           </div>
         </Link>
@@ -128,9 +128,9 @@ export function ActionQueue({
         type="button"
         onClick={handleScrollRight}
         aria-label="Next Queue Items"
-        className="w-7 h-7 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white shrink-0 ml-auto transition shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-hidden"
+        className="w-6 h-6 rounded-md bg-card hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0 ml-auto transition shadow-xs cursor-pointer focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden"
       >
-        <ChevronRight className="w-3.5 h-3.5 stroke-[2]" />
+        <ChevronRight className="w-3 h-3 stroke-[2]" />
       </button>
     </section>
   );
