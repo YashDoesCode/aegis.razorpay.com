@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,8 +21,6 @@ import {
   Landmark,
   ShieldCheck,
   Settings,
-  PanelLeftClose,
-  PanelLeftOpen,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -43,7 +41,6 @@ interface NavItem {
   name: string;
   href: string;
   matchPrefix?: string;
-  hiddenClass?: string;
   icon: React.ElementType;
 }
 
@@ -74,16 +71,14 @@ const navItems: NavItem[] = [
   },
   {
     name: "Fraud Engine",
-    href: "/disputes?filter=high_risk",
-    matchPrefix: "/disputes?filter=high_risk",
-    hiddenClass: "hidden xl:inline-block",
+    href: "/fraud",
+    matchPrefix: "/fraud",
     icon: ShieldCheck,
   },
   {
     name: "Settings",
     href: "/settings",
     matchPrefix: "/settings",
-    hiddenClass: "hidden 2xl:inline-block",
     icon: Settings,
   },
 ];
@@ -103,11 +98,6 @@ export function DashboardShell({
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [internalSearch, setInternalSearch] = useState("");
-  const [isNavCollapsed, setIsNavCollapsed] = useState<boolean>(() => {
-    return safeStorage.getItem<boolean>(STORAGE_KEYS.NAV_COLLAPSED, false);
-  });
-  const [isNavHovered, setIsNavHovered] = useState(false);
-  const navHoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const effectiveSearch = onSearchChange ? searchQuery : internalSearch;
 
@@ -128,32 +118,6 @@ export function DashboardShell({
       safeStorage.setItem(STORAGE_KEYS.LAST_TAB, pathname);
     }
   }, [pathname]);
-
-  const toggleNavCollapse = () => {
-    setIsNavCollapsed((prev) => {
-      const next = !prev;
-      safeStorage.setItem(STORAGE_KEYS.NAV_COLLAPSED, next);
-      return next;
-    });
-  };
-
-  const handleNavMouseEnter = () => {
-    if (navHoverTimeoutRef.current) {
-      clearTimeout(navHoverTimeoutRef.current);
-    }
-    if (isNavCollapsed) {
-      setIsNavHovered(true);
-    }
-  };
-
-  const handleNavMouseLeave = () => {
-    if (navHoverTimeoutRef.current) {
-      clearTimeout(navHoverTimeoutRef.current);
-    }
-    navHoverTimeoutRef.current = setTimeout(() => {
-      setIsNavHovered(false);
-    }, 150);
-  };
 
   useEffect(() => {
     fetch(`/api/disputes?mode=${mode}`)
@@ -235,17 +199,25 @@ export function DashboardShell({
                 <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-slate-950 dark:bg-blue-600 flex items-center justify-center text-white shadow-xs group-hover:bg-primary transition-colors duration-200">
                   <svg
                     className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.75"
                     viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    <polygon
+                    <path
+                      d="M12 2L4 5V11.5C4 16.5 7.4 21.1 12 22C16.6 21.1 20 16.5 20 11.5V5L12 2Z"
                       fill="currentColor"
-                      fillOpacity="0.15"
-                      points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+                      fillOpacity="0.2"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M14.5 7.5L9.5 16.5M10 7.5H15M9 16.5H14"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
                 </div>
@@ -264,16 +236,9 @@ export function DashboardShell({
                 </div>
               </Link>
 
-              <div
-                className="relative hidden lg:flex items-center"
-                onMouseEnter={handleNavMouseEnter}
-                onMouseLeave={handleNavMouseLeave}
-              >
+              <div className="hidden lg:flex items-center">
                 <nav
-                  className={cn(
-                    "flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-0.5 sm:p-1 rounded-full border border-slate-200/70 dark:border-slate-700/70 text-xs font-medium text-slate-600 dark:text-slate-300 transition-all duration-200",
-                    isNavCollapsed && !isNavHovered && "gap-0.5 px-1"
-                  )}
+                  className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-full border border-slate-200/70 dark:border-slate-700/70 text-xs font-medium text-slate-600 dark:text-slate-300 transition-all duration-200 gap-1"
                   aria-label="Main Navigation"
                 >
                   {navItems.map((item) => {
@@ -287,33 +252,12 @@ export function DashboardShell({
 
                     const IconComp = item.icon;
 
-                    if (isNavCollapsed && !isNavHovered) {
-                      return (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          title={item.name}
-                          aria-label={item.name}
-                          className={cn(
-                            "w-7 h-7 flex items-center justify-center rounded-full transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-100 focus-visible:outline-hidden",
-                            item.hiddenClass,
-                            isActive
-                              ? "bg-slate-950 dark:bg-blue-600 text-white shadow-xs"
-                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
-                          )}
-                        >
-                          <IconComp className="w-3.5 h-3.5 stroke-[1.75]" />
-                        </Link>
-                      );
-                    }
-
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "px-3 xl:px-3.5 2xl:px-4 py-1 sm:py-1.5 rounded-full transition-all duration-150 cursor-pointer text-[11px] sm:text-xs flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-100 focus-visible:outline-hidden",
-                          item.hiddenClass,
+                          "px-3 xl:px-3.5 py-1 sm:py-1.5 rounded-full transition-all duration-150 cursor-pointer text-[11px] sm:text-xs flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-100 focus-visible:outline-hidden whitespace-nowrap",
                           isActive
                             ? "bg-slate-950 dark:bg-blue-600 text-white font-semibold shadow-xs"
                             : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
@@ -324,60 +268,7 @@ export function DashboardShell({
                       </Link>
                     );
                   })}
-
-                  <button
-                    type="button"
-                    onClick={toggleNavCollapse}
-                    title={isNavCollapsed ? "Expand navigation" : "Collapse navigation"}
-                    aria-label={isNavCollapsed ? "Expand navigation" : "Collapse navigation"}
-                    className="w-6 h-6 ml-0.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition cursor-pointer"
-                  >
-                    {isNavCollapsed ? (
-                      <PanelLeftOpen className="w-3.5 h-3.5 stroke-[1.75]" />
-                    ) : (
-                      <PanelLeftClose className="w-3.5 h-3.5 stroke-[1.75]" />
-                    )}
-                  </button>
                 </nav>
-
-                <AnimatePresence>
-                  {isNavCollapsed && isNavHovered && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                      transition={{ duration: 0.16, ease: "easeOut" }}
-                      className="absolute top-0 left-0 z-30 flex items-center bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-1 rounded-full border border-slate-200 dark:border-slate-700 shadow-xl ring-1 ring-blue-500/10"
-                    >
-                      {navItems.map((item) => {
-                        const isActive =
-                          item.href === "/overview"
-                            ? pathname === "/overview" || pathname === "/"
-                            : pathname === item.href ||
-                              (item.matchPrefix &&
-                                pathname.startsWith(item.matchPrefix) &&
-                                item.matchPrefix !== "/overview");
-                        const IconComp = item.icon;
-
-                        return (
-                          <Link
-                            key={item.name}
-                            href={item.href}
-                            className={cn(
-                              "px-3 py-1 rounded-full transition-all duration-150 cursor-pointer text-xs flex items-center gap-1.5 whitespace-nowrap",
-                              isActive
-                                ? "bg-slate-950 dark:bg-blue-600 text-white font-semibold shadow-xs"
-                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                            )}
-                          >
-                            <IconComp className="w-3.5 h-3.5 stroke-[1.75]" />
-                            <span>{item.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             </div>
 
