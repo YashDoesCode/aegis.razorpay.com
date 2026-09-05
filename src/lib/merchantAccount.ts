@@ -304,7 +304,6 @@ export async function connectMerchantAccount(params: {
     authType: "api_key",
   };
 
-  // PERSIST TO DURABLE DATABASE STORAGE
   try {
     await prisma.merchant.upsert({
       where: { rzpMerchantId: merchantId },
@@ -335,6 +334,11 @@ export async function connectMerchantAccount(params: {
       module: "MerchantAccount",
       merchantId,
     });
+    activeLiveMerchantMemoryCache = null;
+    return {
+      ok: false,
+      error: "Failed to persist encrypted merchant credentials to database",
+    };
   }
 
   return {
