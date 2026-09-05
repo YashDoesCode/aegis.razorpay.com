@@ -117,10 +117,11 @@ describe("E2E Aegis Defense Pipeline & Dashboard Verification", () => {
     expect(json.message).toContain("Synchronized with Razorpay Disputes API");
   });
 
-  it("7. Page routes (/overview, /disputes, /transactions, /settlements, /settings) return 200 HTML", async () => {
+  it("7. Page routes (/overview, /disputes, /fraud, /transactions, /settlements, /settings) return 200 HTML", async () => {
     const routes = [
       "/overview",
       "/disputes",
+      "/fraud",
       "/transactions",
       "/settlements",
       "/settings",

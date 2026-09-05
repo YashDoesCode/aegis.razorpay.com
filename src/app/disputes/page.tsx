@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import {
@@ -32,7 +33,8 @@ type SortField = "amount" | "winnability" | "date" | "id";
 type SortDirection = "asc" | "desc";
 type WinnabilityFilter = "all" | "high" | "needs_evidence" | "low";
 
-export default function DisputesPage() {
+function DisputesPageContent() {
+  const searchParams = useSearchParams();
   const { mode, setMode, merchant, setIsConnectModalOpen } = useMerchantMode();
 
   const [disputes, setDisputes] = useState<DisputeDetailItem[]>([]);
@@ -43,9 +45,20 @@ export default function DisputesPage() {
     useState<DisputeDetailItem | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const initialSearch = searchParams.get("search") || "";
+  const initialFilter = searchParams.get("filter");
+  const parsedFilter: WinnabilityFilter =
+    initialFilter === "high" || initialFilter === "high_risk"
+      ? "high"
+      : initialFilter === "needs_evidence"
+      ? "needs_evidence"
+      : initialFilter === "low"
+      ? "low"
+      : "all";
+
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [winnabilityFilter, setWinnabilityFilter] =
-    useState<WinnabilityFilter>("all");
+    useState<WinnabilityFilter>(parsedFilter);
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -875,5 +888,13 @@ export default function DisputesPage() {
         />
       </LocalErrorBoundary>
     </DashboardShell>
+  );
+}
+
+export default function DisputesPage() {
+  return (
+    <Suspense fallback={<div className="w-full min-h-screen p-8 bg-white dark:bg-[#0F172A]" />}>
+      <DisputesPageContent />
+    </Suspense>
   );
 }
