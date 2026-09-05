@@ -58,7 +58,6 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
           return saved;
         }
       } catch {
-        // Ignore
       }
     }
     return "test";
@@ -84,8 +83,7 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
           });
         }
       }
-    } catch (err) {
-      console.warn("⚠️ [MerchantModeContext] Failed to load status:", err);
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -110,8 +108,7 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
             });
           }
         }
-      } catch (err) {
-        console.warn("⚠️ [MerchantModeContext] Failed to load status:", err);
+      } catch {
       } finally {
         if (!ignore) {
           setIsLoading(false);
@@ -129,10 +126,8 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
     try {
       localStorage.setItem(STORAGE_KEY, newMode);
     } catch {
-      // Ignore
     }
 
-    // If switching to live and no account is connected, prompt the connect modal
     if (newMode === "live" && !merchant.isConnected) {
       setIsConnectModalOpen(true);
     }
@@ -160,7 +155,6 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
       try {
         localStorage.setItem(STORAGE_KEY, "live");
       } catch {
-        // Ignore
       }
       setIsConnectModalOpen(false);
       return { ok: true };
@@ -178,10 +172,8 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
       try {
         localStorage.setItem(STORAGE_KEY, "test");
       } catch {
-        // Ignore
       }
-    } catch (err) {
-      console.warn("⚠️ [MerchantModeContext] Disconnect error:", err);
+    } catch {
     }
   }, [refreshStatus]);
 

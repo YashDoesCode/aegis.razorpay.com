@@ -61,16 +61,47 @@ describe("Winnability Scoring Engine", () => {
       expect(result.band).toBe("low");
       expect(result.recommendation).toBe("accept");
     });
+
+    it("Dispute 7 (Card 4853, Defective Merchandise with Full Terms & POD) scores High Band", () => {
+      const d7 = fallbackDisputes[6];
+      const result = computeWinnability(d7, d7.evidenceItems, d7.order?.customer);
+      expect(result.score).toBe(100);
+      expect(result.band).toBe("high");
+      expect(result.recommendation).toBe("contest");
+    });
+
+    it("Dispute 8 (Card 4834, Point of Sale Amount Differs with Signed Order & Token Logs) scores High Band", () => {
+      const d8 = fallbackDisputes[7];
+      const result = computeWinnability(d8, d8.evidenceItems, d8.order?.customer);
+      expect(result.score).toBe(100);
+      expect(result.band).toBe("high");
+      expect(result.recommendation).toBe("contest");
+    });
+
+    it("Dispute 9 (UPI 1063, Cancelled Recurring with Missing Timestamp Logs) scores Low Band", () => {
+      const d9 = fallbackDisputes[8];
+      const result = computeWinnability(d9, d9.evidenceItems, d9.order?.customer);
+      expect(result.score).toBe(40);
+      expect(result.band).toBe("low");
+      expect(result.recommendation).toBe("accept");
+    });
+
+    it("Dispute 10 (Card 4837, Velocity Spike Unverified Drop) scores Low Band", () => {
+      const d10 = fallbackDisputes[9];
+      const result = computeWinnability(d10, d10.evidenceItems, d10.order?.customer);
+      expect(result.score).toBe(8);
+      expect(result.band).toBe("low");
+      expect(result.recommendation).toBe("accept");
+    });
   });
 
   describe("Band Boundary Tests", () => {
     it("verifies exact boundary behavior (80, 79, 50, 49)", () => {
       const dispute: DisputeData = {
         id: "disp_generic",
-        reasonCode: "9999", // fallback reason: billing(30) + fulfillment(30) + comms(20) + explanation(20)
+        reasonCode: "9999",
       };
 
-      // 1. Exactly 80 (30 + 30 + 20 = 80)
       const res80 = computeWinnability(dispute, [
         { type: "billing_proof", present: true },
         { type: "shipping_proof", present: true },
@@ -80,7 +111,6 @@ describe("Winnability Scoring Engine", () => {
       expect(res80.band).toBe("high");
       expect(res80.recommendation).toBe("contest");
 
-      // 2. Exactly 50 (30 + 20 = 50)
       const res50 = computeWinnability(dispute, [
         { type: "billing_proof", present: true },
         { type: "customer_communication", present: true },
@@ -89,7 +119,6 @@ describe("Winnability Scoring Engine", () => {
       expect(res50.band).toBe("needs_evidence");
       expect(res50.recommendation).toBe("gather_evidence");
 
-      // 3. Exactly 30 (< 50)
       const res30 = computeWinnability(dispute, [
         { type: "billing_proof", present: true },
       ]);
@@ -121,7 +150,7 @@ describe("Winnability Scoring Engine", () => {
     it("rejects invalid inputs via Zod schema validation", () => {
       expect(() => {
         // @ts-expect-error test runtime validation
-        computeWinnability({ id: "" }); // missing reasonCode
+        computeWinnability({ id: "" });
       }).toThrow(ZodError);
     });
   });

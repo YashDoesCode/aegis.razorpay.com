@@ -303,7 +303,7 @@ function DisputesPageContent() {
                 <span>
                   {mode === "live"
                     ? `Live Production Mode · Connected to ${merchant.name} (${merchant.merchantId})`
-                    : "Test Sandbox Mode · 6 Seeded Sample Disputes"}
+                    : `Test Sandbox Mode · ${disputes.length || 10} Seeded Sample Disputes`}
                 </span>
               </p>
             </div>
@@ -339,7 +339,7 @@ function DisputesPageContent() {
               <div className="flex items-center gap-2.5">
                 <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                 <span>
-                  <strong>Test Sandbox Mode:</strong> Showing 6 representative demo dispute cases with winnability scoring & AI rebuttal drafts.
+                  <strong>Test Sandbox Mode:</strong> Showing {disputes.length || 10} representative demo dispute cases with winnability scoring & AI rebuttal drafts.
                 </span>
               </div>
               <button

@@ -401,6 +401,59 @@ export async function computeDashboardOverview(
     }));
   }
 
+  if (recentAuditFeed.length === 0 && mode === "test") {
+    recentAuditFeed = [
+      {
+        id: "audit_init_001",
+        timestamp: "Just now",
+        disputeId: "disp_1064_goods_not_received",
+        action: "Proof of Delivery auto-ingested from BlueDart API (BD-982144321IN)",
+        category: "evidence",
+        status: "success",
+      },
+      {
+        id: "audit_init_002",
+        timestamp: "5m ago",
+        disputeId: "disp_1064_goods_not_received",
+        action: "AI Defense Pack generated with 4 evidence citations and legal precedent",
+        category: "automation",
+        status: "success",
+      },
+      {
+        id: "audit_init_003",
+        timestamp: "12m ago",
+        disputeId: "disp_4837_velocity_spike",
+        action: "High-risk velocity flag triggered for repeat disputer cust_rajesh_k_10 (Score 92)",
+        category: "security",
+        status: "success",
+      },
+      {
+        id: "audit_init_004",
+        timestamp: "28m ago",
+        disputeId: "disp_4853_defective_merchandise",
+        action: "Razorpay dispute webhook chargeback.created verified and processed",
+        category: "sync",
+        status: "success",
+      },
+      {
+        id: "audit_init_005",
+        timestamp: "1h ago",
+        disputeId: "disp_4834_amount_differ",
+        action: "Dispute resolved in merchant favor: ₹6,450.00 credited back to settlement ledger",
+        category: "automation",
+        status: "success",
+      },
+      {
+        id: "audit_init_006",
+        timestamp: "2h ago",
+        disputeId: "disp_4837_no_cardholder_auth",
+        action: "Missing 3DS Liability Shift token flagged on dispute disp_4837_no_cardholder_auth",
+        category: "evidence",
+        status: "success",
+      },
+    ];
+  }
+
   const courierPerformance: CourierPerformanceItem[] = [
     { name: "Delhivery Surface & Express", verifiedPODs: Math.max(12, verifiedPodDeliveries), matchRate: `${matchedDeliveryRate}%`, avgSyncSec: 1.2 },
     { name: "BlueDart Express Courier", verifiedPODs: Math.max(8, Math.round(verifiedPodDeliveries * 0.7)), matchRate: "94.8%", avgSyncSec: 1.8 },

@@ -5,7 +5,6 @@ const isEvidencePresent = (ctx: ScoringContext, type: EvidenceType): boolean => 
 };
 
 export const REASON_CODES: Record<string, ReasonCodeDefinition> = {
-  // UPI 1064: Goods / Services Not Received (Target: ~94)
   "1064": {
     network: "upi",
     label: "Goods / Services Not Received",
@@ -66,7 +65,6 @@ export const REASON_CODES: Record<string, ReasonCodeDefinition> = {
     ],
   },
 
-  // UPI 108: Beneficiary Account Not Credited (Digital / Service) (Target: ~82)
   "108": {
     network: "upi",
     label: "Debited, Beneficiary Not Credited",
@@ -108,7 +106,6 @@ export const REASON_CODES: Record<string, ReasonCodeDefinition> = {
     ],
   },
 
-  // Card 4837: No Cardholder Authorisation (3DS Liability Shift) (Target: ~68)
   "4837": {
     network: "card",
     label: "No Cardholder Authorisation",
@@ -158,7 +155,6 @@ export const REASON_CODES: Record<string, ReasonCodeDefinition> = {
     ],
   },
 
-  // UPI 1062: Goods / Services Not As Described (Target: ~45)
   "1062": {
     network: "upi",
     label: "Goods Not As Described or Defective",
@@ -206,7 +202,6 @@ export const REASON_CODES: Record<string, ReasonCodeDefinition> = {
     ],
   },
 
-  // UPI 1061: Credit Not Processed (Refund Issue) (Target: ~23)
   "1061": {
     network: "upi",
     label: "Credit / Refund Not Processed",
@@ -244,7 +239,6 @@ export const REASON_CODES: Record<string, ReasonCodeDefinition> = {
     ],
   },
 
-  // UPI 1084: Duplicate Processing (Target: ~12, Merchant Error -> Recommend Accept)
   "1084": {
     network: "upi",
     label: "Duplicate Processing",
@@ -286,6 +280,117 @@ export const REASON_CODES: Record<string, ReasonCodeDefinition> = {
         weight: 12,
         evaluate: (ctx) =>
           Boolean(ctx.dispute.paymentId || ctx.dispute.order?.rzpPaymentId),
+      },
+    ],
+  },
+
+  "4853": {
+    network: "card",
+    label: "Defective Merchandise / Not as Described",
+    plainExplanation:
+      "Cardholder claims received merchandise was defective or not as agreed.",
+    requiredEvidence: [
+      "shipping_proof",
+      "billing_proof",
+      "refund_cancellation_policy",
+      "customer_communication",
+    ],
+    scoringRules: [
+      {
+        id: "shipping_proof_verified",
+        label: "Proof of delivery to cardholder billing address",
+        weight: 25,
+        evaluate: (ctx) =>
+          isEvidencePresent(ctx, "shipping_proof") ||
+          Boolean(ctx.delivery?.signatureCaptured),
+      },
+      {
+        id: "return_policy_signed",
+        label: "Published terms on sealed electronics and return window",
+        weight: 25,
+        evaluate: (ctx) =>
+          isEvidencePresent(ctx, "refund_cancellation_policy") ||
+          isEvidencePresent(ctx, "term_and_conditions"),
+      },
+      {
+        id: "item_specification_invoice",
+        label: "GST Invoice with verified product serial number",
+        weight: 25,
+        evaluate: (ctx) => isEvidencePresent(ctx, "billing_proof"),
+      },
+      {
+        id: "customer_support_resolution",
+        label: "Customer communications on file regarding product condition",
+        weight: 25,
+        evaluate: (ctx) => isEvidencePresent(ctx, "customer_communication"),
+      },
+    ],
+  },
+
+  "4834": {
+    network: "card",
+    label: "Point of Sale Amount Differs",
+    plainExplanation:
+      "Cardholder disputes transaction amount billed on card statement.",
+    requiredEvidence: [
+      "billing_proof",
+      "access_activity_log",
+      "explanation_letter",
+    ],
+    scoringRules: [
+      {
+        id: "invoice_signed_authorized",
+        label: "Signed contract or invoice matching billed amount",
+        weight: 40,
+        evaluate: (ctx) => isEvidencePresent(ctx, "billing_proof"),
+      },
+      {
+        id: "cardholder_authorization",
+        label: "Server activity telemetry confirming feature provisioning",
+        weight: 35,
+        evaluate: (ctx) =>
+          isEvidencePresent(ctx, "access_activity_log") ||
+          isEvidencePresent(ctx, "proof_of_service"),
+      },
+      {
+        id: "explanation_letter_arbitration",
+        label: "Formal network arbitration submission document",
+        weight: 25,
+        evaluate: (ctx) => isEvidencePresent(ctx, "explanation_letter"),
+      },
+    ],
+  },
+
+  "1063": {
+    network: "upi",
+    label: "Cancelled Recurring Transaction",
+    plainExplanation:
+      "Customer claims recurring mandate was revoked prior to auto-debit.",
+    requiredEvidence: [
+      "term_and_conditions",
+      "refund_cancellation_policy",
+      "customer_communication",
+    ],
+    scoringRules: [
+      {
+        id: "subscription_agreement",
+        label: "Mandate agreement and cancellation cutoff terms",
+        weight: 40,
+        evaluate: (ctx) =>
+          isEvidencePresent(ctx, "term_and_conditions") ||
+          isEvidencePresent(ctx, "refund_cancellation_policy"),
+      },
+      {
+        id: "cancellation_timestamp_log",
+        label: "Audit log documenting cancellation request timing",
+        weight: 30,
+        evaluate: (ctx) => isEvidencePresent(ctx, "customer_communication"),
+      },
+      {
+        id: "access_log_post_renewal",
+        label: "Member portal access log after billing cycle",
+        weight: 30,
+        evaluate: (ctx) => isEvidencePresent(ctx, "access_activity_log"),
       },
     ],
   },

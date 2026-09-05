@@ -16,13 +16,12 @@ describe("E2E Aegis Defense Pipeline & Dashboard Verification", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(json.count).toBeGreaterThanOrEqual(6);
-    expect(json.stats.totalCount).toBeGreaterThanOrEqual(6);
-    expect(json.stats.high.count).toBe(2); // 1064 (94) & 108 (82)
-    expect(json.stats.needsEvidence.count).toBe(1); // 4837 (68)
-    expect(json.stats.low.count).toBe(3); // 1062 (45), 1061 (23), 1084 (12)
+    expect(json.count).toBe(10);
+    expect(json.stats.totalCount).toBe(10);
+    expect(json.stats.high.count).toBe(4);
+    expect(json.stats.needsEvidence.count).toBe(1);
+    expect(json.stats.low.count).toBe(5);
 
-    // Check specific realistic scores
     const d1064 = json.data.find((d: { id: string }) => d.id === "disp_1064_goods_not_received");
     expect(d1064).toBeDefined();
     expect(d1064.winnability.score).toBe(94);
@@ -53,6 +52,23 @@ describe("E2E Aegis Defense Pipeline & Dashboard Verification", () => {
     expect(d1084).toBeDefined();
     expect(d1084.winnability.score).toBe(12);
     expect(d1084.winnability.band).toBe("low");
+
+    const d4853 = json.data.find((d: { id: string }) => d.id === "disp_4853_defective_merchandise");
+    expect(d4853).toBeDefined();
+    expect(d4853.winnability.band).toBe("high");
+
+    const d4834 = json.data.find((d: { id: string }) => d.id === "disp_4834_amount_differ");
+    expect(d4834).toBeDefined();
+    expect(d4834.winnability.score).toBe(100);
+    expect(d4834.winnability.band).toBe("high");
+
+    const d1063 = json.data.find((d: { id: string }) => d.id === "disp_1063_cancelled_recurring");
+    expect(d1063).toBeDefined();
+    expect(d1063.winnability.band).toBe("low");
+
+    const d4837v = json.data.find((d: { id: string }) => d.id === "disp_4837_velocity_spike");
+    expect(d4837v).toBeDefined();
+    expect(d4837v.winnability.band).toBe("low");
   });
 
   it("3. GET /api/disputes/[id] returns detail file, scoring rules, and evidence checklist", async () => {

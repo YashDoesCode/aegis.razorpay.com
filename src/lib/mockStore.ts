@@ -64,7 +64,6 @@ const daysAgo = (d: number) => new Date(now.getTime() - d * 24 * 60 * 60 * 1000)
 const daysAhead = (d: number) => new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
 
 export const fallbackDisputes: MockDisputeRecord[] = [
-  // 1. UPI 1064: Score ~94 (High, Contest)
   {
     id: "disp_1064_goods_not_received",
     rzpDisputeId: "disp_rzp_1064_001",
@@ -146,7 +145,6 @@ export const fallbackDisputes: MockDisputeRecord[] = [
     ],
   },
 
-  // 2. UPI 108: Score ~82 (High, Contest)
   {
     id: "disp_108_beneficiary_not_credited",
     rzpDisputeId: "disp_rzp_108_002",
@@ -228,7 +226,6 @@ export const fallbackDisputes: MockDisputeRecord[] = [
     ],
   },
 
-  // 3. Card 4837: Score ~68 (Needs Evidence, Gather Evidence)
   {
     id: "disp_4837_no_cardholder_auth",
     rzpDisputeId: "disp_rzp_4837_003",
@@ -302,7 +299,6 @@ export const fallbackDisputes: MockDisputeRecord[] = [
     ],
   },
 
-  // 4. UPI 1062: Score ~45 (Low, Accept)
   {
     id: "disp_1062_goods_not_as_described",
     rzpDisputeId: "disp_rzp_1062_006",
@@ -384,7 +380,6 @@ export const fallbackDisputes: MockDisputeRecord[] = [
     ],
   },
 
-  // 5. UPI 1061: Score ~23 (Low, Accept)
   {
     id: "disp_1061_credit_not_processed",
     rzpDisputeId: "disp_rzp_1061_004",
@@ -458,7 +453,6 @@ export const fallbackDisputes: MockDisputeRecord[] = [
     ],
   },
 
-  // 6. UPI 1084: Score ~12 (Low, Accept - Merchant Error)
   {
     id: "disp_1084_duplicate_processing",
     rzpDisputeId: "disp_rzp_1084_005",
@@ -517,9 +511,297 @@ export const fallbackDisputes: MockDisputeRecord[] = [
       },
     ],
   },
+
+  {
+    id: "disp_4853_defective_merchandise",
+    rzpDisputeId: "disp_rzp_4853_007",
+    orderId: "order_card_4853_007",
+    paymentId: "pay_O4853CARD0007",
+    reasonCode: "4853",
+    network: "card",
+    amount: 3499900,
+    currency: "INR",
+    phase: "chargeback",
+    status: "open",
+    dataSource: "seed",
+    data_source: "seed",
+    respondBy: daysAhead(0.5),
+    createdAt: daysAgo(2),
+    updatedAt: daysAgo(1),
+    order: {
+      id: "order_card_4853_007",
+      rzpPaymentId: "pay_O4853CARD0007",
+      item: "Apple AirPods Max Wireless Over-Ear Headphones (Space Gray)",
+      amount: 3499900,
+      currency: "INR",
+      status: "captured",
+      customer: {
+        id: "cust_karan_malhotra_07",
+        name: "Karan Malhotra",
+        email: "karan.malhotra@example.com",
+        address: "Flat 8B, Sea Green Towers, Worli, Mumbai, MH 400018",
+        priorOrdersCount: 4,
+        priorDisputesCount: 0,
+      },
+      delivery: {
+        courier: "BlueDart",
+        trackingId: "BD-551029481IN",
+        deliveredAt: daysAgo(5),
+        deliveredToAddress: "Flat 8B, Sea Green Towers, Worli, Mumbai, MH 400018",
+        signatureCaptured: true,
+      },
+      communications: [
+        {
+          id: "comm_07",
+          direction: "inbound",
+          channel: "email",
+          body: "I opened the box and used it for 3 days but decided I prefer the silver color. Requesting chargeback because return window passed.",
+          sentAt: daysAgo(1),
+        },
+      ],
+      refunds: [],
+    },
+    evidenceItems: [
+      {
+        id: "ev_20",
+        type: "shipping_proof",
+        present: true,
+        documentRef: "docs/bluedart_pod_worli.pdf",
+        note: "Signed delivery proof by cardholder at billing address with GPS confirmation",
+      },
+      {
+        id: "ev_21",
+        type: "billing_proof",
+        present: true,
+        documentRef: "docs/invoice_INV8827.pdf",
+        note: "GST Invoice with verified product serial number matching manufacturer warranty",
+      },
+      {
+        id: "ev_22",
+        type: "refund_cancellation_policy",
+        present: true,
+        documentRef: "docs/sealed_electronics_policy.pdf",
+        note: "Terms state opened seal electronics non-returnable unless hardware defect verified",
+      },
+      {
+        id: "ev_23",
+        type: "customer_communication",
+        present: true,
+        documentRef: "docs/customer_email_color_preference.pdf",
+        note: "Customer admitted item is fully working and disputed due to color preference",
+      },
+      {
+        id: "ev_24",
+        type: "explanation_letter",
+        present: false,
+        documentRef: null,
+        note: "Formal rebuttal explanation letter pending submission",
+      },
+    ],
+  },
+
+  {
+    id: "disp_4834_amount_differ",
+    rzpDisputeId: "disp_rzp_4834_008",
+    orderId: "order_card_4834_008",
+    paymentId: "pay_O4834CARD0008",
+    reasonCode: "4834",
+    network: "card",
+    amount: 645000,
+    currency: "INR",
+    phase: "arbitration",
+    status: "won",
+    dataSource: "seed",
+    data_source: "seed",
+    respondBy: daysAgo(10),
+    createdAt: daysAgo(15),
+    updatedAt: daysAgo(1),
+    order: {
+      id: "order_card_4834_008",
+      rzpPaymentId: "pay_O4834CARD0008",
+      item: "SaaS Developer Enterprise Add-on Tier 2",
+      amount: 645000,
+      currency: "INR",
+      status: "captured",
+      customer: {
+        id: "cust_deepika_r_08",
+        name: "Deepika Ranganathan",
+        email: "deepika.r@example.com",
+        address: "Indiranagar 100ft Rd, Bengaluru, KA 560038",
+        priorOrdersCount: 12,
+        priorDisputesCount: 0,
+      },
+      delivery: {
+        courier: "Digital Service",
+        trackingId: "DIGI-SAAS-PROV-9941",
+        deliveredAt: daysAgo(15),
+        deliveredToAddress: "deepika.r@example.com",
+        signatureCaptured: false,
+      },
+      communications: [
+        {
+          id: "comm_08",
+          direction: "outbound",
+          channel: "email",
+          body: "Your enterprise add-on invoice of INR 6,450.00 has been verified against signed order form.",
+          sentAt: daysAgo(14),
+        },
+      ],
+      refunds: [],
+    },
+    evidenceItems: [
+      {
+        id: "ev_25",
+        type: "billing_proof",
+        present: true,
+        documentRef: "docs/enterprise_order_form_INV8828.pdf",
+        note: "Signed contract with INR 6,450.00 line item authorization",
+      },
+      {
+        id: "ev_26",
+        type: "access_activity_log",
+        present: true,
+        documentRef: "docs/auth_token_access_audit.pdf",
+        note: "Server API logs confirming feature utilization",
+      },
+      {
+        id: "ev_27",
+        type: "explanation_letter",
+        present: true,
+        documentRef: "docs/arbitration_submission_pack.pdf",
+        note: "Arbitration pack accepted by card network",
+      },
+    ],
+  },
+
+  {
+    id: "disp_1063_cancelled_recurring",
+    rzpDisputeId: "disp_rzp_1063_009",
+    orderId: "order_upi_1063_009",
+    paymentId: "pay_O1063UPI0009",
+    reasonCode: "1063",
+    network: "upi",
+    amount: 199900,
+    currency: "INR",
+    phase: "pre_arbitration",
+    status: "lost",
+    dataSource: "seed",
+    data_source: "seed",
+    respondBy: daysAgo(20),
+    createdAt: daysAgo(25),
+    updatedAt: daysAgo(5),
+    order: {
+      id: "order_upi_1063_009",
+      rzpPaymentId: "pay_O1063UPI0009",
+      item: "Monthly Fitness Club Auto-Renewal",
+      amount: 199900,
+      currency: "INR",
+      status: "captured",
+      customer: {
+        id: "cust_arun_s_09",
+        name: "Arun Swaminathan",
+        email: "arun.swaminathan@example.com",
+        address: "Anna Nagar, Chennai, TN 600040",
+        priorOrdersCount: 2,
+        priorDisputesCount: 2,
+      },
+      delivery: null,
+      communications: [
+        {
+          id: "comm_09",
+          direction: "inbound",
+          channel: "email",
+          body: "I cancelled my recurring subscription 2 days before renewal via your portal.",
+          sentAt: daysAgo(24),
+        },
+      ],
+      refunds: [],
+    },
+    evidenceItems: [
+      {
+        id: "ev_28",
+        type: "refund_cancellation_policy",
+        present: true,
+        documentRef: "docs/subscription_terms.pdf",
+        note: "Merchant 72-hour notice cutoff policy",
+      },
+      {
+        id: "ev_29",
+        type: "customer_communication",
+        present: false,
+        documentRef: null,
+        note: "Merchant failed to capture cancellation timestamp log",
+      },
+    ],
+  },
+
+  {
+    id: "disp_4837_velocity_spike",
+    rzpDisputeId: "disp_rzp_4837_010",
+    orderId: "order_card_4837_010",
+    paymentId: "pay_O4837CARD0010",
+    reasonCode: "4837",
+    network: "card",
+    amount: 4850000,
+    currency: "INR",
+    phase: "chargeback",
+    status: "under_review",
+    dataSource: "seed",
+    data_source: "seed",
+    respondBy: daysAhead(1),
+    createdAt: daysAgo(0.5),
+    updatedAt: daysAgo(0.2),
+    order: {
+      id: "order_card_4837_010",
+      rzpPaymentId: "pay_O4837CARD0010",
+      item: "High-End GPU Accelerator Card",
+      amount: 4850000,
+      currency: "INR",
+      status: "captured",
+      customer: {
+        id: "cust_rajesh_k_10",
+        name: "Rajesh K. Singhania",
+        email: "rajesh.singhania@example.com",
+        address: "Bandra West, Mumbai, MH 400050",
+        priorOrdersCount: 0,
+        priorDisputesCount: 4,
+      },
+      delivery: {
+        courier: "Shadowfax",
+        trackingId: "SF-991024810IN",
+        deliveredAt: daysAgo(1),
+        deliveredToAddress: "Bandra West, Mumbai, MH 400050",
+        signatureCaptured: false,
+      },
+      communications: [],
+      refunds: [],
+    },
+    evidenceItems: [
+      {
+        id: "ev_30",
+        type: "shipping_proof",
+        present: false,
+        documentRef: null,
+        note: "Unverified package delivery drop without OTP or signature",
+      },
+      {
+        id: "ev_31",
+        type: "billing_proof",
+        present: true,
+        documentRef: "docs/invoice_INV8830.pdf",
+        note: "Tax invoice issued to non-cardholder recipient",
+      },
+      {
+        id: "ev_32",
+        type: "access_activity_log",
+        present: false,
+        documentRef: null,
+        note: "No 3DS liability shift token on payment gateway record",
+      },
+    ],
+  },
 ];
 
-// In-memory dispute state for resilient demo operations
 const inMemoryStore: MockDisputeRecord[] = JSON.parse(JSON.stringify(fallbackDisputes));
 
 export function getInMemoryDisputes(): MockDisputeRecord[] {
@@ -647,11 +929,11 @@ export function queryInMemoryAuditEvents(filters: {
   }
   if (filters.startDate) {
     const start = new Date(filters.startDate).getTime();
-    results = results.filter((e) => e.createdAt.getTime() >= start);
+    results = results.filter((e) => new Date(e.createdAt).getTime() >= start);
   }
   if (filters.endDate) {
     const end = new Date(filters.endDate).getTime();
-    results = results.filter((e) => e.createdAt.getTime() <= end);
+    results = results.filter((e) => new Date(e.createdAt).getTime() <= end);
   }
 
   const offset = filters.offset || 0;
@@ -665,10 +947,8 @@ export function addInMemoryAuditEvent(event: MockAuditEventRecord): void {
 
 export function resetInMemoryWebhookStore(): void {
   inMemoryWebhookEvents.length = 0;
-  inMemoryAuditEvents.length = 0;
 }
 
 export function resetInMemoryAuditStore(): void {
   inMemoryAuditEvents.length = 0;
 }
-

@@ -18,10 +18,9 @@ describe("Strict Live vs Test Mode Data Separation & Merchant Connect Flow", () 
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(json.mode).toBe("test");
-    expect(json.count).toBeGreaterThanOrEqual(6);
-    expect(json.data.length).toBeGreaterThanOrEqual(6);
+    expect(json.count).toBe(10);
+    expect(json.data.length).toBe(10);
 
-    // Verify all returned records have mode: "test" and isDemo: true
     for (const d of json.data) {
       expect(d.mode).toBe("test");
       expect(d.dataSource).toBe("seed");
@@ -30,10 +29,9 @@ describe("Strict Live vs Test Mode Data Separation & Merchant Connect Flow", () 
       expect(typeof d.winnability.score).toBe("number");
     }
 
-    // Verify representative winnability spread
-    expect(json.stats.high.count).toBe(2);
+    expect(json.stats.high.count).toBe(4);
     expect(json.stats.needsEvidence.count).toBe(1);
-    expect(json.stats.low.count).toBe(3);
+    expect(json.stats.low.count).toBe(5);
   });
 
   it("3. GET /api/disputes?mode=live NEVER leaks seeded or mock demo data", async () => {
@@ -43,13 +41,11 @@ describe("Strict Live vs Test Mode Data Separation & Merchant Connect Flow", () 
     expect(json.ok).toBe(true);
     expect(json.mode).toBe("live");
 
-    // In Live mode, if account has 0 disputes, count must be 0 and data must be empty
     if (json.count === 0) {
       expect(json.data).toEqual([]);
       expect(json.stats.totalCount).toBe(0);
       expect(json.stats.totalPendingAmount).toBe(0);
     } else {
-      // If live disputes exist, verify none of them are seeded demo dispute IDs
       const seedIds = [
         "disp_1064_goods_not_received",
         "disp_108_beneficiary_not_credited",
@@ -57,6 +53,10 @@ describe("Strict Live vs Test Mode Data Separation & Merchant Connect Flow", () 
         "disp_1062_goods_not_as_described",
         "disp_1061_credit_not_processed",
         "disp_1084_duplicate_processing",
+        "disp_4853_defective_merchandise",
+        "disp_4834_amount_differ",
+        "disp_1063_cancelled_recurring",
+        "disp_4837_velocity_spike",
       ];
       for (const d of json.data) {
         expect(seedIds).not.toContain(d.id);
@@ -66,7 +66,6 @@ describe("Strict Live vs Test Mode Data Separation & Merchant Connect Flow", () 
   });
 
   it("4. POST /api/merchant/connect validates credentials and rejects invalid formats", async () => {
-    // Missing credentials
     const res1 = await fetch(`${BASE_URL}/api/merchant/connect`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -76,7 +75,6 @@ describe("Strict Live vs Test Mode Data Separation & Merchant Connect Flow", () 
     const json1 = await res1.json();
     expect(json1.ok).toBe(false);
 
-    // Invalid key prefix
     const res2 = await fetch(`${BASE_URL}/api/merchant/connect`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -102,7 +100,6 @@ describe("Strict Live vs Test Mode Data Separation & Merchant Connect Flow", () 
   });
 
   it("6. POST /api/disputes/sync?mode=live vs mode=test maintains data isolation", async () => {
-    // Test mode sync
     const resTest = await fetch(`${BASE_URL}/api/disputes/sync?mode=test`, {
       method: "POST",
     });
@@ -112,7 +109,6 @@ describe("Strict Live vs Test Mode Data Separation & Merchant Connect Flow", () 
     expect(jsonTest.mode).toBe("test");
     expect(jsonTest.totalManagedCount).toBeGreaterThanOrEqual(6);
 
-    // Live mode sync
     const resLive = await fetch(`${BASE_URL}/api/disputes/sync?mode=live`, {
       method: "POST",
     });

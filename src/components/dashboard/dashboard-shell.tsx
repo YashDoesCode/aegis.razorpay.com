@@ -33,6 +33,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { ConnectRazorpayModal } from "./connect-razorpay-modal";
+import { ModeSwitcher } from "./mode-switcher";
 import { useMerchantMode } from "@/context/merchant-mode-context";
 import { safeStorage, STORAGE_KEYS } from "@/lib/storage/safeStorage";
 import { cn } from "@/lib/utils";
@@ -177,7 +178,7 @@ export function DashboardShell({
     }, 500);
   };
 
-  const merchantName = merchant?.name || "Merchant Corp";
+  const merchantName = merchant?.name || "Acme India Retail Ltd";
   const merchantInitials = React.useMemo(() => {
     const parts = merchantName.trim().split(" ");
     if (parts.length >= 2) {
@@ -261,6 +262,8 @@ export function DashboardShell({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+              <ModeSwitcher />
+
               <div className="relative hidden md:block w-36 lg:w-44 xl:w-56 2xl:w-64">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Search className="w-3.5 h-3.5" />
@@ -340,7 +343,7 @@ export function DashboardShell({
                   <button
                     id="tour-merchant-menu"
                     data-testid="user-profile-menu"
-                    aria-label={`Merchant Account Menu: ${merchant.name || "Merchant Corp"}`}
+                    aria-label={`Merchant Account Menu: ${merchant.name || "Acme India Retail Ltd"}`}
                     className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 pl-1.5 pr-2.5 sm:pr-3 py-1 rounded-full cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
                   >
                     <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full bg-slate-950 dark:bg-blue-600 text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold tracking-tight">
@@ -348,7 +351,7 @@ export function DashboardShell({
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[85px] sm:max-w-[110px] truncate">
-                        {merchant.name || "Merchant Corp"}
+                        {merchant.name || "Acme India Retail Ltd"}
                       </span>
                       <span
                         className={cn(
@@ -378,10 +381,10 @@ export function DashboardShell({
                   <DropdownMenuLabel className="px-2 py-1">
                     <div className="flex flex-col">
                       <span className="text-xs font-semibold text-slate-900 dark:text-white">
-                        {merchant.name || "Merchant Corp"}
+                        {merchant.name || "Acme India Retail Ltd"}
                       </span>
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                        {merchant.merchantId || "acc_live_demo"}
+                        {merchant.merchantId || "acc_demo_test_01"}
                       </span>
                     </div>
                   </DropdownMenuLabel>
@@ -498,7 +501,10 @@ export function DashboardShell({
                   })}
                 </div>
 
-                <div className="mt-auto border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-xs">
+                <div className="mt-auto border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3 text-xs">
+                  <div className="px-1">
+                    <ModeSwitcher />
+                  </div>
                   <button
                     type="button"
                     onClick={() => {
