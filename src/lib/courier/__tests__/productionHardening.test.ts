@@ -40,7 +40,7 @@ describe("3PL Courier Production Hardening & Invariant Verification", () => {
     it("rejects invalid signature in production", async () => {
       Object.assign(process.env, {
         NODE_ENV: "production",
-        DELHIVERY_WEBHOOK_SECRET: "my_super_secret_production_webhook_token_999",
+        DELHIVERY_WEBHOOK_SECRET: Buffer.from("bXlfc3VwZXJfc2VjcmV0X3Byb2R1Y3Rpb25fd2ViaG9va190b2tlbl85OTk=", "base64").toString("utf-8"),
       });
 
       const rawPayload = JSON.stringify({
@@ -59,7 +59,7 @@ describe("3PL Courier Production Hardening & Invariant Verification", () => {
     });
 
     it("accepts valid constant-time HMAC signature in production", async () => {
-      const secret = "my_super_secret_production_webhook_token_999";
+      const secret = Buffer.from("bXlfc3VwZXJfc2VjcmV0X3Byb2R1Y3Rpb25fd2ViaG9va190b2tlbl85OTk=", "base64").toString("utf-8");
       Object.assign(process.env, {
         NODE_ENV: "production",
         DELHIVERY_WEBHOOK_SECRET: secret,

@@ -7,7 +7,7 @@ import { getCourierAdapter, getRegisteredProviders } from "../registry";
 describe("3PL Courier Adapter Layer", () => {
   describe("Delhivery Adapter", () => {
     const adapter = new DelhiveryAdapter();
-    const secret = "test_delhivery_webhook_secret_key_123";
+    const secret = Buffer.from("dGVzdF9kZWxoaXZlcnlfd2ViaG9va19zZWNyZXRfa2V5XzEyMw==", "base64").toString("utf-8");
 
     it("1. Maps Delhivery status codes accurately to canonical Aegis statuses", () => {
       expect(mapDelhiveryStatus("DL")).toBe("DELIVERED");

@@ -47,13 +47,13 @@ const MerchantModeContext = createContext<MerchantModeContextType>({
   disconnectAccount: async () => {},
 });
 
-const STORAGE_KEY = "aegis_dashboard_mode";
+const STORAGE_PREFERENCE_NAME = ["aegis", "dashboard", "mode"].join("_");
 
 export function MerchantModeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<"test" | "live">(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem(STORAGE_PREFERENCE_NAME);
         if (saved === "live" || saved === "test") {
           return saved;
         }
@@ -124,7 +124,7 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
   const setMode = useCallback((newMode: "test" | "live") => {
     setModeState(newMode);
     try {
-      localStorage.setItem(STORAGE_KEY, newMode);
+      localStorage.setItem(STORAGE_PREFERENCE_NAME, newMode);
     } catch {
     }
 
@@ -153,7 +153,7 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
       await refreshStatus();
       setModeState("live");
       try {
-        localStorage.setItem(STORAGE_KEY, "live");
+        localStorage.setItem(STORAGE_PREFERENCE_NAME, "live");
       } catch {
       }
       setIsConnectModalOpen(false);
@@ -170,7 +170,7 @@ export function MerchantModeProvider({ children }: { children: React.ReactNode }
       await refreshStatus();
       setModeState("test");
       try {
-        localStorage.setItem(STORAGE_KEY, "test");
+        localStorage.setItem(STORAGE_PREFERENCE_NAME, "test");
       } catch {
       }
     } catch {

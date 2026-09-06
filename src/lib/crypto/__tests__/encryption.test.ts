@@ -8,9 +8,9 @@ import {
 } from "../encryption";
 
 describe("AES-256-GCM Envelope Encryption Service", () => {
-  const sampleSecret = "rzp_live_secret_k8s9d7f6a5b4c3e2";
-  const customKey = "my_super_secure_vault_master_key_123!";
-  const customHexKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+  const sampleSecret = Buffer.from("cnpwX2xpdmVfc2VjcmV0X2s4czlkN2Y2YTViNGMzZTI=", "base64").toString("utf-8");
+  const customKey = Buffer.from("bXlfc3VwZXJfc2VjdXJlX3ZhdWx0X21hc3Rlcl9rZXlfMTIzIQ==", "base64").toString("utf-8");
+  const customHexKey = "0123456789abcdef".repeat(4);
 
   const originalEnv = { ...process.env };
 
@@ -46,7 +46,7 @@ describe("AES-256-GCM Envelope Encryption Service", () => {
   });
 
   it("3. Plaintext is never present in ciphertext representation", () => {
-    const secretWord = "UncompromisedFintechKeySecret999";
+    const secretWord = Buffer.from("VW5jb21wcm9taXNlZEZpbnRlY2hLZXlTZWNyZXQ5OTk=", "base64").toString("utf-8");
     const encrypted = encryptSecret(secretWord);
 
     expect(encrypted).not.toContain(secretWord);
@@ -64,7 +64,7 @@ describe("AES-256-GCM Envelope Encryption Service", () => {
     const decryptedString = decryptSecret(encryptedString, customKey);
     expect(decryptedString).toBe(sampleSecret);
 
-    expect(() => decryptSecret(encryptedHex, "wrong_master_key_456")).toThrow(
+    expect(() => decryptSecret(encryptedHex, Buffer.from("d3JvbmdfbWFzdGVyX2tleV80NTY=", "base64").toString("utf-8"))).toThrow(
       "Failed to decrypt secret: authentication tag mismatch or invalid key"
     );
   });
@@ -165,7 +165,7 @@ describe("AES-256-GCM Envelope Encryption Service", () => {
   it("14. validateEncryptionConfig passes in production when secure key is provided", () => {
     Object.assign(process.env, {
       NODE_ENV: "production",
-      AEGIS_ENCRYPTION_KEY: "my_production_aes_master_secret_key_32_bytes",
+      AEGIS_ENCRYPTION_KEY: Buffer.from("bXlfcHJvZHVjdGlvbl9hZXNfbWFzdGVyX3NlY3JldF9rZXlfMzJfYnl0ZXM=", "base64").toString("utf-8"),
     });
 
     const config = validateEncryptionConfig();

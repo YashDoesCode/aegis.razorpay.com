@@ -12,6 +12,8 @@ export interface StartupContextValue {
   hasCompleted: boolean;
   audioUnlocked: boolean;
   error: Error | null;
+  alwaysPlayIntro: boolean;
+  setAlwaysPlayIntro: (enabled: boolean) => void;
   setError: (error: Error | null) => void;
   setStartupState: (state: StartupState) => void;
   markComplete: () => void;

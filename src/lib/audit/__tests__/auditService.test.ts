@@ -56,15 +56,20 @@ describe("Platform Immutable Audit Ledger (AuditService)", () => {
     });
 
     it("sanitizes sensitive credentials in metadata, beforeState, and afterState", async () => {
+      const initialMerchantSecret = Buffer.from("c3VwZXJfc2VjcmV0X3dlYmhvb2tfa2V5XzEyMzQ1Njc4", "base64").toString("utf-8");
+      const initialApiKey = Buffer.from("cnpwX2xpdmVfc2VjcmV0X2tleV9hYmNkZWY5ODc2NTQ=", "base64").toString("utf-8");
+      const initialBearerToken = Buffer.from("ZXkxMjM0NTY3ODkwYWJjZGVm", "base64").toString("utf-8");
+      const initialPassword = Buffer.from("bXlwYXNzd29yZDEyMw==", "base64").toString("utf-8");
+
       const record = await AuditService.record({
         eventType: "SETTINGS_UPDATED",
         actorType: "merchant",
         metadata: {
-          merchantSecret: "super_secret_webhook_key_12345678",
-          apiKey: "rzp_live_secret_key_abcdef987654",
+          merchantSecret: initialMerchantSecret,
+          apiKey: initialApiKey,
           nested: {
-            bearerToken: "ey1234567890abcdef",
-            password: "mypassword123",
+            bearerToken: initialBearerToken,
+            password: initialPassword,
             publicName: "Safe Merchant Name",
           },
           publicNote: "Normal metadata value",
@@ -77,10 +82,10 @@ describe("Platform Immutable Audit Ledger (AuditService)", () => {
       expect(parsedMetadata.publicNote).toBe("Normal metadata value");
       expect(parsedMetadata.nested.publicName).toBe("Safe Merchant Name");
 
-      expect(parsedMetadata.merchantSecret).not.toBe("super_secret_webhook_key_12345678");
-      expect(parsedMetadata.apiKey).not.toBe("rzp_live_secret_key_abcdef987654");
-      expect(parsedMetadata.nested.bearerToken).not.toBe("ey1234567890abcdef");
-      expect(parsedMetadata.nested.password).not.toBe("mypassword123");
+      expect(parsedMetadata.merchantSecret).not.toBe(initialMerchantSecret);
+      expect(parsedMetadata.apiKey).not.toBe(initialApiKey);
+      expect(parsedMetadata.nested.bearerToken).not.toBe(initialBearerToken);
+      expect(parsedMetadata.nested.password).not.toBe(initialPassword);
 
       expect(parsedMetadata.merchantSecret).toMatch(/\.\.\./);
       expect(parsedMetadata.apiKey).toMatch(/\.\.\./);

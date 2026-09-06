@@ -53,4 +53,10 @@ describe("SafeStorage", () => {
       "/overview"
     );
   });
+
+  it("stores and retrieves ALWAYS_PLAY_INTRO flag", () => {
+    expect(safeStorage.getItem(STORAGE_KEYS.ALWAYS_PLAY_INTRO, false)).toBe(false);
+    safeStorage.setItem(STORAGE_KEYS.ALWAYS_PLAY_INTRO, true);
+    expect(safeStorage.getItem(STORAGE_KEYS.ALWAYS_PLAY_INTRO, false)).toBe(true);
+  });
 });

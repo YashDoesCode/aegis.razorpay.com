@@ -29,6 +29,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -39,6 +40,7 @@ import { ConnectRazorpayModal } from "./connect-razorpay-modal";
 import { ModeSwitcher } from "./mode-switcher";
 import { RightSidebar } from "./right-sidebar";
 import { useMerchantMode } from "@/context/merchant-mode-context";
+import { useStartupContext } from "@/components/startup/startup-context";
 import { safeStorage, STORAGE_KEYS } from "@/lib/storage/safeStorage";
 import { cn } from "@/lib/utils";
 
@@ -101,12 +103,19 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const isDashboardPage = pathname === "/overview" || pathname === "/";
+  const { alwaysPlayIntro, setAlwaysPlayIntro } = useStartupContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [internalSearch, setInternalSearch] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    return !safeStorage.getItem<boolean>(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, false);
-  });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSidebarOpen(true);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const effectiveSearch = onSearchChange ? searchQuery : internalSearch;
 
@@ -140,11 +149,7 @@ export function DashboardShell({
   }, []);
 
   const handleToggleSidebar = () => {
-    setSidebarOpen((prev) => {
-      const next = !prev;
-      safeStorage.setItem(STORAGE_KEYS.RIGHT_SIDEBAR_COLLAPSED, !next);
-      return next;
-    });
+    setSidebarOpen((prev) => !prev);
   };
 
   useEffect(() => {
@@ -226,9 +231,9 @@ export function DashboardShell({
         className="w-full min-h-screen bg-background text-foreground font-sans antialiased transition-colors duration-200"
         suppressHydrationWarning
       >
-        <div className="w-full min-h-screen p-3.5 sm:p-5 lg:p-6 flex flex-col justify-between gap-4 relative">
-          <header className="flex items-center justify-between gap-3 sm:gap-4 pb-3 border-b border-border">
-            <div className="flex items-center gap-3 lg:gap-5 shrink-0">
+        <div className="w-full max-w-full min-h-screen p-3.5 sm:p-5 lg:p-6 flex flex-col justify-between gap-4 relative overflow-x-hidden">
+          <header className="flex items-center justify-between gap-2 sm:gap-4 pb-3 border-b border-border w-full min-w-0">
+            <div className="flex items-center gap-2.5 lg:gap-4 xl:gap-5 min-w-0">
               <Link href="/overview" className="flex items-center gap-2.5 group shrink-0">
                 <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-xs shrink-0 border border-border/80 bg-card">
                   <Image
@@ -255,9 +260,9 @@ export function DashboardShell({
                 </div>
               </Link>
 
-              <div className="hidden lg:flex items-center">
+              <div className="hidden lg:flex items-center min-w-0">
                 <nav
-                  className="flex items-center bg-muted/50 p-1 rounded-lg border border-border text-xs font-normal text-muted-foreground transition-all duration-200 gap-1"
+                  className="flex items-center bg-muted/50 p-1 rounded-lg border border-border text-xs font-normal text-muted-foreground transition-all duration-200 gap-0.5 xl:gap-1"
                   aria-label="Main Navigation"
                 >
                   {navItems.map((item) => {
@@ -276,7 +281,7 @@ export function DashboardShell({
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "px-3 py-1 rounded-md transition-all duration-150 cursor-pointer text-xs flex items-center gap-1.5 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden whitespace-nowrap",
+                          "px-2.5 xl:px-3 py-1 rounded-md transition-all duration-150 cursor-pointer text-xs flex items-center gap-1.5 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:outline-hidden whitespace-nowrap",
                           isActive
                             ? "bg-card text-foreground font-medium shadow-xs border border-border"
                             : "hover:text-foreground hover:bg-card/50"
@@ -291,10 +296,10 @@ export function DashboardShell({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <ModeSwitcher />
 
-              <div className="relative hidden md:block w-36 lg:w-44 xl:w-52">
+              <div className="relative hidden xl:block w-32 2xl:w-44">
                 <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-muted-foreground">
                   <Search className="w-3.5 h-3.5" />
                 </div>
@@ -314,7 +319,7 @@ export function DashboardShell({
                   type="button"
                   onClick={handleTriggerInstall}
                   aria-label="Install as App"
-                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-foreground bg-card hover:bg-muted border border-border rounded-lg shadow-xs transition cursor-pointer"
+                  className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-foreground bg-card hover:bg-muted border border-border rounded-lg shadow-xs transition cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5 text-primary" />
                   <span className="hidden md:inline">Install App</span>
@@ -380,17 +385,19 @@ export function DashboardShell({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <button
-                type="button"
-                onClick={handleToggleSidebar}
-                aria-label={sidebarOpen ? "Hide info panel" : "Show info panel"}
-                className={cn(
-                  "hidden lg:flex w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg border border-border items-center justify-center text-muted-foreground hover:text-foreground transition cursor-pointer shadow-xs",
-                  sidebarOpen ? "bg-muted text-foreground" : "bg-card"
-                )}
-              >
-                <PanelRight className="w-3.5 h-3.5 stroke-[1.75]" />
-              </button>
+              {isDashboardPage && (
+                <button
+                  type="button"
+                  onClick={handleToggleSidebar}
+                  aria-label={sidebarOpen ? "Hide info panel" : "Show info panel"}
+                  className={cn(
+                    "hidden lg:flex w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg border border-border items-center justify-center text-muted-foreground hover:text-foreground transition cursor-pointer shadow-xs",
+                    sidebarOpen ? "bg-muted text-foreground" : "bg-card"
+                  )}
+                >
+                  <PanelRight className="w-3.5 h-3.5 stroke-[1.75]" />
+                </button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -398,18 +405,18 @@ export function DashboardShell({
                     id="tour-merchant-menu"
                     data-testid="user-profile-menu"
                     aria-label={`Merchant Account Menu: ${merchant.name || "Acme India Retail Ltd"}`}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-card hover:bg-muted border border-border pl-1.5 pr-2.5 py-1 rounded-lg cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-1 focus-visible:ring-foreground"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-card hover:bg-muted border border-border pl-1.5 pr-2 py-1 rounded-lg cursor-pointer transition shadow-xs outline-hidden focus-visible:ring-1 focus-visible:ring-foreground shrink-0 max-w-[140px] sm:max-w-[170px]"
                   >
-                    <div className="w-5.5 h-5.5 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-medium tracking-tight">
+                    <div className="w-5.5 h-5.5 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-medium tracking-tight shrink-0">
                       {merchantInitials}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium text-foreground max-w-[85px] sm:max-w-[110px] truncate">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs font-medium text-foreground truncate max-w-[70px] sm:max-w-[95px]">
                         {merchant.name || "Acme India Retail Ltd"}
                       </span>
                       <span
                         className={cn(
-                          "w-1.5 h-1.5 rounded-full",
+                          "w-1.5 h-1.5 rounded-full shrink-0",
                           mode === "live" && merchant.isConnected
                             ? "bg-emerald-500"
                             : mode === "live"
@@ -418,7 +425,7 @@ export function DashboardShell({
                         )}
                       />
                     </div>
-                    <ChevronDown className="w-3 h-3 text-muted-foreground stroke-[2]" />
+                    <ChevronDown className="w-3 h-3 text-muted-foreground stroke-[2] shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -466,6 +473,20 @@ export function DashboardShell({
                     <Download className="w-3.5 h-3.5 text-primary" />
                     <span>Install as App (Chromium)</span>
                   </DropdownMenuItem>
+                  <DropdownMenuCheckboxItem
+                    checked={alwaysPlayIntro}
+                    onCheckedChange={(checked) => {
+                      setAlwaysPlayIntro(checked);
+                      if (checked) {
+                        toast.success("Intro will play on each reload");
+                      } else {
+                        toast.info("Intro will only play once per session");
+                      }
+                    }}
+                    className="cursor-pointer text-xs rounded-lg py-2 pl-8 pr-2 hover:bg-muted focus:bg-muted"
+                  >
+                    <span>Play Intro on Reload</span>
+                  </DropdownMenuCheckboxItem>
                   {merchant.isConnected && (
                     <DropdownMenuItem
                       onClick={async () => {
@@ -606,14 +627,14 @@ export function DashboardShell({
               </motion.main>
             </AnimatePresence>
 
-            <AnimatePresence initial={false}>
-              {sidebarOpen && (
+            <AnimatePresence>
+              {isDashboardPage && sidebarOpen && (
                 <motion.div
-                  initial={{ opacity: 0, x: 24, width: 0 }}
+                  initial={{ opacity: 0, x: 28, width: 0 }}
                   animate={{ opacity: 1, x: 0, width: "auto" }}
-                  exit={{ opacity: 0, x: 24, width: 0 }}
+                  exit={{ opacity: 0, x: 28, width: 0 }}
                   transition={{
-                    duration: 0.22,
+                    duration: 0.35,
                     ease: [0.16, 1, 0.3, 1],
                   }}
                   className="hidden lg:block shrink-0 sticky top-4 self-start overflow-hidden"

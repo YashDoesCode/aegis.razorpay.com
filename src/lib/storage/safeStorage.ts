@@ -2,6 +2,7 @@ export const STORAGE_KEYS = {
   THEME: "aegis:theme:v1",
   ACCENT: "aegis:accent:v1",
   STARTUP_TIMESTAMP: "aegis:startup:timestamp:v1",
+  ALWAYS_PLAY_INTRO: "aegis:startup:always_play:v1",
   ONBOARDING: "aegis:onboarding:v1",
   LAST_TAB: "aegis:nav:last_tab:v1",
   NAV_COLLAPSED: "aegis:nav:collapsed:v1",

@@ -161,11 +161,9 @@ export default function OverviewPage() {
                 </p>
               </div>
             </div>
-
             <div className="flex items-center flex-wrap gap-2">
               <HealthScore
                 score={data?.healthScore ?? 94}
-                activeShiftProtection={data?.activeProtection ?? true}
               />
 
               <button

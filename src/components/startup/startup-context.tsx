@@ -14,6 +14,8 @@ function subscribeToStorage(callback: () => void) {
 
 function checkIsStartupSuppressed(): boolean {
   if (typeof window === "undefined") return false;
+  const alwaysPlay = safeStorage.getItem<boolean>(STORAGE_KEYS.ALWAYS_PLAY_INTRO, false);
+  if (alwaysPlay) return false;
   const lastPlayed = safeStorage.getItem<number>(STORAGE_KEYS.STARTUP_TIMESTAMP, 0);
   if (!lastPlayed || typeof lastPlayed !== "number") return false;
   return Date.now() - lastPlayed < TEN_MINUTES_MS;
@@ -32,6 +34,18 @@ export function StartupProvider({ children }: { children: React.ReactNode }) {
   const [hasCompleted, setHasCompleted] = useState<boolean>(false);
   const [audioUnlocked, setAudioUnlocked] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
+  const [alwaysPlayIntro, setAlwaysPlayIntroState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return safeStorage.getItem<boolean>(STORAGE_KEYS.ALWAYS_PLAY_INTRO, false);
+  });
+
+  const setAlwaysPlayIntro = useCallback((enabled: boolean) => {
+    setAlwaysPlayIntroState(enabled);
+    safeStorage.setItem(STORAGE_KEYS.ALWAYS_PLAY_INTRO, enabled);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
+  }, []);
 
   const markComplete = useCallback(() => {
     setStartupState("COMPLETE");
@@ -52,6 +66,8 @@ export function StartupProvider({ children }: { children: React.ReactNode }) {
       hasCompleted: effectiveHasCompleted,
       audioUnlocked,
       error,
+      alwaysPlayIntro,
+      setAlwaysPlayIntro,
       setError,
       setStartupState: (state: StartupState) => {
         setStartupState(state);
@@ -63,7 +79,7 @@ export function StartupProvider({ children }: { children: React.ReactNode }) {
       markComplete,
       triggerUserStart,
     }),
-    [effectiveState, effectiveHasCompleted, audioUnlocked, error, markComplete, triggerUserStart]
+    [effectiveState, effectiveHasCompleted, audioUnlocked, error, alwaysPlayIntro, setAlwaysPlayIntro, markComplete, triggerUserStart]
   );
 
   return <StartupContext.Provider value={value}>{children}</StartupContext.Provider>;

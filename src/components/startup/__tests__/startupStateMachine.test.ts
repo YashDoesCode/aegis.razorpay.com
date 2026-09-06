@@ -228,7 +228,7 @@ describe("Aegis Startup State Machine & Autoplay Recovery Engine", () => {
     expect(harness.wasPlayingBeforeHidden).toBe(false);
   });
 
-  it("never loops or replays once COMPLETE has been reached", async () => {
+  it("never loops or replays once COMPLETE has been reached in session", async () => {
     const harness = new StartupStateMachineHarness();
     harness.markComplete();
 
@@ -242,5 +242,18 @@ describe("Aegis Startup State Machine & Autoplay Recovery Engine", () => {
     await harness.attemptAutoplay(mockPlay);
     expect(mockPlay).not.toHaveBeenCalled();
     expect(harness.state).toBe("COMPLETE");
+  });
+
+  it("suppression logic permits immediate replay when alwaysPlayIntro is enabled", () => {
+    const TEN_MINUTES_MS = 10 * 60 * 1000;
+    const isSuppressed = (lastPlayed: number, alwaysPlay: boolean) => {
+      if (alwaysPlay) return false;
+      if (!lastPlayed) return false;
+      return Date.now() - lastPlayed < TEN_MINUTES_MS;
+    };
+
+    const recentTimestamp = Date.now() - 5000;
+    expect(isSuppressed(recentTimestamp, false)).toBe(true);
+    expect(isSuppressed(recentTimestamp, true)).toBe(false);
   });
 });

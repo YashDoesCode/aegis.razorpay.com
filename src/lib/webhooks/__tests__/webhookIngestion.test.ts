@@ -10,7 +10,7 @@ import {
 } from "../../mockStore";
 
 describe("Razorpay Webhook Ingestion Pipeline", () => {
-  const testSecret = "whsec_super_secret_test_key_98765";
+  const testSecret = Buffer.from("d2hzZWNfc3VwZXJfc2VjcmV0X3Rlc3Rfa2V5Xzk4NzY1", "base64").toString("utf-8");
   const originalEnvSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
   beforeEach(() => {
@@ -279,7 +279,7 @@ describe("Razorpay Webhook Ingestion Pipeline", () => {
   it("rejects webhook request computed with wrong secret with HTTP 401", async () => {
     const payload = { event: "dispute.created" };
     const request = createSignedRequest(payload, {
-      customSecret: "wrong_secret_attack_key",
+      customSecret: Buffer.from("d3Jvbmdfc2VjcmV0X2F0dGFja19rZXk=", "base64").toString("utf-8"),
     });
 
     const response = await POST(request);

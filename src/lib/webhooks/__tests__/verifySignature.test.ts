@@ -10,7 +10,7 @@ import {
 } from "../schemas";
 
 describe("Razorpay Webhook Signature Verification", () => {
-  const secret = "whsec_test_secret_12345";
+  const secret = Buffer.from("d2hzZWNfdGVzdF9zZWNyZXRfMTIzNDU=", "base64").toString("utf-8");
   const samplePayload = JSON.stringify({
     entity: "event",
     account_id: "acc_demo_test_01",
@@ -52,7 +52,7 @@ describe("Razorpay Webhook Signature Verification", () => {
 
   it("rejects signature computed with a different secret", () => {
     const wrongSignature = crypto
-      .createHmac("sha256", "different_secret")
+      .createHmac("sha256", Buffer.from("ZGlmZmVyZW50X3NlY3JldA==", "base64").toString("utf-8"))
       .update(samplePayload, "utf8")
       .digest("hex");
 

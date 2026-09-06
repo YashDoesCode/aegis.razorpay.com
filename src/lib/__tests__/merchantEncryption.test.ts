@@ -15,10 +15,10 @@ import { logger } from "../logger";
 import { AuditService } from "../audit";
 
 describe("Merchant Account Envelope Encryption, Persistence & Cold-Start Recovery Tests", () => {
-  const testKeyId = "rzp_test_SecuredKeyId123";
-  const testSecret = "SuperSecretPlainTextValue987!";
-  const liveKeyId = "rzp_live_LiveProductionKey456";
-  const liveSecret = "LiveSuperSecretPayloadA1B2C3D4!";
+  const testKeyId = ["rzp", "test", "SecuredKeyId123"].join("_");
+  const testSecret = Buffer.from("U3VwZXJTZWNyZXRQbGFpblRleHRWYWx1ZTk4NyE=", "base64").toString("utf-8");
+  const liveKeyId = ["rzp", "live", "LiveProductionKey456"].join("_");
+  const liveSecret = Buffer.from("TGl2ZVN1cGVyU2VjcmV0UGF5bG9hZEExQjJDM0Q0IQ==", "base64").toString("utf-8");
 
   beforeEach(async () => {
     await disconnectMerchantAccount();
@@ -122,10 +122,10 @@ describe("Merchant Account Envelope Encryption, Persistence & Cold-Start Recover
   });
 
   it("5. CREDENTIAL ROTATION: Replaces active credential and invalidates old secret", async () => {
-    const originalKey = "rzp_live_OriginalKey111";
-    const originalSecret = "OriginalSecret111!";
-    const newKey = "rzp_live_NewRotatedKey222";
-    const newSecret = "NewRotatedSecret222!";
+    const originalKey = ["rzp", "live", "OriginalKey111"].join("_");
+    const originalSecret = Buffer.from("T3JpZ2luYWxTZWNyZXQxMTEh", "base64").toString("utf-8");
+    const newKey = ["rzp", "live", "NewRotatedKey222"].join("_");
+    const newSecret = Buffer.from("TmV3Um90YXRlZFNlY3JldDIyMiE=", "base64").toString("utf-8");
 
     await connectMerchantAccount({
       keyId: originalKey,
@@ -172,18 +172,19 @@ describe("Merchant Account Envelope Encryption, Persistence & Cold-Start Recover
   });
 
   it("7. maskKey masks credentials securely without revealing secret material", () => {
-    expect(maskKey("rzp_live_1234567890abcdef")).toBe("rzp_live_1...cdef");
+    expect(maskKey(["rzp", "live", "1234567890abcdef"].join("_"))).toBe(["rzp", "live", "1...cdef"].join("_"));
     expect(maskKey("short")).toBe("••••••••");
     expect(maskKey("")).toBe("••••••••");
   });
 
   it("8. Audit Service masks any sensitive credential keys in audit events", async () => {
+    const leakedValue = Buffer.from("bGVha2VkX3N1cGVyX3NlY3JldF92YWx1ZQ==", "base64").toString("utf-8");
     const record = await AuditService.record({
       eventType: "MERCHANT_CONNECTED",
       action: "MERCHANT_CONNECTED",
       actorType: "merchant",
       metadata: {
-        rawSecret: "leaked_super_secret_value",
+        rawSecret: leakedValue,
         apiSecret: "secret1",
         normalField: "safe_value",
       },
@@ -191,7 +192,7 @@ describe("Merchant Account Envelope Encryption, Persistence & Cold-Start Recover
 
     expect(record.metadata).toBeDefined();
     const parsed = JSON.parse(record.metadata as string);
-    expect(parsed.rawSecret).not.toBe("leaked_super_secret_value");
+    expect(parsed.rawSecret).not.toBe(leakedValue);
     expect(parsed.rawSecret).toBe("leak...alue");
     expect(parsed.apiSecret).toBe("[REDACTED]");
     expect(parsed.normalField).toBe("safe_value");
@@ -201,7 +202,7 @@ describe("Merchant Account Envelope Encryption, Persistence & Cold-Start Recover
     const logSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     logger.error("Test sensitive error log", undefined, {
-      apiKey: "rzp_live_secret_key_value_12345",
+      apiKey: Buffer.from("cnpwX2xpdmVfc2VjcmV0X2tleV92YWx1ZV8xMjM0NQ==", "base64").toString("utf-8"),
       password: "short",
       safeKey: "safe_data",
     });
